@@ -92,12 +92,12 @@ export default function HadraScreen() {
       state.settings.darkMode && styles.containerDark
     ]}>
       <ScreenBackground>
-      <GradientHeader
+      {/* <GradientHeader
         arabicTitle="حضرة الجمعة"
         englishTitle="Hadra Joumou'a"
         subtitle="Friday Spiritual Gathering"
         icon={<Sun color="#FFFFFF" size={32} fill="#FFFFFF" />}
-      />
+      /> */}
 
       <View style={[
         styles.progressContainer,

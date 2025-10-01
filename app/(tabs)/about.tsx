@@ -15,6 +15,7 @@ import {
 } from 'lucide-react-native';
 import GradientHeader from '../../components/GradientHeader';
 import { useApp } from '../../contexts/AppContext';
+import ScreenBackground from '../../components/ScreenBackground';
 
 const features = [
   {
@@ -79,12 +80,13 @@ export default function AboutScreen() {
       styles.container,
       state.settings.darkMode && styles.containerDark
     ]}>
-      <GradientHeader
+      <ScreenBackground>
+      {/* <GradientHeader
         arabicTitle="حول التطبيق"
         englishTitle="About"
         subtitle="Learn More About Our Mission"
         icon={<Info color="#FFFFFF" size={32} />}
-      />
+      /> */}
 
       <ScrollView 
         style={styles.scrollView} 
@@ -382,6 +384,7 @@ export default function AboutScreen() {
 
         <View style={styles.bottomSpacing} />
       </ScrollView>
+      </ScreenBackground>
     </SafeAreaView>
   );
 }
@@ -476,10 +479,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#1E293B',
   },
   sectionTitle: {
+    backgroundColor: 'rgba(0,0,0,0.5)',
     fontSize: 20,
     fontWeight: '700',
-    color: '#1E293B',
+    color: '#F8FAFC',
     marginBottom: 16,
+    padding: 8,
+    borderRadius: 8,
+    // textAlign: 'center',
   },
   sectionTitleDark: {
     color: '#F8FAFC',
@@ -742,11 +749,22 @@ const styles = StyleSheet.create({
 
   // Copyright
   copyrightContainer: {
+   backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 28,
+    marginHorizontal: 16,
     alignItems: 'center',
-    paddingHorizontal: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 5,
+    borderLeftWidth: 4,
+    borderLeftColor: '#059669',
     marginTop: 32,
   },
   copyrightText: {
+    
     fontSize: 14,
     color: '#64748B',
     fontWeight: '600',

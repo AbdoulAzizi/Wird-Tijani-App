@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { 
@@ -14,24 +14,50 @@ import {
   TrendingUp,
   Clock,
   Award,
-  ChevronRight
+  ChevronRight,
+  Sparkles,
+  LucideIcon
 } from 'lucide-react-native';
 import GradientHeader from '../../components/GradientHeader';
 import { useApp } from '../../contexts/AppContext';
 import { openHadraMap } from "../../utils/OpenHadraMap";
+import QuickActionsBar from '../../components/QuickActionsBar';
+
+// Interface pour les cartes de pratique
+interface PracticeCard {
+  id: string;
+  title: string;
+  arabicTitle: string;
+  description: string;
+  icon?: LucideIcon;
+  image?: any; // Pour les images requises avec require()
+  color: string;
+  lightColor: string;
+  route: string;
+  time: string;
+  priority: string;
+}
+
+interface QuickAction {
+  title: string;
+  description: string;
+  icon: LucideIcon;
+  color: string;
+  action: string;
+}
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - 48) / 2;
 
-const practiceCards = [
+const practiceCards: PracticeCard[] = [
   {
     id: 'wird',
     title: 'Wird Tijāni',
     arabicTitle: 'الوِرد التجاني',
     description: 'Daily spiritual practice',
-    icon: Heart,
-    color: '#059669',
-    lightColor: '#D1FAE5',
+    icon: Heart, // Utilise une icône
+    color: '#DC2626',
+    lightColor: '#FEE2E2',
     route: '/wird',
     time: 'Morning & Evening',
     priority: 'high',
@@ -41,7 +67,7 @@ const practiceCards = [
     title: 'Wazīfa Tijāniyya',
     arabicTitle: 'الوَظِيفَة التِّجَانِيَّة',
     description: 'Daily spiritual practice',
-    icon: Star,
+    icon: Star, // Utilise une icône
     color: '#D97706',
     lightColor: '#FEF3C7',
     route: '/wazifa',
@@ -53,7 +79,9 @@ const practiceCards = [
     title: 'Haḍratu-Jumūʿa',
     arabicTitle: 'حضرة الجمعة',
     description: 'Friday spiritual gathering',
-    icon: Users,
+    // Exemple avec image au lieu d'icône
+    // image: require('../../assets/images/hadra.png'), // Utilise une image
+    icon: Users, // Utilise une icône
     color: '#7C3AED',
     lightColor: '#EDE9FE',
     route: '/hadra-jumua',
@@ -62,19 +90,47 @@ const practiceCards = [
   },
   {
     id: 'hadra-map',
-    title: 'Hadra Map',
+    title: 'Hadara Map',
     arabicTitle: 'خريطة الحضرة',
     description: 'Find local Zawiya & spiritual gatherings',
-    icon: MapPin,
-    color: '#DC2626',
-    lightColor: '#FEE2E2',
+    // icon: MapPin, // Utilise une icône
+    image: require('../../assets/images/hadara-map-logo.png'), // Utilise une image
+    color: '#059669',
+    lightColor: '#D1FAE5',
+    // lightColor: 'transparent',
     route: '/hadra-map',
     time: 'Dhikr, Prayer & Zakat',
     priority: 'low',
   },
+   {
+    id: 'names-allah',
+    title: 'Asmā\' Al-Husnā',
+    arabicTitle: 'أسماء الله الحسنى',
+    description: 'The 99 Beautiful Names of Allah',
+    icon: Sparkles, // Utilise une icône
+    color: '#1e40af',
+    lightColor: '#dbeafe',
+    route: '/names',
+    time: 'Meditation & Reflection',
+    priority: 'high',
+  },
+  {
+    id: 'library',
+    title: 'Spiritual Library',
+    arabicTitle: 'المكتبة الروحية',
+    description: 'Sacred formulas, biographies & wisdom',
+    // Exemple avec image au lieu d'icône
+    // image: require('../../assets/images/library.png'), // Utilise une image
+    icon: BookOpen, // Utilise une icône
+    color: '#059669',
+    lightColor: '#D1FAE5',
+    route: '/library',
+    time: 'Anytime',
+    priority: 'low',
+  },
 ];
 
-const quickActions = [
+const quickActions: QuickAction[] = [
   {
     title: 'Continue Practice',
     description: 'Resume your spiritual journey',
@@ -88,6 +144,13 @@ const quickActions = [
     icon: Clock,
     color: '#7C3AED',
     action: 'schedule',
+  },
+    {
+    title: "Asm'a Al-Husn'a",
+    description: 'The 99 Beautiful Names of Allah',
+    icon: Sparkles,
+    color: '#1e40af',
+    action: 'names',
   },
   {
     title: 'Achievements',
@@ -108,6 +171,9 @@ const handleCardPress = (route: string) => {
       break;
     case '/wazifa':
       router.push('/(tabs)/wazifa');
+      break;
+    case '/names':
+      router.push('/(tabs)/names');
       break;
     case '/library':
       router.push('/(tabs)/library');
@@ -140,6 +206,14 @@ const handleCardPress = (route: string) => {
         // Navigate to achievements
         router.push('/(tabs)/stats');
         console.log('Navigate to achievements');
+        break;
+      case 'names':
+        // Navigate to names
+        router.push('/(tabs)/names');
+        console.log('Navigate to names');
+        break;
+      default:
+        console.log(`Navigate to ${action}`);
         break;
     }
   };
@@ -175,56 +249,50 @@ const handleCardPress = (route: string) => {
   const totalProgress = Math.round((wirdProgress + wazifaProgress) / 2);
   const streak = 5; // This should come from your context
 
+  // Fonction pour rendre l'icône ou l'image
+  const renderCardIcon = (card: PracticeCard, isDarkMode: boolean) => {
+    if (card.image) {
+      // Si c'est une image
+      return (
+        <Image
+          source={card.image}
+          style={[
+            styles.cardImage,
+            isDarkMode && styles.cardImageDark
+          ]}
+          resizeMode="cover"
+        />
+      );
+    } else if (card.icon) {
+      // Si c'est une icône
+      const CardIcon = card.icon;
+      return (
+        <CardIcon 
+          color={isDarkMode ? "#FFFFFF" : card.color} 
+          size={24} 
+        />
+      );
+    }
+    return null;
+  };
+
   return (
     <SafeAreaView style={[
       styles.container,
       state.settings.darkMode && styles.containerDark
     ]}>
-      <GradientHeader
+      {/* <GradientHeader
         arabicTitle="بِسْمِ اللّٰهِ الرَّحْمٰنِ الرَّحِيمِ"
         englishTitle="Wird & Wazīfa Tijāniyya"
         subtitle="Spiritual Practice Companion"
         icon={<Heart color="#FFFFFF" size={32} fill="#FFFFFF" />}
-      />
+      /> */}
 
       <ScrollView 
         style={styles.scrollView} 
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {/* Enhanced Greeting Section */}
-        {/* <View style={[
-          styles.greetingContainer,
-          state.settings.darkMode && styles.greetingContainerDark
-        ]}>
-          <View style={styles.greetingHeader}>
-    
-            <View style={styles.greetingIconContainer}>
-              <GreetingIcon color="#059669" size={28} />
-            </View>
-            <View style={styles.greetingTextContainer}>
-              <Text style={[
-                styles.greetingArabic,
-                state.settings.darkMode && styles.greetingArabicDark
-              ]}>
-                {greeting.arabic}
-              </Text>
-              <Text style={[
-                styles.greetingEnglish,
-                state.settings.darkMode && styles.greetingEnglishDark
-              ]}>
-                {greeting.text}
-              </Text>
-            </View>
-          </View>
-          <Text style={[
-            styles.greetingMessage,
-            state.settings.darkMode && styles.greetingMessageDark
-          ]}>
-            {greeting.message}
-          </Text>
-        </View> */}
-
         {/* Enhanced Progress Stats */}
         <View style={styles.progressSection}>
           <Text style={[
@@ -292,7 +360,13 @@ const handleCardPress = (route: string) => {
 
         {/* Quick Actions */}
         <View style={styles.quickActionsSection}>
-          <Text style={[
+          
+           <QuickActionsBar
+            quickActions={quickActions}
+            handleQuickAction={handleQuickAction}
+            darkMode={state.settings.darkMode}
+          />
+          {/* <Text style={[
             styles.sectionTitle, {
               marginHorizontal: 20, marginBottom: 10,
             },
@@ -303,7 +377,7 @@ const handleCardPress = (route: string) => {
           
           <ScrollView 
             horizontal 
-            showsHorizontalScrollIndicator={false}
+            showsHorizontalScrollIndicator={true}
             contentContainerStyle={styles.quickActionsContainer}
           >
             {quickActions.map((action, index) => {
@@ -336,7 +410,7 @@ const handleCardPress = (route: string) => {
                 </TouchableOpacity>
               );
             })}
-          </ScrollView>
+          </ScrollView> */}
         </View>
 
         {/* Redesigned Practice Cards */}
@@ -356,7 +430,6 @@ const handleCardPress = (route: string) => {
 
           <View style={styles.cardsGrid}>
             {practiceCards.map((card) => {
-              const CardIcon = card.icon;
               const isWird = card.id === 'wird';
               const isWazifa = card.id === 'wazifa';
               const progress = isWird ? wirdProgress : isWazifa ? wazifaProgress : 0;
@@ -375,14 +448,12 @@ const handleCardPress = (route: string) => {
                   <View style={styles.cardHeader}>
                     <View style={[
                       styles.cardIconContainer,
+                      card.image && styles.cardIconContainerImage,
                       state.settings.darkMode 
                         ? { backgroundColor: card.color }
                         : { backgroundColor: card.lightColor }
                     ]}>
-                      <CardIcon 
-                        color={state.settings.darkMode ? "#FFFFFF" : card.color} 
-                        size={24} 
-                      />
+                      {renderCardIcon(card, state.settings.darkMode)}
                     </View>
                     {card.priority === 'high' && (
                       <View style={styles.priorityBadge}>
@@ -448,6 +519,38 @@ const handleCardPress = (route: string) => {
             })}
           </View>
         </View>
+
+          {/* Featured: 99 Names of Allah */}
+        <TouchableOpacity
+          style={[
+            styles.featuredCard,
+            state.settings.darkMode && styles.featuredCardDark
+          ]}
+          onPress={() => router.push('/(tabs)/names')}
+          activeOpacity={0.8}
+        >
+          <View style={styles.featuredCardGradient}>
+            <View style={styles.featuredContent}>
+              <View style={styles.featuredLeft}>
+                <View style={styles.featuredIconContainer}>
+                  <Sparkles color="#FFFFFF" size={32} />
+                </View>
+                <View style={styles.featuredTextContainer}>
+                  <Text style={styles.featuredArabicTitle}>
+                    أسماء الله الحسنى
+                  </Text>
+                  <Text style={styles.featuredTitle}>
+                    The 99 Beautiful Names of Allah
+                  </Text>
+                  <Text style={styles.featuredSubtitle}>
+                    Meditate and reflect on Allah's divine attributes
+                  </Text>
+                </View>
+              </View>
+              <ChevronRight color="rgba(255, 255, 255, 0.8)" size={24} />
+            </View>
+          </View>
+        </TouchableOpacity>
 
         {/* Enhanced Library Card */}
         <TouchableOpacity
@@ -524,69 +627,10 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingBottom: 20,
   },
-  
-  // Enhanced Greeting
-  greetingContainer: {
-    backgroundColor: '#FFFFFF',
-    marginHorizontal: 16,
-    marginTop: 16,
-    borderRadius: 20,
-    padding: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 5,
-  },
-  greetingContainerDark: {
-    backgroundColor: '#1E293B',
-  },
-  greetingHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  greetingIconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#F0FDF4',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
-  },
-  greetingTextContainer: {
-    flex: 1,
-  },
-  greetingArabic: {
-    fontSize: 18,
-    color: '#1E293B',
-    fontFamily: 'Amiri_400Regular',
-    marginBottom: 2,
-  },
-  greetingArabicDark: {
-    color: '#F8FAFC',
-  },
-  greetingEnglish: {
-    fontSize: 16,
-    color: '#64748B',
-    fontWeight: '600',
-  },
-  greetingEnglishDark: {
-    color: '#CBD5E1',
-  },
-  greetingMessage: {
-    fontSize: 14,
-    color: '#64748B',
-    fontStyle: 'italic',
-  },
-  greetingMessageDark: {
-    color: '#94A3B8',
-  },
 
   // Progress Section
   progressSection: {
-    marginTop: 24,
+    marginTop: 2,
     paddingHorizontal: 16,
   },
   progressCard: {
@@ -724,6 +768,65 @@ const styles = StyleSheet.create({
     color: '#CBD5E1',
   },
 
+  // Featured Card for 99 Names
+  featuredCard: {
+    marginHorizontal: 16,
+    marginTop: 24,
+    borderRadius: 20,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  featuredCardDark: {
+    shadowColor: '#1e40af',
+  },
+  featuredCardGradient: {
+    backgroundColor: '#1e40af',
+    padding: 24,
+  },
+  featuredContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  featuredLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  featuredIconContainer: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  featuredTextContainer: {
+    flex: 1,
+  },
+  featuredArabicTitle: {
+    fontSize: 16,
+    color: 'rgba(255, 255, 255, 0.9)',
+    marginBottom: 4,
+    textAlign: 'right',
+  },
+  featuredTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    marginBottom: 4,
+  },
+  featuredSubtitle: {
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.8)',
+    lineHeight: 18,
+  },
+
   // Section Headers
   sectionTitle: {
     fontSize: 20,
@@ -788,6 +891,20 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  // Nouveau style pour les containers d'images
+  cardIconContainerImage: {
+    overflow: 'hidden',
+    backgroundColor: 'transparent',
+  },
+  // Style pour les images dans les cartes
+  cardImage: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+  },
+  cardImageDark: {
+    opacity: 0.9,
   },
   priorityBadge: {
     backgroundColor: '#FEF3C7',

@@ -820,12 +820,12 @@ export default function LibraryScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <ScreenBackground>
-      <GradientHeader
+      {/* <GradientHeader
         arabicTitle="المكتبة الروحية"
         englishTitle="Spiritual Library"
         subtitle={currentView === 'categories' ? 'Knowledge & Wisdom' : categories.find(c => c.id === selectedCategory)?.title || ''}
         icon={<BookOpen color="#FFFFFF" size={32} />}
-      />
+      /> */}
 
       {currentView === 'items' && (
         <View style={styles.backButtonContainer}>

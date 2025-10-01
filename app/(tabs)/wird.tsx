@@ -85,12 +85,12 @@ export default function WirdScreen() {
       state.settings.darkMode && styles.containerDark
     ]}>
       <ScreenBackground>
-      <GradientHeader
+      {/* <GradientHeader
         arabicTitle="الوِرد التجاني"
         englishTitle="Wird Tijāni"
         subtitle="Daily Spiritual Practice"
         icon={<Heart color="#FFFFFF" size={32} fill="#FFFFFF" />}
-      />
+      /> */}
 
       <View style={[
         styles.progressContainer,

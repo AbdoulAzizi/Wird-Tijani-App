@@ -125,12 +125,12 @@ export default function WazifaScreen() {
       state.settings.darkMode && styles.containerDark
     ]}>
       <ScreenBackground>
-      <GradientHeader
+      {/* <GradientHeader
         arabicTitle="الوَظِيفَة التِّجَانِيَّة"
         englishTitle="Wazīfa Tijāniyya"
         subtitle="The Daily Devotional Recitation"
         icon={<Star color="#FFFFFF" size={32} fill="#FFFFFF" />}
-      />
+      /> */}
 
       <View style={[
         styles.progressContainer,

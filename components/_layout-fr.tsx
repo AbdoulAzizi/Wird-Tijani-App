@@ -1,5 +1,5 @@
 import { Tabs, useRouter, usePathname } from 'expo-router';
-import { Heart, BookOpen, ChartBar as BarChart3, Settings as SettingsIcon, Star, Moon, Home, Info, Menu, X, ChevronRight, Sparkles } from 'lucide-react-native';
+import { Heart, HomeIcon,BookOpen, ChartBar as BarChart3, Settings as SettingsIcon, Star, Moon, Home, Info, Menu, X, ChevronRight } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { View, Text, TouchableOpacity, Animated, StyleSheet, ScrollView, Pressable, PanResponder } from 'react-native';
 import { useState, useRef, useEffect } from 'react';
@@ -13,15 +13,15 @@ export default function TabLayout() {
   const pathname = usePathname();
 
   const menuItems = [
-    { name: 'Home', route: '/', icon: Home, description: 'Main page' },
-    { name: 'Wird', route: '/wird', icon: Heart, description: 'Daily prayers' },
-    { name: 'Wazifa', route: '/wazifa', icon: Star, description: 'Special invocations' },
-    { name: 'Hadra', route: '/hadra', icon: Moon, description: 'Spiritual sessions' },
-    { name: 'Names', route: '/names', icon: Sparkles, description: 'Divine names' },
-    { name: 'Library', route: '/library', icon: BookOpen, description: 'Resources' },
-    { name: 'Statistics', route: '/stats', icon: BarChart3, description: 'Your progress' },
-    { name: 'Settings', route: '/settings', icon: SettingsIcon, description: 'Configuration' },
-    { name: 'About', route: '/about', icon: Info, description: 'Information' },
+    { name: 'Accueil', route: '/', icon: Home, description: 'Page principale' },
+    { name: 'Wird', route: '/wird', icon: BookOpen, description: 'Prières quotidiennes' },
+    { name: 'Wazifa', route: '/wazifa', icon: Star, description: 'Invocations spéciales' },
+    { name: 'Hadra', route: '/hadra', icon: Heart, description: 'Séances spirituelles' },
+    { name: 'Les Noms', route: '/names', icon: Moon, description: 'Noms divins' },
+    { name: 'Bibliothèque', route: '/library', icon: BookOpen, description: 'Ressources' },
+    { name: 'Statistiques', route: '/stats', icon: BarChart3, description: 'Vos progrès' },
+    { name: 'Paramètres', route: '/settings', icon: SettingsIcon, description: 'Configuration' },
+    { name: 'À propos', route: '/about', icon: Info, description: 'Informations' },
   ];
 
   // PanResponder pour le geste de swipe
@@ -121,9 +121,11 @@ export default function TabLayout() {
         </View>
         <View style={styles.menuButton} />
       </View> */}
-      <SpiritualHeader onMenuPress={() => setDrawerVisible(true)} currentPage={getTabName()} />
-
-      {/* Swipe area to open drawer */}
+      <SpiritualHeader 
+        onMenuPress={() => setDrawerVisible(true)}
+        currentPage={getTabName()}
+      />
+      {/* Zone de swipe pour ouvrir le drawer */}
       {!drawerVisible && (
         <View 
           style={styles.swipeArea}
@@ -147,7 +149,7 @@ export default function TabLayout() {
               { transform: [{ translateX: slideAnim }] }
             ]}
           >
-            {/* Header du Drawer with gradient */}
+            {/* Header du Drawer avec gradient */}
             <View style={styles.drawerHeader}>
               <View>
                 <Text style={styles.drawerTitle}>Menu</Text>
@@ -162,7 +164,7 @@ export default function TabLayout() {
               </TouchableOpacity>
             </View>
 
-            {/* Page list with scroll */}
+            {/* Liste des pages avec scroll */}
             <ScrollView 
               style={styles.menuList}
               showsVerticalScrollIndicator={false}
@@ -212,7 +214,7 @@ export default function TabLayout() {
               })}
             </ScrollView>
 
-            {/* Drawer Footer */}
+            {/* Footer du Drawer */}
             <View style={styles.drawerFooter}>
               <View style={styles.footerDivider} />
               <Text style={styles.footerText}>Version 1.0.0</Text>
@@ -222,8 +224,8 @@ export default function TabLayout() {
         </View>
       )}
 
-      {/* Tabs Navigation Improved */}
-       <Tabs
+      {/* Tabs Navigation Améliorée */}
+      <Tabs
         screenOptions={{
           headerShown: false,
           tabBarActiveTintColor: '#059669',
@@ -500,8 +502,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 16,
-    borderTopRightRadius: 24,
-    borderBottomRightRadius: 24,
   },
   drawerHeader: {
     flexDirection: 'row',
@@ -510,7 +510,6 @@ const styles = StyleSheet.create({
     padding: 24,
     paddingTop: 48,
     backgroundColor: '#059669',
-    borderTopRightRadius: 24,
   },
   drawerTitle: {
     fontSize: 28,
@@ -578,7 +577,6 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: '#E5E7EB',
     alignItems: 'center',
-    borderBottomRightRadius: 24,
   },
   footerDivider: {
     width: 40,

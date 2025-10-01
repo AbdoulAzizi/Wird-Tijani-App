@@ -171,12 +171,12 @@ export default function SettingsScreen() {
       state.settings.darkMode && styles.containerDark
     ]}>
       <ScreenBackground>
-        <GradientHeader
+        {/* <GradientHeader
           arabicTitle="الإعدادات"
           englishTitle="Settings"
           subtitle="Customize Your Experience"
           icon={<SettingsIcon color="#FFFFFF" size={32} />}
-        />
+        /> */}
 
         <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
           {/* Appearance Settings */}

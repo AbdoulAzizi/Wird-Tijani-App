@@ -81,12 +81,12 @@ export default function StatsScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <ScreenBackground>
-        <GradientHeader
+        {/* <GradientHeader
           arabicTitle="الإحصائيات"
           englishTitle="Spiritual Progress"
           subtitle="Track Your Journey"
           icon={<BarChart3 color="#FFFFFF" size={32} />}
-        />
+        /> */}
 
         <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
           {/* Progress Cards */}
