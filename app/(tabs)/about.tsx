@@ -11,7 +11,13 @@ import {
   Award, 
   Code,
   Coffee,
-  Github
+  Github,
+  Moon, 
+  Sparkles, 
+  ChevronLeft,
+  MapPin,
+  BookOpen,
+  ShieldCheck,
 } from 'lucide-react-native';
 import GradientHeader from '../../components/GradientHeader';
 import { useApp } from '../../contexts/AppContext';
@@ -30,6 +36,36 @@ const features = [
     description: 'Join the collective dhikr with the traditional Friday Wazīfa sequence.',
     color: '#D97706',
   },
+  {
+    icon: Moon,
+    title: 'Hadra Sessions',
+    description: 'Participate in spiritual gatherings with audio guidance and timers.',
+    color: '#9333EA',
+  },
+  {
+    icon: MapPin,
+    title: 'Hadara Map',
+    description: 'Find nearby zawiyas and community events to enhance your spiritual journey.',
+    color: '#B45309',
+  },
+  {
+    icon: Info,
+    title: 'Prayer Times',
+    description: 'Get accurate prayer times and schedules for your location.',
+    color: '#1e40af',
+  },
+  { icon: Sparkles,
+    title: 'Asma al-Husna',
+    description: 'Explore the 99 Names of Allah with meanings and recitation guides.',
+    color: '#2563EB',
+  },
+  {
+    icon: BookOpen,
+    title: 'Spiritual Library',
+    description: 'Access a vast library of spiritual texts, prayers, and resources.',
+    color: '#7C3AED',
+  },
+  
   {
     icon: Users,
     title: 'Community',

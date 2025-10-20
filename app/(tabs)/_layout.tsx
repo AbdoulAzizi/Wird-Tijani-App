@@ -1,10 +1,19 @@
 import { Tabs, useRouter, usePathname } from 'expo-router';
 import { Heart, BookOpen, ChartBar as BarChart3, Settings as SettingsIcon, Star, Moon, Home, Info, Menu, X, ChevronRight, Sparkles } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { View, Text, TouchableOpacity, Animated, StyleSheet, ScrollView, Pressable, PanResponder } from 'react-native';
-import { useState, useRef, useEffect } from 'react';
+import { View, Text, TouchableOpacity, Animated, StyleSheet, ScrollView, Pressable, PanResponder, Platform } from 'react-native';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import SpiritualHeader from '@/components/SpiritualHeader';
 import Ionicons from '@expo/vector-icons/Ionicons';
+
+// Types pour améliorer la sécurité du code
+interface MenuItem {
+  name: string;
+  route: string;
+  icon: any;
+  description: string;
+}
+
 export default function TabLayout() {
   const [drawerVisible, setDrawerVisible] = useState(false);
   const slideAnim = useRef(new Animated.Value(-300)).current;
@@ -12,23 +21,33 @@ export default function TabLayout() {
   const router = useRouter();
   const pathname = usePathname();
 
-  const menuItems = [
+  // Mémoiser les éléments du menu pour éviter les recréations
+  const menuItems: MenuItem[] = useMemo(() => [
     { name: 'Home', route: '/', icon: Home, description: 'Main page' },
     { name: 'Wird', route: '/wird', icon: Heart, description: 'Daily prayers' },
     { name: 'Wazifa', route: '/wazifa', icon: Star, description: 'Special invocations' },
     { name: 'Hadra', route: '/hadra', icon: Moon, description: 'Spiritual sessions' },
     { name: 'Names', route: '/names', icon: Sparkles, description: 'Divine names' },
     { name: 'Library', route: '/library', icon: BookOpen, description: 'Resources' },
+    { name: 'Bibliothèque', route: '/library-screen', icon: BookOpen, description: 'Ressources' },
     { name: 'Statistics', route: '/stats', icon: BarChart3, description: 'Your progress' },
     { name: 'Settings', route: '/settings', icon: SettingsIcon, description: 'Configuration' },
     { name: 'About', route: '/about', icon: Info, description: 'Information' },
-  ];
+  ], []);
 
-  // PanResponder pour le geste de swipe
+  // Animations optimisées avec useCallback
+  const openDrawer = useCallback(() => {
+    setDrawerVisible(true);
+  }, []);
+
+  const closeDrawer = useCallback(() => {
+    setDrawerVisible(false);
+  }, []);
+
+  // PanResponder optimisé avec useCallback
   const panResponder = useRef(
     PanResponder.create({
       onMoveShouldSetPanResponder: (evt, gestureState) => {
-        // Détecter le swipe de gauche vers droite
         return gestureState.dx > 10 && Math.abs(gestureState.dy) < 80;
       },
       onPanResponderMove: (evt, gestureState) => {
@@ -39,13 +58,14 @@ export default function TabLayout() {
       },
       onPanResponderRelease: (evt, gestureState) => {
         if (gestureState.dx > 150) {
-          setDrawerVisible(true);
+          openDrawer();
         } else {
           Animated.parallel([
-            Animated.timing(slideAnim, {
+            Animated.spring(slideAnim, {
               toValue: -300,
-              duration: 200,
               useNativeDriver: true,
+              damping: 20,
+              stiffness: 200,
             }),
             Animated.timing(fadeAnim, {
               toValue: 0,
@@ -58,13 +78,15 @@ export default function TabLayout() {
     })
   ).current;
 
+  // Effet pour les animations d'ouverture/fermeture
   useEffect(() => {
     if (drawerVisible) {
       Animated.parallel([
-        Animated.timing(slideAnim, {
+        Animated.spring(slideAnim, {
           toValue: 0,
-          duration: 300,
           useNativeDriver: true,
+          damping: 20,
+          stiffness: 180,
         }),
         Animated.timing(fadeAnim, {
           toValue: 1,
@@ -74,10 +96,11 @@ export default function TabLayout() {
       ]).start();
     } else {
       Animated.parallel([
-        Animated.timing(slideAnim, {
+        Animated.spring(slideAnim, {
           toValue: -300,
-          duration: 250,
           useNativeDriver: true,
+          damping: 22,
+          stiffness: 200,
         }),
         Animated.timing(fadeAnim, {
           toValue: 0,
@@ -86,44 +109,106 @@ export default function TabLayout() {
         }),
       ]).start();
     }
-  }, [drawerVisible]);
+  }, [drawerVisible, slideAnim, fadeAnim]);
 
-  const handleNavigation = (route: string) => {
-    setDrawerVisible(false);
-    setTimeout(() => {
-      router.push(route as any);
-    }, 300);
-  };
+  // Navigation optimisée
+  const handleNavigation = useCallback((route: string) => {
+    closeDrawer();
+    // Utiliser requestAnimationFrame pour une meilleure performance
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        router.push(route as any);
+      }, 250);
+    });
+  }, [router, closeDrawer]);
 
-  const isCurrentRoute = (route: string) => {
+  // Vérification de la route active
+  const isCurrentRoute = useCallback((route: string) => {
     return pathname === route;
-  };
+  }, [pathname]);
 
-  const getTabName = () => {
+  // Obtenir le nom de l'onglet actuel
+  const getTabName = useCallback(() => {
     const currentItem = menuItems.find(item => item.route === pathname);
     return currentItem?.name || 'Home';
-  };
+  }, [pathname, menuItems]);
+
+  // Composant MenuItem optimisé
+  const MenuItem = useCallback(({ item, index }: { item: MenuItem; index: number }) => {
+    const IconComponent = item.icon;
+    const isActive = isCurrentRoute(item.route);
+    
+    return (
+      <TouchableOpacity
+        key={index}
+        style={[
+          styles.menuItem,
+          isActive && styles.menuItemActive
+        ]}
+        onPress={() => handleNavigation(item.route)}
+        activeOpacity={0.7}
+      >
+        <View style={[
+          styles.iconContainer,
+          isActive && styles.iconContainerActive
+        ]}>
+          <IconComponent 
+            color={isActive ? "#FFFFFF" : "#059669"} 
+            size={22}
+            strokeWidth={2.5}
+          />
+        </View>
+        <View style={styles.menuItemTextContainer}>
+          <Text style={[
+            styles.menuItemText,
+            isActive && styles.menuItemTextActive
+          ]}>
+            {item.name}
+          </Text>
+          <Text style={styles.menuItemDescription}>
+            {item.description}
+          </Text>
+        </View>
+        <ChevronRight 
+          color={isActive ? "#059669" : "#9CA3AF"} 
+          size={20}
+          strokeWidth={2}
+        />
+      </TouchableOpacity>
+    );
+  }, [handleNavigation, isCurrentRoute]);
+
+  // Composant TabIcon optimisé
+  const TabIcon = useCallback(({ IconComponent, color, focused, name }: any) => (
+    <View style={[
+      styles.tabIconContainer,
+      focused && styles.tabIconContainerActive
+    ]}>
+      {name === 'home' ? (
+        <Ionicons 
+          name="home" 
+          color={color} 
+          size={24} 
+        />
+      ) : (
+        <IconComponent 
+          color={color} 
+          size={24}
+          strokeWidth={focused ? 2.5 : 2}
+        />
+      )}
+    </View>
+  ), []);
 
   return (
-    <SafeAreaView style={{ flex: 1 }}>
-      {/* Header avec Menu Burger */}
-      {/* <View style={styles.headerContainer}>
-        <TouchableOpacity
-          style={styles.menuButton}
-          onPress={() => setDrawerVisible(true)}
-          activeOpacity={0.7}
-        >
-          <Menu color="#059669" size={26} strokeWidth={2.5} />
-        </TouchableOpacity>
-        <View style={styles.headerTitleContainer}>
-          <Text style={styles.headerTitle}>Spiritual App</Text>
-          <Text style={styles.headerSubtitle}>{getTabName()}</Text>
-        </View>
-        <View style={styles.menuButton} />
-      </View> */}
-      <SpiritualHeader onMenuPress={() => setDrawerVisible(true)} currentPage={getTabName()} />
+    <SafeAreaView style={styles.container}>
+      {/* Header amélioré */}
+      <SpiritualHeader 
+        onMenuPress={openDrawer} 
+        currentPage={getTabName()} 
+      />
 
-      {/* Swipe area to open drawer */}
+      {/* Zone de swipe pour ouvrir le drawer */}
       {!drawerVisible && (
         <View 
           style={styles.swipeArea}
@@ -131,12 +216,12 @@ export default function TabLayout() {
         />
       )}
 
-      {/* Drawer Menu */}
+      {/* Drawer Menu optimisé */}
       {drawerVisible && (
         <View style={styles.drawerOverlay}>
           <Pressable 
             style={styles.backdrop} 
-            onPress={() => setDrawerVisible(false)}
+            onPress={closeDrawer}
           >
             <Animated.View style={[styles.backdropFade, { opacity: fadeAnim }]} />
           </Pressable>
@@ -147,14 +232,14 @@ export default function TabLayout() {
               { transform: [{ translateX: slideAnim }] }
             ]}
           >
-            {/* Header du Drawer with gradient */}
+            {/* Header du Drawer */}
             <View style={styles.drawerHeader}>
               <View>
                 <Text style={styles.drawerTitle}>Menu</Text>
                 <Text style={styles.drawerSubtitle}>Navigation</Text>
               </View>
               <TouchableOpacity
-                onPress={() => setDrawerVisible(false)}
+                onPress={closeDrawer}
                 style={styles.closeButton}
                 activeOpacity={0.7}
               >
@@ -162,57 +247,18 @@ export default function TabLayout() {
               </TouchableOpacity>
             </View>
 
-            {/* Page list with scroll */}
+            {/* Liste des pages */}
             <ScrollView 
               style={styles.menuList}
               showsVerticalScrollIndicator={false}
+              contentContainerStyle={styles.menuListContent}
             >
-              {menuItems.map((item, index) => {
-                const IconComponent = item.icon;
-                const isActive = isCurrentRoute(item.route);
-                
-                return (
-                  <TouchableOpacity
-                    key={index}
-                    style={[
-                      styles.menuItem,
-                      isActive && styles.menuItemActive
-                    ]}
-                    onPress={() => handleNavigation(item.route)}
-                    activeOpacity={0.7}
-                  >
-                    <View style={[
-                      styles.iconContainer,
-                      isActive && styles.iconContainerActive
-                    ]}>
-                      <IconComponent 
-                        color={isActive ? "#FFFFFF" : "#059669"} 
-                        size={22}
-                        strokeWidth={2.5}
-                      />
-                    </View>
-                    <View style={styles.menuItemTextContainer}>
-                      <Text style={[
-                        styles.menuItemText,
-                        isActive && styles.menuItemTextActive
-                      ]}>
-                        {item.name}
-                      </Text>
-                      <Text style={styles.menuItemDescription}>
-                        {item.description}
-                      </Text>
-                    </View>
-                    <ChevronRight 
-                      color={isActive ? "#059669" : "#9CA3AF"} 
-                      size={20}
-                      strokeWidth={2}
-                    />
-                  </TouchableOpacity>
-                );
-              })}
+              {menuItems.map((item, index) => (
+                <MenuItem key={item.route} item={item} index={index} />
+              ))}
             </ScrollView>
 
-            {/* Drawer Footer */}
+            {/* Footer du Drawer */}
             <View style={styles.drawerFooter}>
               <View style={styles.footerDivider} />
               <Text style={styles.footerText}>Version 1.0.0</Text>
@@ -222,35 +268,15 @@ export default function TabLayout() {
         </View>
       )}
 
-      {/* Tabs Navigation Improved */}
-       <Tabs
+      {/* Navigation par onglets améliorée */}
+      <Tabs
         screenOptions={{
           headerShown: false,
           tabBarActiveTintColor: '#059669',
           tabBarInactiveTintColor: '#9CA3AF',
-          tabBarStyle: {
-            backgroundColor: '#FFFFFF',
-            borderTopWidth: 0,
-            paddingBottom: 8,
-            paddingTop: 8,
-            height: 70,
-            elevation: 20,
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: -4 },
-            shadowOpacity: 0.12,
-            shadowRadius: 8,
-            borderTopLeftRadius: 20,
-            borderTopRightRadius: 20,
-          },
-          tabBarLabelStyle: {
-            fontSize: 11,
-            fontWeight: '700',
-            marginTop: 4,
-            letterSpacing: 0.3,
-          },
-          tabBarItemStyle: {
-            paddingVertical: 6,
-          },
+          tabBarStyle: styles.tabBar,
+          tabBarLabelStyle: styles.tabBarLabel,
+          tabBarItemStyle: styles.tabBarItem,
         }}
       >
         <Tabs.Screen
@@ -258,18 +284,7 @@ export default function TabLayout() {
           options={{
             title: 'Home',
             tabBarIcon: ({ color, focused }) => (
-              <View style={[
-                styles.tabIconContainer,
-                focused && styles.tabIconContainerActive
-              ]}>
-                <Ionicons 
-                  name="home" 
-                  color={color} 
-                  size={24} 
-                  strokeWidth={focused ? 2.5 : 2}
-                  fill={focused ? color : 'none'} 
-                />
-              </View>
+              <TabIcon IconComponent={Home} color={color} focused={focused} name="home" />
             ),
           }}
         />
@@ -278,150 +293,61 @@ export default function TabLayout() {
           options={{
             title: 'Wird',
             tabBarIcon: ({ color, focused }) => (
-              <View style={[
-                styles.tabIconContainer,
-                focused && styles.tabIconContainerActive
-              ]}>
-                <Heart 
-                  color={color} 
-                  size={24}
-                  strokeWidth={focused ? 2.5 : 2}
-                />
-              </View>
+              <TabIcon IconComponent={Heart} color={color} focused={focused} />
             ),
           }}
-          // options={{
-          //   href: null,
-          // }}
         />
         <Tabs.Screen
           name="wazifa"
-          // options={{
-          //   href: null,
-          // }}
           options={{
             title: 'Wazifa',
             tabBarIcon: ({ color, focused }) => (
-              <View style={[
-                styles.tabIconContainer,
-                focused && styles.tabIconContainerActive
-              ]}>
-                <Star 
-                  color={color} 
-                  size={24}
-                  strokeWidth={focused ? 2.5 : 2}
-                />
-              </View>
+              <TabIcon IconComponent={Star} color={color} focused={focused} />
             ),
           }}
         />
         <Tabs.Screen
           name="hadra"
-          // options={{
-          //   href: null,
-          // }}
           options={{
             title: 'Hadra',
             tabBarIcon: ({ color, focused }) => (
-              <View style={[
-                styles.tabIconContainer,
-                focused && styles.tabIconContainerActive
-              ]}>
-                <Moon 
-                  color={color} 
-                  size={24}
-                  strokeWidth={focused ? 2.5 : 2}
-                />
-              </View>
+              <TabIcon IconComponent={Moon} color={color} focused={focused} />
             ),
           }}
         />
         <Tabs.Screen
           name="names"
-          options={{
-            href: null,
-          }}
+          options={{ href: null }}
         />
         <Tabs.Screen
-          name="library"
+          name="library-screen"
           options={{
             title: 'Library',
             tabBarIcon: ({ color, focused }) => (
-              <View style={[
-                styles.tabIconContainer,
-                focused && styles.tabIconContainerActive
-              ]}>
-                <BookOpen 
-                  color={color} 
-                  size={24}
-                  strokeWidth={focused ? 2.5 : 2}
-                />
-              </View>
+              <TabIcon IconComponent={BookOpen} color={color} focused={focused} />
             ),
           }}
         />
         <Tabs.Screen
           name="stats"
-          // options={{
-          //   title: 'Stats',
-          //   tabBarIcon: ({ color, focused }) => (
-          //     <View style={[
-          //       styles.tabIconContainer,
-          //       focused && styles.tabIconContainerActive
-          //     ]}>
-          //       <BarChart3 
-          //         color={color} 
-          //         size={24}
-          //         strokeWidth={focused ? 2.5 : 2}
-          //       />
-          //     </View>
-          //   ),
-          // }}
-          options={{
-            href: null,
-          }}
+          options={{ href: null }}
         />
         <Tabs.Screen
           name="settings"
-          // options={{
-          //   title: 'Settings',
-          //   tabBarIcon: ({ color, focused }) => (
-          //     <View style={[
-          //       styles.tabIconContainer,
-          //       focused && styles.tabIconContainerActive
-          //     ]}>
-          //       <SettingsIcon 
-          //         color={color} 
-          //         size={24}
-          //         strokeWidth={focused ? 2.5 : 2}
-          //       />
-          //     </View>
-          //   ),
-          // }}
-          options={{
-            href: null,
-          }}
+          options={{ href: null }}
         />
         <Tabs.Screen
           name="about"
           options={{
             title: 'About',
             tabBarIcon: ({ color, focused }) => (
-              <View style={[
-                styles.tabIconContainer,
-                focused && styles.tabIconContainerActive
-              ]}>
-                <Info 
-                  color={color} 
-                  size={24}
-                  strokeWidth={focused ? 2.5 : 2}
-                />
-              </View>
+              <TabIcon IconComponent={Info} color={color} focused={focused} />
             ),
           }}
-          // options={{
-          //   href: null,
-          // }}
+        />
+        <Tabs.Screen
+          name="library"
+          options={{ href: null }}
         />
       </Tabs>
     </SafeAreaView>
@@ -429,40 +355,9 @@ export default function TabLayout() {
 }
 
 const styles = StyleSheet.create({
-  headerContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+  container: {
+    flex: 1,
     backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-  },
-  headerTitleContainer: {
-    alignItems: 'center',
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: '#1F2937',
-    letterSpacing: 0.3,
-  },
-  headerSubtitle: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: '#059669',
-    marginTop: 2,
-  },
-  menuButton: {
-    padding: 8,
-    borderRadius: 8,
-    width: 42,
   },
   swipeArea: {
     position: 'absolute',
@@ -508,7 +403,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 24,
-    paddingTop: 48,
+    paddingTop: Platform.OS === 'ios' ? 60 : 48,
     backgroundColor: '#059669',
     borderTopRightRadius: 24,
   },
@@ -531,7 +426,10 @@ const styles = StyleSheet.create({
   },
   menuList: {
     flex: 1,
+  },
+  menuListContent: {
     paddingTop: 8,
+    paddingBottom: 16,
   },
   menuItem: {
     flexDirection: 'row',
@@ -568,6 +466,7 @@ const styles = StyleSheet.create({
   },
   menuItemTextActive: {
     color: '#059669',
+    fontWeight: '700',
   },
   menuItemDescription: {
     fontSize: 12,
@@ -597,12 +496,35 @@ const styles = StyleSheet.create({
     color: '#9CA3AF',
     marginTop: 4,
   },
+  tabBar: {
+    backgroundColor: '#FFFFFF',
+    borderTopWidth: 0,
+    paddingBottom: 8,
+    paddingTop: 8,
+    height: Platform.OS === 'ios' ? 85 : 70,
+    elevation: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+  },
+  tabBarLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    marginTop: 4,
+    letterSpacing: 0.3,
+  },
+  tabBarItem: {
+    paddingVertical: 6,
+  },
   tabIconContainer: {
     justifyContent: 'center',
     alignItems: 'center',
     paddingTop: 2,
   },
   tabIconContainerActive: {
-    transform: [{ scale: 1.1 }],
+    transform: [{ scale: 1.15 }],
   },
 });

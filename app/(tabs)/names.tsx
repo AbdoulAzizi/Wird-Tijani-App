@@ -34,10 +34,12 @@ import {
   Filter,
   Settings,
   Moon,
-  Sun
+  Sun,
+  Repeat,
 } from 'lucide-react-native';
 import { router } from 'expo-router';
 import { asmaAlHusna, AsmaAlHusnaItem } from '../../data/asmaAlHusna';
+import { useApp } from '../../contexts/AppContext';
 
 const { width, height } = Dimensions.get('window');
 const CARD_WIDTH = width * 0.92;
@@ -69,7 +71,8 @@ export default function NamesScreen() {
   const [isMuted, setIsMuted] = useState(false);
   const [showSpeedMenu, setShowSpeedMenu] = useState(false);
   const [showResetMenu, setShowResetMenu] = useState(false);
-  
+  const { state, dispatch, isWirdComplete, getWirdProgress, getCurrentSalawatFormula } = useApp();
+
   // Vitesses disponibles (en secondes par nom)
   const speedOptions = [
     { label: '0.5x', value: 0.5, duration: 20000 }, // 20 secondes
@@ -216,7 +219,12 @@ export default function NamesScreen() {
 
   const togglePlay = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    setPlaybackState(prev => ({ ...prev, isPlaying: !prev.isPlaying }));
+    setPlaybackState(prev => {
+      const newIsPlaying = !prev.isPlaying;
+      // Active/désactive aussi l'autoplay quand on clique sur play
+      setAutoPlay(newIsPlaying);
+      return { ...prev, isPlaying: newIsPlaying };
+    });
   }, []);
 
   const toggleAutoPlay = useCallback(() => {
@@ -505,7 +513,7 @@ export default function NamesScreen() {
       {/* <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} backgroundColor={isDarkMode ? "#0f172a" : "#064e3b"} /> */}
       <StatusBar  />
       {/* Header fixe avec plus d'options */}
-      <LinearGradient
+      {/* <LinearGradient
         colors={isDarkMode ? ['#0f172a' as const, '#1e293b' as const] : ['#064e3b' as const, '#065f46' as const]}
         style={styles.header}
       >
@@ -538,13 +546,53 @@ export default function NamesScreen() {
               <Moon color="#ffffff" size={20} />
             }
           </TouchableOpacity>
-{/*           
+          
           <View style={styles.counterContainer}>
             <Text style={styles.counterText}>{currentIndex + 1}</Text>
             <Text style={styles.counterTotal}>/{asmaAlHusna.length}</Text>
-          </View> */}
+          </View>
         </View>
-      </LinearGradient>
+      </LinearGradient> */}
+
+        <View style={[
+        styles.progressContainer,
+        state.settings.darkMode && styles.progressContainerDark
+      ]}>
+        <Text style={[
+          styles.progressText,
+          state.settings.darkMode && styles.progressTextDark
+        ]}>
+          {currentIndex + 1} / {asmaAlHusna.length} Names
+        </Text>
+        <View style={styles.headerButtons}>
+          <TouchableOpacity 
+            onPress={() => setIsDarkMode(!isDarkMode)}
+            style={styles.infoButton}
+          >
+             {isDarkMode ? 
+              <Sun color="#6B7280" size={20} /> : 
+              <Moon color="#6B7280" size={20} />
+            }
+          </TouchableOpacity>
+          <TouchableOpacity 
+            // onPress={() => setIsDarkMode(!isDarkMode)}
+            onPress={() => setShowResetMenu(!showResetMenu)}
+            style={styles.settingsButton}
+          >
+            <Settings color="#6B7280" size={16} />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={resetToBeginning} style={styles.resetAllButton}>
+            <Repeat color="#6B7280" size={16} />
+            <Text style={[
+              styles.resetAllText,
+              state.settings.darkMode && styles.resetAllTextDark
+            ]}>
+              Reset All
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+      
 
       {/* Menu Reset/Options */}
       {showResetMenu && (
@@ -1116,7 +1164,9 @@ const styles = StyleSheet.create({
   progressText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#6b7280',
+    // color: '#6b7280',
+    color: '#FFFFFF',
+
   },
   extendedControls: {
     flexDirection: 'row',
@@ -1295,5 +1345,65 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#6b7280',
     fontWeight: '500',
+  },
+
+   progressContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#059669',
+    marginHorizontal: 16,
+    marginTop: 16,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  progressContainerDark: {
+    backgroundColor: '#1F2937',
+  },
+  // progressText: {
+  //   fontSize: 16,
+  //   fontWeight: '600',
+  //   color: '#FFFFFF',
+  // },
+  progressTextDark: {
+    color: '#FFFFFF',
+  },
+  headerButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  settingsButton: {
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: '#F3F4F6',
+  },
+  infoButton: {
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: '#F3F4F6',
+  },
+  resetAllButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    backgroundColor: '#F3F4F6',
+  },
+  resetAllText: {
+    fontSize: 14,
+    color: '#6B7280',
+    fontWeight: '500',
+  },
+  resetAllTextDark: {
+    color: '#D1D5DB',
   },
 });

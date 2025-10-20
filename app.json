@@ -1,39 +1,36 @@
 {
   "expo": {
-    "name": "Wird Tijani",
-    "slug": "bolt-expo-nativewind",
+    "name": "Trésor Sublime",
+    "slug": "tresor-sublime",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "wirdapp",
+    "scheme": "tresorsublime",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-
     "splash": {
       "image": "./assets/images/splash.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.tresorsublime.wirdapp"
     },
-
     "android": {
       "package": "com.tresorsublime.wirdapp",
+      "versionCode": 1,
+      "displayName": "Trésor Sublime",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#059669"
       }
     },
-
     "web": {
       "bundler": "metro",
       "output": "single",
       "favicon": "./assets/favicon.png"
     },
-
     "plugins": [
       "expo-router",
       "expo-font",
@@ -47,18 +44,15 @@
         }
       ]
     ],
-
     "experiments": {
       "typedRoutes": true
     },
-
+    "owner": "abdoulaziz",
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "e2539c50-78d4-419d-84da-ca1260fd9080"
-      },
-      "appName": "Wird App",
-      "author": "Maazou Amadou Abdoul Aziz (Khadimour-Rassoul)"
+        "projectId": "d6804abc-7d41-4321-875e-181217620aeb"
+      }
     }
   }
 }
