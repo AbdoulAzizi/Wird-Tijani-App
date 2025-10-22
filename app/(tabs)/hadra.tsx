@@ -1,12 +1,12 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, TextInput, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Sun, RotateCcw, Settings, X, Info, CheckCircle } from 'lucide-react-native';
-import GradientHeader from '../../components/GradientHeader';
+import { RotateCcw, Settings, Info, CheckCircle } from 'lucide-react-native';
 import DhikrCard from '../../components/DhikrCard';
-import { useApp, HADRA_TARGETS } from '../../contexts/AppContext';
+import { useApp } from '../../contexts/AppContext';
 import ScreenBackground from '../../components/ScreenBackground';
 import HadraInfoModal from '../../components/HadraInfoModal';
+import HadraSettingsModal from '../../components/HadraSettingsModal';
 
 const HADRA_DHIKR = {
   tahlil: {
@@ -24,19 +24,11 @@ const HADRA_DHIKR = {
 } as const;
 
 const DHIKR_KEYS = ['tahlil', 'ismuLlah'] as const;
-const DEFAULT_TARGETS = {
-  tahlil: 800,
-  ismuLlah: 400,
-};
 
 export default function HadraScreen() {
   const { state, dispatch, isHadraComplete, getHadraProgress } = useApp();
   const [showSettings, setShowSettings] = useState(false);
   const [showInfoModal, setShowInfoModal] = useState(false);
-  const [tempTargets, setTempTargets] = useState({
-    tahlil: state.hadraTargets.tahlil,
-    ismuLlah: state.hadraTargets.ismuLlah,
-  });
 
   const { darkMode, audioEnabled } = state.settings;
 
@@ -118,39 +110,14 @@ export default function HadraScreen() {
     );
   }, [dispatch]);
 
-  const handleSaveSettings = useCallback(() => {
-    // Validation des valeurs
-    if (tempTargets.tahlil < 1 || tempTargets.ismuLlah < 1) {
-      Alert.alert(
-        'Invalid Values',
-        'Target numbers must be at least 1.',
-        [{ text: 'OK' }]
-      );
-      return;
-    }
-
-    dispatch({ type: 'UPDATE_HADRA_TARGETS', targets: tempTargets });
-    setShowSettings(false);
+  const handleSaveSettings = useCallback((targets: { tahlil: number; ismuLlah: number }) => {
+    dispatch({ type: 'UPDATE_HADRA_TARGETS', targets });
     Alert.alert(
       'Settings Saved',
       'Your hadra targets have been updated.',
       [{ text: 'OK' }]
     );
-  }, [tempTargets, dispatch]);
-
-  const handleResetToDefault = useCallback(() => {
-    Alert.alert(
-      'Reset to Default',
-      'Reset targets to 800 (Tahlīl) and 400 (Ism Allāh)?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Reset', 
-          onPress: () => setTempTargets(DEFAULT_TARGETS)
-        },
-      ]
-    );
-  }, []);
+  }, [dispatch]);
 
   const playAudio = useCallback((dhikrType: string) => {
     if (audioEnabled) {
@@ -159,19 +126,7 @@ export default function HadraScreen() {
   }, [audioEnabled]);
 
   const toggleInfoModal = useCallback(() => setShowInfoModal(prev => !prev), []);
-  
-  const toggleSettings = useCallback(() => {
-    setTempTargets({
-      tahlil: state.hadraTargets.tahlil,
-      ismuLlah: state.hadraTargets.ismuLlah,
-    });
-    setShowSettings(prev => !prev);
-  }, [state.hadraTargets]);
-
-  const handleTargetChange = useCallback((key: 'tahlil' | 'ismuLlah', text: string) => {
-    const num = parseInt(text) || 0;
-    setTempTargets(prev => ({ ...prev, [key]: Math.max(0, num) }));
-  }, []);
+  const toggleSettings = useCallback(() => setShowSettings(prev => !prev), []);
 
   return (
     <SafeAreaView style={[styles.container, darkMode && styles.containerDark]}>
@@ -309,107 +264,13 @@ export default function HadraScreen() {
         </ScrollView>
 
         {/* Settings Modal */}
-        <Modal
+        <HadraSettingsModal
           visible={showSettings}
-          animationType="slide"
-          presentationStyle="pageSheet"
-          onRequestClose={toggleSettings}
-        >
-          <SafeAreaView style={[styles.modalContainer, darkMode && styles.modalContainerDark]}>
-            <View style={[styles.modalHeader, darkMode && styles.modalHeaderDark]}>
-              <Text style={[styles.modalTitle, darkMode && styles.modalTitleDark]}>
-                Customize Targets
-              </Text>
-              <TouchableOpacity 
-                onPress={toggleSettings}
-                activeOpacity={0.7}
-                accessibilityLabel="Close"
-              >
-                <X color={darkMode ? '#FFFFFF' : '#1F2937'} size={24} />
-              </TouchableOpacity>
-            </View>
-
-            <ScrollView style={styles.settingsContent}>
-              <View style={styles.settingSection}>
-                <Text style={[styles.settingSectionTitle, darkMode && styles.settingSectionTitleDark]}>
-                  Set Custom Repetitions
-                </Text>
-                <Text style={[styles.settingSectionDescription, darkMode && styles.settingSectionDescriptionDark]}>
-                  Adjust the number of repetitions for each dhikr according to your preference or tradition.
-                </Text>
-              </View>
-
-              {/* Tahlil Input */}
-              <View style={styles.settingItem}>
-                <Text style={[styles.settingLabel, darkMode && styles.settingLabelDark]}>
-                  Tahlīl (لَا إِلٰهَ إِلَّا اللّٰهُ)
-                </Text>
-                <View style={[styles.inputContainer, darkMode && styles.inputContainerDark]}>
-                  <TextInput
-                    style={[styles.settingInput, darkMode && styles.settingInputDark]}
-                    value={tempTargets.tahlil.toString()}
-                    onChangeText={(text) => handleTargetChange('tahlil', text)}
-                    keyboardType="numeric"
-                    placeholder="800"
-                    placeholderTextColor="#9CA3AF"
-                    maxLength={5}
-                  />
-                  <Text style={[styles.inputSuffix, darkMode && styles.inputSuffixDark]}>
-                    times
-                  </Text>
-                </View>
-              </View>
-
-              {/* Ism Allah Input */}
-              <View style={styles.settingItem}>
-                <Text style={[styles.settingLabel, darkMode && styles.settingLabelDark]}>
-                  Ism Allāh (اللّٰهُ)
-                </Text>
-                <View style={[styles.inputContainer, darkMode && styles.inputContainerDark]}>
-                  <TextInput
-                    style={[styles.settingInput, darkMode && styles.settingInputDark]}
-                    value={tempTargets.ismuLlah.toString()}
-                    onChangeText={(text) => handleTargetChange('ismuLlah', text)}
-                    keyboardType="numeric"
-                    placeholder="400"
-                    placeholderTextColor="#9CA3AF"
-                    maxLength={5}
-                  />
-                  <Text style={[styles.inputSuffix, darkMode && styles.inputSuffixDark]}>
-                    times
-                  </Text>
-                </View>
-              </View>
-
-              {/* Info Box */}
-              <View style={[styles.infoBox, darkMode && styles.infoBoxDark]}>
-                <Info color={darkMode ? '#60A5FA' : '#3B82F6'} size={16} />
-                <Text style={[styles.infoText, darkMode && styles.infoTextDark]}>
-                  Default values: 800 (Tahlīl) and 400 (Ism Allāh)
-                </Text>
-              </View>
-
-              <TouchableOpacity 
-                onPress={handleResetToDefault} 
-                style={[styles.defaultButton, darkMode && styles.defaultButtonDark]}
-                activeOpacity={0.7}
-              >
-                <RotateCcw color={darkMode ? '#9CA3AF' : '#6B7280'} size={16} />
-                <Text style={[styles.defaultButtonText, darkMode && styles.defaultButtonTextDark]}>
-                  Reset to Default
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity 
-                onPress={handleSaveSettings} 
-                style={[styles.saveButton, darkMode && styles.saveButtonDark]}
-                activeOpacity={0.8}
-              >
-                <Text style={styles.saveButtonText}>Save Changes</Text>
-              </TouchableOpacity>
-            </ScrollView>
-          </SafeAreaView>
-        </Modal>
+          onClose={toggleSettings}
+          currentTargets={state.hadraTargets}
+          onSave={handleSaveSettings}
+          darkMode={darkMode}
+        />
 
         {/* Info Modal */}
         <HadraInfoModal 
@@ -587,163 +448,5 @@ const styles = StyleSheet.create({
   },
   bottomSpacing: {
     height: 24,
-  },
-  modalContainer: {
-    flex: 1,
-    backgroundColor: '#F9FAFB',
-  },
-  modalContainerDark: {
-    backgroundColor: '#111827',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
-  },
-  modalHeaderDark: {
-    borderBottomColor: '#374151',
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1F2937',
-  },
-  modalTitleDark: {
-    color: '#FFFFFF',
-  },
-  settingsContent: {
-    flex: 1,
-    padding: 16,
-  },
-  settingSection: {
-    marginBottom: 24,
-  },
-  settingSectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1F2937',
-    marginBottom: 8,
-  },
-  settingSectionTitleDark: {
-    color: '#FFFFFF',
-  },
-  settingSectionDescription: {
-    fontSize: 14,
-    color: '#6B7280',
-    lineHeight: 20,
-  },
-  settingSectionDescriptionDark: {
-    color: '#D1D5DB',
-  },
-  settingItem: {
-    marginBottom: 20,
-  },
-  settingLabel: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#1F2937',
-    marginBottom: 8,
-  },
-  settingLabelDark: {
-    color: '#FFFFFF',
-  },
-  inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#D1D5DB',
-    borderRadius: 8,
-    overflow: 'hidden',
-  },
-  inputContainerDark: {
-    backgroundColor: '#374151',
-    borderColor: '#4B5563',
-  },
-  settingInput: {
-    flex: 1,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 16,
-    color: '#1F2937',
-  },
-  settingInputDark: {
-    color: '#FFFFFF',
-  },
-  inputSuffix: {
-    paddingHorizontal: 12,
-    fontSize: 14,
-    color: '#6B7280',
-    fontWeight: '500',
-  },
-  inputSuffixDark: {
-    color: '#9CA3AF',
-  },
-  infoBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: '#EFF6FF',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 16,
-  },
-  infoBoxDark: {
-    backgroundColor: '#1E3A5F',
-  },
-  infoText: {
-    flex: 1,
-    fontSize: 13,
-    color: '#3B82F6',
-    lineHeight: 18,
-  },
-  infoTextDark: {
-    color: '#93C5FD',
-  },
-  defaultButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: '#F3F4F6',
-    borderRadius: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    marginBottom: 12,
-  },
-  defaultButtonDark: {
-    backgroundColor: '#374151',
-  },
-  defaultButtonText: {
-    fontSize: 14,
-    color: '#6B7280',
-    fontWeight: '500',
-  },
-  defaultButtonTextDark: {
-    color: '#D1D5DB',
-  },
-  saveButton: {
-    backgroundColor: '#059669',
-    borderRadius: 12,
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-    alignItems: 'center',
-    shadowColor: '#059669',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  saveButtonDark: {
-    backgroundColor: '#10B981',
-  },
-  saveButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
   },
 });

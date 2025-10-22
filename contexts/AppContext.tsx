@@ -25,7 +25,8 @@ interface HadraTargets {
 }
 
 interface WazifaSettings {
-  useJawhara: boolean; // true = Jawhara (12x), false = Salatul Fatih (20x)
+  useJawhara: boolean; // true = Jawhara, false = Salatul Fatih
+  jawharaCount: 11 | 12; // Number of Jawhara recitations (11 or 12)
 }
 
 interface WirdSettings {
@@ -76,7 +77,7 @@ type AppAction =
   | { type: 'RESET_HADRA'; dhikr: keyof HadraState }
   | { type: 'RESET_ALL_HADRA' }
   | { type: 'UPDATE_HADRA_TARGETS'; targets: HadraTargets }
-  | { type: 'UPDATE_WAZIFA_SETTINGS'; settings: WazifaSettings }
+  | { type: 'UPDATE_WAZIFA_SETTINGS'; settings: Partial<WazifaSettings> }
   | { type: 'UPDATE_WIRD_SETTINGS'; settings: WirdSettings }
   | { type: 'COMPLETE_WIRD' }
   | { type: 'COMPLETE_WAZIFA' }
@@ -110,6 +111,7 @@ const initialState: AppState = {
   },
   wazifaSettings: {
     useJawhara: true, // Par défaut, utiliser Jawhara
+    jawharaCount: 12, // Par défaut, 12 récitations
   },
   wirdSettings: {
     salawatFormula: 'salatulFatih', // Par défaut, Salatul Fatih
@@ -222,7 +224,7 @@ function appReducer(state: AppState, action: AppAction): AppState {
       };
     case 'INCREMENT_WAZIFA':
       const wazifaTarget = action.dhikr === 'jawhara' 
-        ? (state.wazifaSettings.useJawhara ? WAZIFA_TARGETS.jawhara : WAZIFA_SALAT_FATIH_TARGET)
+        ? (state.wazifaSettings.useJawhara ? state.wazifaSettings.jawharaCount : WAZIFA_SALAT_FATIH_TARGET)
         : WAZIFA_TARGETS[action.dhikr];
       return {
         ...state,
@@ -293,7 +295,10 @@ function appReducer(state: AppState, action: AppAction): AppState {
     case 'UPDATE_WAZIFA_SETTINGS':
       return {
         ...state,
-        wazifaSettings: action.settings,
+        wazifaSettings: {
+          ...state.wazifaSettings,
+          ...action.settings,
+        },
         // Réinitialiser le compteur jawhara quand on change de paramètre
         wazifa: {
           ...state.wazifa,
@@ -340,7 +345,11 @@ function appReducer(state: AppState, action: AppAction): AppState {
         ...action.state,
         hadra: action.state.hadra || initialState.hadra,
         hadraTargets: action.state.hadraTargets || initialState.hadraTargets,
-        wazifaSettings: action.state.wazifaSettings || initialState.wazifaSettings,
+        wazifaSettings: {
+          ...initialState.wazifaSettings,
+          ...(action.state.wazifaSettings || {}),
+          jawharaCount: action.state.wazifaSettings?.jawharaCount || 12, // Migration: default to 12
+        },
         wirdSettings: action.state.wirdSettings || initialState.wirdSettings,
         completedHadras: action.state.completedHadras || [],
         currentHadraStep: action.state.currentHadraStep || 0,
@@ -419,7 +428,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(appReducer, initialState);
 
   const getWazifaJawharaTarget = () => {
-    return state.wazifaSettings.useJawhara ? WAZIFA_TARGETS.jawhara : WAZIFA_SALAT_FATIH_TARGET;
+    return state.wazifaSettings.useJawhara ? state.wazifaSettings.jawharaCount : WAZIFA_SALAT_FATIH_TARGET;
   };
 
   const getCurrentSalawatFormula = () => {

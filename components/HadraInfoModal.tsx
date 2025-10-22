@@ -17,12 +17,14 @@ export default function HadraInfoModal({ visible, onClose, darkMode = false }: H
       presentationStyle="pageSheet"
       onRequestClose={onClose}
     >
-      <SafeAreaView style={[styles.container, darkMode && styles.containerDark]}>
-        {/* Header */}
+      <SafeAreaView style={[styles.container, darkMode && styles.containerDark]} edges={['top']}>
+        {/* Header avec dégradé */}
         <View style={[styles.header, darkMode && styles.headerDark]}>
+          <View style={styles.headerGradient} />
           <View style={styles.headerContent}>
             <View style={styles.iconContainer}>
               <Text style={styles.icon}>🌙</Text>
+              <View style={styles.iconGlow} />
             </View>
             <View style={styles.titleContainer}>
               <Text style={[styles.title, darkMode && styles.titleDark]}>
@@ -33,148 +35,234 @@ export default function HadraInfoModal({ visible, onClose, darkMode = false }: H
               </Text>
             </View>
           </View>
-          <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-            <X color={darkMode ? '#FFFFFF' : '#6B7280'} size={24} />
+          <TouchableOpacity 
+            onPress={onClose} 
+            style={[styles.closeButton, darkMode && styles.closeButtonDark]}
+            activeOpacity={0.7}
+          >
+            <X color={darkMode ? '#FFFFFF' : '#6B7280'} size={22} />
           </TouchableOpacity>
         </View>
 
-        <ScrollView style={[styles.scrollView, darkMode && styles.scrollViewDark]} showsVerticalScrollIndicator={false}>
-          {/* Timing Section */}
+        <ScrollView 
+          style={[styles.scrollView, darkMode && styles.scrollViewDark]} 
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+        >
+          {/* Timing Section avec design amélioré */}
           <View style={styles.section}>
-            <Text style={[styles.sectionTitle, darkMode && styles.sectionTitleDark]}>
-              🕐 Horaire d'exécution
-            </Text>
-            <View style={[styles.card, darkMode && styles.cardDark]}>
-              <Text style={[styles.cardTitle, darkMode && styles.cardTitleDark]}>
-                Moment obligatoire :
+            <View style={styles.sectionHeader}>
+              <View style={styles.sectionIconWrapper}>
+                <Text style={styles.sectionIcon}>🕐</Text>
+              </View>
+              <Text style={[styles.sectionTitle, darkMode && styles.sectionTitleDark]}>
+                Horaire d'exécution
               </Text>
-              <View style={styles.timeSlot}>
-                <Text style={styles.timeLabel}>🕌 Vendredi :</Text>
-                <Text style={[styles.timeText, darkMode && styles.timeTextDark]}>
-                  Entre Asr et le coucher du soleil
+            </View>
+            <View style={[styles.card, styles.timingCard, darkMode && styles.cardDark]}>
+              <View style={styles.timingHeader}>
+                <Text style={[styles.cardTitle, darkMode && styles.cardTitleDark]}>
+                  Moment obligatoire
+                </Text>
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>Essentiel</Text>
+                </View>
+              </View>
+              <View style={[styles.timeSlot, darkMode && styles.timeSlotDark]}>
+                <View style={styles.timeIconWrapper}>
+                  <Text style={styles.timeIcon}>🕌</Text>
+                </View>
+                <View style={styles.timeContent}>
+                  <Text style={[styles.timeDay, darkMode && styles.timeDayDark]}>Vendredi</Text>
+                  <Text style={[styles.timeText, darkMode && styles.timeTextDark]}>
+                    Entre Asr et le coucher du soleil
+                  </Text>
+                </View>
+              </View>
+              <View style={[styles.noteBox, darkMode && styles.noteBoxDark]}>
+                <Text style={styles.noteIcon}>💡</Text>
+                <Text style={[styles.note, darkMode && styles.noteDark]}>
+                  En groupe de préférence, seul si empêchement
                 </Text>
               </View>
-              <Text style={[styles.note, darkMode && styles.noteDark]}>
-                💡 En groupe de préférence, seul si empêchement
-              </Text>
             </View>
           </View>
 
           {/* Preparation Section */}
           <View style={styles.section}>
-            <Text style={[styles.sectionTitle, darkMode && styles.sectionTitleDark]}>
-              🧘‍♂️ Préparation spirituelle
-            </Text>
+            <View style={styles.sectionHeader}>
+              <View style={styles.sectionIconWrapper}>
+                <Text style={styles.sectionIcon}>🧘‍♂️</Text>
+              </View>
+              <Text style={[styles.sectionTitle, darkMode && styles.sectionTitleDark]}>
+                Préparation spirituelle
+              </Text>
+            </View>
             <View style={[styles.card, darkMode && styles.cardDark]}>
-              <View style={styles.preparationItem}>
-                <Text style={styles.bullet}>•</Text>
-                <Text style={[styles.preparationText, darkMode && styles.preparationTextDark]}>
-                  État de pureté (wudû) obligatoire
-                </Text>
-              </View>
-              <View style={styles.preparationItem}>
-                <Text style={styles.bullet}>•</Text>
-                <Text style={[styles.preparationText, darkMode && styles.preparationTextDark]}>
-                  S'asseoir comme en prière
-                </Text>
-              </View>
-              <View style={styles.preparationItem}>
-                <Text style={styles.bullet}>•</Text>
-                <Text style={[styles.preparationText, darkMode && styles.preparationTextDark]}>
-                  Formation en cercle autour d'une nappe blanche
-                </Text>
-              </View>
-              <View style={styles.preparationItem}>
-                <Text style={styles.bullet}>•</Text>
-                <Text style={[styles.preparationText, darkMode && styles.preparationTextDark]}>
-                  Direction collective vers la Qibla
-                </Text>
-              </View>
+              {[
+                { icon: '💧', text: 'État de pureté (wudû) obligatoire' },
+                { icon: '🤲', text: 'S\'asseoir comme en prière' },
+                { icon: '⭕', text: 'Formation en cercle autour d\'une nappe blanche' },
+                { icon: '🧭', text: 'Direction collective vers la Qibla' }
+              ].map((item, index) => (
+                <View key={index} style={[styles.preparationItem, darkMode && styles.preparationItemDark]}>
+                  <View style={styles.preparationIconWrapper}>
+                    <Text style={styles.preparationIcon}>{item.icon}</Text>
+                  </View>
+                  <Text style={[styles.preparationText, darkMode && styles.preparationTextDark]}>
+                    {item.text}
+                  </Text>
+                </View>
+              ))}
             </View>
           </View>
 
           {/* Steps Section */}
           <View style={styles.section}>
-            <Text style={[styles.sectionTitle, darkMode && styles.sectionTitleDark]}>
-              📋 Étapes à suivre dans l'ordre
-            </Text>
+            <View style={styles.sectionHeader}>
+              <View style={styles.sectionIconWrapper}>
+                <Text style={styles.sectionIcon}>📋</Text>
+              </View>
+              <Text style={[styles.sectionTitle, darkMode && styles.sectionTitleDark]}>
+                Étapes à suivre dans l'ordre
+              </Text>
+            </View>
 
             {[
               {
                 step: '1',
                 title: 'Intention (Niyya)',
+                icon: '💭',
                 description: 'Formuler l\'intention de réciter le dhikr du vendredi'
               },
               {
                 step: '2',
                 title: 'Protection (Ta\'awwudh)',
+                icon: '🛡️',
                 arabic: 'أَعُوذُ بِاللّٰهِ مِنَ الشَّيْطَانِ الرَّجِيمِ',
-                description: 'Une fois (1) - Protection contre Satan'
+                count: '1×',
+                description: 'Protection contre Satan'
               },
               {
                 step: '3',
                 title: 'Al-Fātiḥa',
-                description: 'Réciter la Fātiḥa une fois (1)'
+                icon: '📖',
+                count: '1×',
+                description: 'Réciter la Fātiḥa'
               },
               {
                 step: '4',
                 title: 'Istighfār spécial',
+                icon: '🤲',
                 arabic: 'أَسْتَغْفِرُ اللّٰهَ الْعَظِيمَ الَّذِي لَا إِلٰهَ إِلَّا هُوَ الْحَيُّ الْقَيُّومُ',
-                description: 'Trois fois (3) - Formule complète d\'absolution'
+                count: '3×',
+                description: 'Formule complète d\'absolution'
               },
               {
                 step: '5',
                 title: 'Ṣalāt al-Fātiḥ',
+                icon: '🌟',
                 arabic: 'اللَّهُمَّ صَلِّ عَلَى سَيِّدِنَا مُحَمَّدٍ الْفَاتِحِ لِمَا أُغْلِقَ...',
-                description: 'Trois fois (3) - Prière spéciale sur le Prophète (ﷺ)'
+                count: '3×',
+                description: 'Prière spéciale sur le Prophète ﷺ'
               },
               {
                 step: '6',
                 title: 'Glorification',
+                icon: '✨',
                 arabic: 'سُبْحَانَ رَبِّكَ رَبِّ الْعِزَّةِ...',
-                description: 'Une fois (1) - Glorification divine'
+                count: '1×',
+                description: 'Glorification divine'
               },
               {
                 step: '7',
-                title: 'Tahlīl (Unicité) - Phase intensive',
+                title: 'Tahlīl (Unicité)',
+                icon: '☝️',
                 arabic: 'لَا إِلٰهَ إِلَّا اللّٰهُ',
-                description: '800 à 1000 fois (groupe) / 1200 à 1600 fois (individuel)',
-                note: '💫 Récitation rythmée et harmonieuse collective'
+                count: '800-1000×',
+                description: 'En groupe',
+                alternateCount: '1200-1600×',
+                alternateDescription: 'Individuel',
+                note: 'Récitation rythmée et harmonieuse collective',
+                highlight: true
               },
               {
                 step: '8',
                 title: 'Ism Allah',
+                icon: '🌙',
                 arabic: 'اللّٰهُ',
-                description: '400 fois - Invocation du Nom Suprême'
+                count: '400×',
+                description: 'Invocation du Nom Suprême'
               },
               {
                 step: '9',
                 title: 'Clôture coranique',
+                icon: '📿',
                 arabic: 'إِنَّ اللّٰهَ وَمَلَائِكَتَهُ يُصَلُّونَ عَلَى النَّبِيِّ...',
-                description: 'Une fois (1) - Verset coranique + glorification finale'
+                count: '1×',
+                description: 'Verset coranique + glorification finale'
               }
             ].map((item, index) => (
-              <View key={index} style={[styles.stepCard, darkMode && styles.stepCardDark]}>
+              <View 
+                key={index} 
+                style={[
+                  styles.stepCard, 
+                  darkMode && styles.stepCardDark,
+                  item.highlight && styles.stepCardHighlight,
+                  item.highlight && darkMode && styles.stepCardHighlightDark
+                ]}
+              >
                 <View style={styles.stepHeader}>
-                  <View style={styles.stepNumber}>
+                  <View style={[styles.stepNumber, item.highlight && styles.stepNumberHighlight]}>
                     <Text style={styles.stepNumberText}>{item.step}</Text>
                   </View>
-                  <Text style={[styles.stepTitle, darkMode && styles.stepTitleDark]}>
-                    {item.title}
+                  <View style={styles.stepTitleWrapper}>
+                    <Text style={styles.stepEmoji}>{item.icon}</Text>
+                    <Text style={[styles.stepTitle, darkMode && styles.stepTitleDark]}>
+                      {item.title}
+                    </Text>
+                  </View>
+                </View>
+                
+                {item.arabic && (
+                  <View style={[styles.arabicContainer, darkMode && styles.arabicContainerDark]}>
+                    <Text style={[styles.arabicText, darkMode && styles.arabicTextDark]}>
+                      {item.arabic}
+                    </Text>
+                  </View>
+                )}
+                
+                <View style={styles.stepDetails}>
+                  {item.count && (
+                    <View style={[styles.countBadge, item.highlight && styles.countBadgeHighlight]}>
+                      <Text style={[styles.countText, item.highlight && styles.countTextHighlight]}>
+                        {item.count}
+                      </Text>
+                    </View>
+                  )}
+                  <Text style={[styles.stepDescription, darkMode && styles.stepDescriptionDark]}>
+                    {item.description}
                   </Text>
                 </View>
-                {item.arabic && (
-                  <Text style={styles.arabicText}>
-                    {item.arabic}
-                  </Text>
+                
+                {item.alternateCount && (
+                  <View style={styles.stepDetails}>
+                    <View style={styles.countBadgeSecondary}>
+                      <Text style={styles.countTextSecondary}>{item.alternateCount}</Text>
+                    </View>
+                    <Text style={[styles.stepDescription, darkMode && styles.stepDescriptionDark]}>
+                      {item.alternateDescription}
+                    </Text>
+                  </View>
                 )}
-                <Text style={[styles.stepDescription, darkMode && styles.stepDescriptionDark]}>
-                  {item.description}
-                </Text>
+                
                 {item.note && (
-                  <Text style={[styles.stepNote, darkMode && styles.stepNoteDark]}>
-                    {item.note}
-                  </Text>
+                  <View style={[styles.stepNoteBox, darkMode && styles.stepNoteBoxDark]}>
+                    <Text style={styles.stepNoteIcon}>💫</Text>
+                    <Text style={[styles.stepNote, darkMode && styles.stepNoteDark]}>
+                      {item.note}
+                    </Text>
+                  </View>
                 )}
               </View>
             ))}
@@ -183,9 +271,14 @@ export default function HadraInfoModal({ visible, onClose, darkMode = false }: H
           {/* Collective Practice */}
           <View style={styles.section}>
             <View style={[styles.collectiveCard, darkMode && styles.collectiveCardDark]}>
-              <Text style={[styles.collectiveTitle, darkMode && styles.collectiveTitleDark]}>
-                👥 Dimension collective
-              </Text>
+              <View style={styles.collectiveHeader}>
+                <View style={styles.collectiveIconWrapper}>
+                  <Text style={styles.collectiveIcon}>👥</Text>
+                </View>
+                <Text style={[styles.collectiveTitle, darkMode && styles.collectiveTitleDark]}>
+                  Dimension collective
+                </Text>
+              </View>
               <Text style={[styles.collectiveText, darkMode && styles.collectiveTextDark]}>
                 Le dhikr du vendredi est avant tout une pratique collective qui renforce les liens 
                 fraternels et la barakah communautaire. La récitation en groupe avec un rythme 
@@ -196,15 +289,20 @@ export default function HadraInfoModal({ visible, onClose, darkMode = false }: H
 
           {/* Note on Numbers */}
           <View style={styles.section}>
-            <View style={[styles.noteCard, darkMode && styles.noteCardDark]}>
-              <Text style={[styles.noteTitle, darkMode && styles.noteTitleDark]}>
-                📌 Note sur les nombres
-              </Text>
-              <Text style={[styles.noteText, darkMode && styles.noteTextDark]}>
-                Les nombres peuvent être adaptés selon les circonstances et le temps disponible. 
-                L'essentiel réside dans la qualité spirituelle et la présence du cœur plutôt 
-                que dans le comptage strict.
-              </Text>
+            <View style={[styles.infoCard, darkMode && styles.infoCardDark]}>
+              <View style={styles.infoIconWrapper}>
+                <Text style={styles.infoIcon}>📌</Text>
+              </View>
+              <View style={styles.infoContent}>
+                <Text style={[styles.infoTitle, darkMode && styles.infoTitleDark]}>
+                  Note sur les nombres
+                </Text>
+                <Text style={[styles.infoText, darkMode && styles.infoTextDark]}>
+                  Les nombres peuvent être adaptés selon les circonstances et le temps disponible. 
+                  L'essentiel réside dans la qualité spirituelle et la présence du cœur plutôt 
+                  que dans le comptage strict.
+                </Text>
+              </View>
             </View>
           </View>
 
@@ -218,147 +316,277 @@ export default function HadraInfoModal({ visible, onClose, darkMode = false }: H
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#FAFAFA',
   },
   containerDark: {
-    backgroundColor: '#111827',
+    backgroundColor: '#0F1419',
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    position: 'relative',
     paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    paddingTop: 16,
+    paddingBottom: 20,
     backgroundColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
   headerDark: {
-    backgroundColor: '#111827',
-    borderBottomColor: '#374151',
+    backgroundColor: '#1A1F26',
+    shadowOpacity: 0.3,
+  },
+  headerGradient: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 4,
+    backgroundColor: '#10B981',
   },
   headerContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    flex: 1,
   },
   iconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     backgroundColor: '#10B981',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
+    marginRight: 14,
+    shadowColor: '#10B981',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+    position: 'relative',
+  },
+  iconGlow: {
+    position: 'absolute',
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#10B981',
+    opacity: 0.2,
   },
   icon: {
-    fontSize: 24,
+    fontSize: 28,
   },
   titleContainer: {
     flex: 1,
   },
   title: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '700',
     color: '#111827',
-    marginBottom: 2,
+    marginBottom: 4,
+    letterSpacing: -0.3,
   },
   titleDark: {
     color: '#FFFFFF',
   },
   subtitle: {
-    fontSize: 14,
+    fontSize: 13,
     color: '#6B7280',
+    fontWeight: '500',
   },
   subtitleDark: {
-    color: '#D1D5DB',
+    color: '#9CA3AF',
   },
   closeButton: {
-    padding: 8,
-    borderRadius: 8,
-    backgroundColor: '#F9FAFB',
+    padding: 10,
+    borderRadius: 10,
+    backgroundColor: '#F3F4F6',
+  },
+  closeButtonDark: {
+    backgroundColor: '#374151',
   },
   scrollView: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: '#FAFAFA',
   },
   scrollViewDark: {
-    backgroundColor: '#111827',
+    backgroundColor: '#0F1419',
+  },
+  scrollContent: {
+    paddingTop: 20,
   },
   section: {
     paddingHorizontal: 20,
-    marginBottom: 24,
+    marginBottom: 28,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  sectionIconWrapper: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: '#F0FDF4',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+  },
+  sectionIcon: {
+    fontSize: 18,
   },
   sectionTitle: {
     fontSize: 20,
     fontWeight: '700',
     color: '#111827',
-    marginBottom: 16,
+    letterSpacing: -0.3,
   },
   sectionTitleDark: {
     color: '#FFFFFF',
   },
   card: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: 16,
+    padding: 18,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
   },
   cardDark: {
-    backgroundColor: '#1F2937',
+    backgroundColor: '#1A1F26',
+    shadowOpacity: 0.2,
+  },
+  timingCard: {
+    borderWidth: 1.5,
+    borderColor: '#E5E7EB',
+  },
+  timingHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 16,
   },
   cardTitle: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 17,
+    fontWeight: '700',
     color: '#10B981',
-    marginBottom: 12,
   },
   cardTitleDark: {
     color: '#34D399',
   },
+  badge: {
+    backgroundColor: '#DCFCE7',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  badgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#059669',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
   timeSlot: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: 8,
+    alignItems: 'center',
+    backgroundColor: '#F9FAFB',
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 12,
   },
-  timeLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#10B981',
-    minWidth: 100,
+  timeSlotDark: {
+    backgroundColor: '#111827',
+  },
+  timeIconWrapper: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  timeIcon: {
+    fontSize: 20,
+  },
+  timeContent: {
+    flex: 1,
+  },
+  timeDay: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#111827',
+    marginBottom: 2,
+  },
+  timeDayDark: {
+    color: '#FFFFFF',
   },
   timeText: {
     fontSize: 14,
-    color: '#374151',
-    flex: 1,
+    color: '#6B7280',
   },
   timeTextDark: {
-    color: '#D1D5DB',
+    color: '#9CA3AF',
+  },
+  noteBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ECFDF5',
+    borderRadius: 10,
+    padding: 12,
+    borderLeftWidth: 3,
+    borderLeftColor: '#10B981',
+  },
+  noteBoxDark: {
+    backgroundColor: '#064E3B',
+    borderLeftColor: '#34D399',
+  },
+  noteIcon: {
+    fontSize: 16,
+    marginRight: 10,
   },
   note: {
     fontSize: 13,
     color: '#059669',
-    fontStyle: 'italic',
-    marginTop: 8,
+    fontWeight: '500',
+    flex: 1,
+    lineHeight: 18,
   },
   noteDark: {
-    color: '#34D399',
+    color: '#6EE7B7',
   },
   preparationItem: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: 8,
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    backgroundColor: '#F9FAFB',
+    borderRadius: 12,
+    marginBottom: 10,
   },
-  bullet: {
-    fontSize: 14,
-    color: '#10B981',
-    fontWeight: '600',
-    marginRight: 8,
-    marginTop: 2,
+  preparationItemDark: {
+    backgroundColor: '#111827',
+  },
+  preparationIconWrapper: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  preparationIcon: {
+    fontSize: 18,
   },
   preparationText: {
     fontSize: 14,
     color: '#374151',
     flex: 1,
+    fontWeight: '500',
     lineHeight: 20,
   },
   preparationTextDark: {
@@ -366,125 +594,254 @@ const styles = StyleSheet.create({
   },
   stepCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    borderLeftWidth: 3,
+    borderRadius: 16,
+    padding: 18,
+    marginBottom: 14,
+    borderLeftWidth: 4,
     borderLeftColor: '#10B981',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    elevation: 2,
   },
   stepCardDark: {
+    backgroundColor: '#1A1F26',
+  },
+  stepCardHighlight: {
+    borderLeftColor: '#F59E0B',
+    backgroundColor: '#FFFBEB',
+  },
+  stepCardHighlightDark: {
     backgroundColor: '#1F2937',
+    borderLeftColor: '#FBBF24',
   },
   stepHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 12,
   },
   stepNumber: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     backgroundColor: '#10B981',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
   },
+  stepNumberHighlight: {
+    backgroundColor: '#F59E0B',
+  },
   stepNumberText: {
-    fontSize: 14,
-    fontWeight: '700',
+    fontSize: 15,
+    fontWeight: '800',
     color: '#FFFFFF',
+  },
+  stepTitleWrapper: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  stepEmoji: {
+    fontSize: 18,
+    marginRight: 8,
   },
   stepTitle: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '700',
     color: '#111827',
     flex: 1,
   },
   stepTitleDark: {
     color: '#FFFFFF',
   },
+  arabicContainer: {
+    backgroundColor: '#F0FDF4',
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#BBF7D0',
+  },
+  arabicContainerDark: {
+    backgroundColor: '#064E3B',
+    borderColor: '#065F46',
+  },
   arabicText: {
-    fontSize: 16,
-    color: '#10B981',
-    fontWeight: '500',
+    fontSize: 17,
+    color: '#059669',
+    fontWeight: '600',
     textAlign: 'right',
+    lineHeight: 28,
+  },
+  arabicTextDark: {
+    color: '#6EE7B7',
+  },
+  stepDetails: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: 8,
-    lineHeight: 24,
+  },
+  countBadge: {
+    backgroundColor: '#DCFCE7',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+    marginRight: 10,
+  },
+  countBadgeHighlight: {
+    backgroundColor: '#FEF3C7',
+  },
+  countText: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#059669',
+  },
+  countTextHighlight: {
+    color: '#D97706',
+  },
+  countBadgeSecondary: {
+    backgroundColor: '#F3F4F6',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+    marginRight: 10,
+  },
+  countTextSecondary: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#6B7280',
   },
   stepDescription: {
     fontSize: 14,
     color: '#6B7280',
+    flex: 1,
     lineHeight: 20,
   },
   stepDescriptionDark: {
-    color: '#D1D5DB',
+    color: '#9CA3AF',
+  },
+  stepNoteBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFBEB',
+    borderRadius: 10,
+    padding: 10,
+    marginTop: 8,
+  },
+  stepNoteBoxDark: {
+    backgroundColor: '#1F2937',
+  },
+  stepNoteIcon: {
+    fontSize: 14,
+    marginRight: 8,
   },
   stepNote: {
     fontSize: 12,
-    color: '#059669',
-    fontStyle: 'italic',
-    marginTop: 4,
+    color: '#D97706',
+    fontWeight: '600',
+    flex: 1,
+    lineHeight: 16,
   },
   stepNoteDark: {
-    color: '#34D399',
+    color: '#FCD34D',
   },
   collectiveCard: {
-    backgroundColor: '#F0FDF4',
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#BBF7D0',
+    backgroundColor: '#ECFDF5',
+    borderRadius: 16,
+    padding: 18,
+    borderWidth: 1.5,
+    borderColor: '#A7F3D0',
+    shadowColor: '#10B981',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 2,
   },
   collectiveCardDark: {
     backgroundColor: '#064E3B',
-    borderColor: '#065F46',
+    borderColor: '#059669',
   },
-  collectiveTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#059669',
+  collectiveHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: 12,
   },
+  collectiveIconWrapper: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  collectiveIcon: {
+    fontSize: 20,
+  },
+  collectiveTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: '#047857',
+  },
   collectiveTitleDark: {
-    color: '#34D399',
+    color: '#6EE7B7',
   },
   collectiveText: {
     fontSize: 14,
-    color: '#047857',
-    lineHeight: 20,
+    color: '#065F46',
+    lineHeight: 22,
+    fontWeight: '500',
   },
   collectiveTextDark: {
     color: '#A7F3D0',
   },
-  noteCard: {
+  infoCard: {
     backgroundColor: '#F9FAFB',
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: 16,
+    padding: 18,
+    flexDirection: 'row',
     borderWidth: 1,
     borderColor: '#E5E7EB',
   },
-  noteCardDark: {
-    backgroundColor: '#1F2937',
+  infoCardDark: {
+    backgroundColor: '#1A1F26',
     borderColor: '#374151',
   },
-  noteTitle: {
+  infoIconWrapper: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 14,
+  },
+  infoIcon: {
+    fontSize: 20,
+  },
+  infoContent: {
+    flex: 1,
+  },
+  infoTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#6B7280',
-    marginBottom: 12,
+    color: '#374151',
+    marginBottom: 8,
   },
-  noteTitleDark: {
+  infoTitleDark: {
     color: '#D1D5DB',
   },
-  noteText: {
+  infoText: {
     fontSize: 14,
     color: '#6B7280',
-    lineHeight: 20,
+    lineHeight: 21,
   },
-  noteTextDark: {
-    color: '#D1D5DB',
+  infoTextDark: {
+    color: '#9CA3AF',
   },
   bottomSpacing: {
-    height: 40,
+    height: 50,
   },
 });

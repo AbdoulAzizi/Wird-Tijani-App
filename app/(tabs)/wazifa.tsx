@@ -42,6 +42,7 @@ export default function WazifaScreen() {
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [tempUseJawhara, setTempUseJawhara] = useState(state.wazifaSettings.useJawhara);
+  const [tempJawharaCount, setTempJawharaCount] = useState(state.wazifaSettings.jawharaCount || 12);
 
   const { darkMode, audioEnabled } = state.settings;
   const jawharaTarget = getWazifaJawharaTarget();
@@ -79,9 +80,10 @@ export default function WazifaScreen() {
   // Get final dhikr content
   const finalDhikrContent = useMemo(() => {
     if (state.wazifaSettings.useJawhara) {
+      const count = state.wazifaSettings.jawharaCount || 12;
       return {
         ...WAZIFA_DHIKR.jawhara,
-        title: `${WAZIFA_DHIKR.jawhara.title} (12x)`,
+        title: `${WAZIFA_DHIKR.jawhara.title} (${count}x)`,
         audioType: 'jawhara'
       };
     }
@@ -90,7 +92,7 @@ export default function WazifaScreen() {
       title: `${WAZIFA_DHIKR.salatFatih.title} (20x)`,
       audioType: 'salatFatih'
     };
-  }, [state.wazifaSettings.useJawhara]);
+  }, [state.wazifaSettings.useJawhara, state.wazifaSettings.jawharaCount]);
 
   // Handlers with useCallback
   const handleResetAll = useCallback(() => {
@@ -145,7 +147,10 @@ export default function WazifaScreen() {
   const handleSaveSettings = useCallback(() => {
     dispatch({ 
       type: 'UPDATE_WAZIFA_SETTINGS', 
-      settings: { useJawhara: tempUseJawhara } 
+      settings: { 
+        useJawhara: tempUseJawhara,
+        jawharaCount: tempJawharaCount
+      } 
     });
     setShowSettings(false);
     Alert.alert(
@@ -153,7 +158,7 @@ export default function WazifaScreen() {
       'Your wazīfa preferences have been updated.',
       [{ text: 'OK' }]
     );
-  }, [tempUseJawhara, dispatch]);
+  }, [tempUseJawhara, tempJawharaCount, dispatch]);
 
   const playAudio = useCallback((dhikrType: string) => {
     if (audioEnabled) {
@@ -164,8 +169,9 @@ export default function WazifaScreen() {
   const toggleInfoModal = useCallback(() => setShowInfoModal(prev => !prev), []);
   const toggleSettings = useCallback(() => {
     setTempUseJawhara(state.wazifaSettings.useJawhara);
+    setTempJawharaCount(state.wazifaSettings.jawharaCount || 12);
     setShowSettings(prev => !prev);
-  }, [state.wazifaSettings.useJawhara]);
+  }, [state.wazifaSettings.useJawhara, state.wazifaSettings.jawharaCount]);
 
   return (
     <SafeAreaView style={[styles.container, darkMode && styles.containerDark]}>
@@ -282,7 +288,7 @@ export default function WazifaScreen() {
             blessing="سيدنا محمد رسول الله عليه السلام"
           />
 
-          {/* Final Dhikr (Jawhara 12x or Salat al-Fatih 20x) */}
+          {/* Final Dhikr (Jawhara or Salat al-Fatih) */}
           <DhikrCard
             title={finalDhikrContent.title}
             arabic={finalDhikrContent.arabic}
@@ -314,7 +320,7 @@ export default function WazifaScreen() {
                 • Complete each dhikr sequentially
               </Text>
               <Text style={[styles.instruction, darkMode && styles.instructionDark]}>
-                • Customize final dhikr in settings (Jawhara 12x or Ṣalāt al-Fātiḥ 20x)
+                • Customize final dhikr in settings (Jawhara 11x/12x or Ṣalāt al-Fātiḥ 20x)
               </Text>
             </View>
           </View>
@@ -361,10 +367,11 @@ export default function WazifaScreen() {
                   Final Dhikr Choice
                 </Text>
                 <Text style={[styles.settingSectionDescription, darkMode && styles.settingSectionDescriptionDark]}>
-                  Choose between Jawharat al-Kamāl (12x) or Ṣalāt al-Fātiḥ (20x) for the final dhikr
+                  Choose between Jawharat al-Kamāl or Ṣalāt al-Fātiḥ for the final dhikr
                 </Text>
               </View>
 
+              {/* Jawhara Option */}
               <TouchableOpacity 
                 style={[
                   styles.optionItem, 
@@ -376,7 +383,7 @@ export default function WazifaScreen() {
               >
                 <View style={styles.optionContent}>
                   <Text style={[styles.optionTitle, darkMode && styles.optionTitleDark]}>
-                    Jawharat al-Kamāl (12x)
+                    Jawharat al-Kamāl
                   </Text>
                   <Text style={[styles.optionSubtitle, darkMode && styles.optionSubtitleDark]}>
                     Default traditional choice
@@ -390,6 +397,57 @@ export default function WazifaScreen() {
                 </View>
               </TouchableOpacity>
 
+              {/* Jawhara Count Selection (only shown if Jawhara is selected) */}
+              {tempUseJawhara && (
+                <View style={[styles.subOptionContainer, darkMode && styles.subOptionContainerDark]}>
+                  <Text style={[styles.subOptionTitle, darkMode && styles.subOptionTitleDark]}>
+                    Number of recitations:
+                  </Text>
+                  
+                  <View style={styles.countOptionsRow}>
+                    <TouchableOpacity 
+                      style={[
+                        styles.countOption,
+                        darkMode && styles.countOptionDark,
+                        tempJawharaCount === 11 && styles.countOptionSelected
+                      ]}
+                      onPress={() => setTempJawharaCount(11)}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={[
+                        styles.countOptionText,
+                        darkMode && styles.countOptionTextDark,
+                        tempJawharaCount === 11 && styles.countOptionTextSelected
+                      ]}>
+                        11x
+                      </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity 
+                      style={[
+                        styles.countOption,
+                        darkMode && styles.countOptionDark,
+                        tempJawharaCount === 12 && styles.countOptionSelected
+                      ]}
+                      onPress={() => setTempJawharaCount(12)}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={[
+                        styles.countOptionText,
+                        darkMode && styles.countOptionTextDark,
+                        tempJawharaCount === 12 && styles.countOptionTextSelected
+                      ]}>
+                        12x
+                      </Text>
+                      <Text style={[styles.defaultBadge, darkMode && styles.defaultBadgeDark]}>
+                        Default
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              )}
+
+              {/* Salat al-Fatih Option */}
               <TouchableOpacity 
                 style={[
                   styles.optionItem, 
@@ -716,6 +774,69 @@ const styles = StyleSheet.create({
     height: 12,
     borderRadius: 6,
     backgroundColor: '#059669',
+  },
+  subOptionContainer: {
+    backgroundColor: '#F3F4F6',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    marginTop: -4,
+  },
+  subOptionContainerDark: {
+    backgroundColor: '#374151',
+  },
+  subOptionTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1F2937',
+    marginBottom: 12,
+  },
+  subOptionTitleDark: {
+    color: '#FFFFFF',
+  },
+  countOptionsRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  countOption: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: '#E5E7EB',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  countOptionDark: {
+    backgroundColor: '#1F2937',
+    borderColor: '#4B5563',
+  },
+  countOptionSelected: {
+    borderColor: '#059669',
+    backgroundColor: '#ECFDF5',
+  },
+  countOptionText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#6B7280',
+  },
+  countOptionTextDark: {
+    color: '#D1D5DB',
+  },
+  countOptionTextSelected: {
+    color: '#059669',
+  },
+  defaultBadge: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#059669',
+    marginTop: 4,
+    textTransform: 'uppercase',
+  },
+  defaultBadgeDark: {
+    color: '#10B981',
   },
   saveButton: {
     backgroundColor: '#059669',

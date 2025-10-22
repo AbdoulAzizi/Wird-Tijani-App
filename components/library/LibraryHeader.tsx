@@ -21,9 +21,9 @@ export const LibraryHeader: React.FC<LibraryHeaderProps> = ({
   return (
     <View style={styles.container}>
       {/* Gradient Background */}
-      {/* <View style={styles.gradientBackground}>
+      <View style={styles.gradientBackground}>
         <View style={[styles.gradient, { backgroundColor: COLORS.primary }]} />
-      </View> */}
+      </View>
 
       <View style={styles.content}>
         {/* Icon ou Back Button */}

@@ -138,7 +138,7 @@ export default function SpiritualHeader({
 
         <View style={styles.centerContent}>
           <Text style={styles.muhammadName} accessibilityLabel="Peace be upon him">
-            ﷺ
+           مُحَمَّد ﷺ
           </Text>
           <View style={styles.logoContainer}>
             <View style={styles.crescent}>

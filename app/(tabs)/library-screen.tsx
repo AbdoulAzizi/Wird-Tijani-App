@@ -1,7 +1,8 @@
 // screens/LibraryScreen.tsx
 import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { ChevronLeft } from 'lucide-react-native';
 
 import { LibraryHeader } from '@/components/library';
 import { CategoryCard } from '@/components/library';
@@ -89,12 +90,15 @@ export default function LibraryScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       <ScreenBackground>
         <View style={styles.wrapper}>
-          <LibraryHeader
-            title={view === 'categories' ? 'Bibliothèque Spirituelle' : currentCategory?.title || ''}
-            subtitle={view === 'categories' ? 'المكتبة الروحية' : currentCategory?.arabicTitle}
-            showBack={view === 'items'}
-            onBack={handleBackToCategories}
-          />
+          {/* Header seulement pour la vue catégories */}
+          {/* {view === 'categories' && (
+            <LibraryHeader
+              title="Bibliothèque Spirituelle"
+              subtitle="المكتبة الروحية"
+              showBack={false}
+              onBack={handleBackToCategories}
+            />
+          )} */}
 
           <ScrollView 
             style={styles.scrollView}
@@ -126,6 +130,19 @@ export default function LibraryScreen() {
             <QuoteSection />
           </ScrollView>
 
+          {/* Bouton retour flottant - APRÈS le ScrollView pour être au-dessus */}
+          {view === 'items' && (
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={handleBackToCategories}
+              activeOpacity={0.7}
+              accessibilityLabel="Retour aux catégories"
+              accessibilityRole="button"
+            >
+              <ChevronLeft color="#FFFFFF" size={24} strokeWidth={2.5} />
+            </TouchableOpacity>
+          )}
+
           <DetailModal
             visible={modalVisible}
             onClose={closeModal}
@@ -147,6 +164,23 @@ const styles = StyleSheet.create({
   wrapper: {
     flex: 1,
     backgroundColor: COLORS.background,
+  },
+  backButton: {
+    position: 'absolute',
+    top: 0,
+    left: 16,
+    zIndex: 1000,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#10B981',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 5,
   },
   scrollView: {
     flex: 1,
