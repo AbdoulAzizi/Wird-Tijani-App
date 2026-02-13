@@ -152,7 +152,7 @@ export default function SpiritualHeader({
         </View>
 
         <View style={styles.rightActions}>
-          <TouchableOpacity 
+          {/* <TouchableOpacity 
             style={styles.iconButton} 
             activeOpacity={0.7}
             onPress={handleSearchPress}
@@ -160,7 +160,7 @@ export default function SpiritualHeader({
             accessibilityRole="button"
           >
             <Search color="#FFFFFF" size={22} strokeWidth={2.5} />
-          </TouchableOpacity>
+          </TouchableOpacity> */}
           
           <TouchableOpacity 
             style={styles.iconButton} 
@@ -357,7 +357,7 @@ const styles = StyleSheet.create({
   rightActions: {
     flexDirection: 'row',
     gap: 8,
-    width: 96,
+    width: 40,
     justifyContent: 'flex-end',
   },
   notificationBadge: {
