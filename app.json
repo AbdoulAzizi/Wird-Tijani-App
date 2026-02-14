@@ -23,7 +23,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.wirdtijani.wirdapp",
+      "bundleIdentifier": "com.wirdtijani.app",
       "buildNumber": "1"
     },
     "android": {
