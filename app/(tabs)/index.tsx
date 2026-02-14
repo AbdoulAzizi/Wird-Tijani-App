@@ -153,6 +153,13 @@ const quickActions: QuickAction[] = [
     action: 'names',
   },
   {
+    title: 'Library',
+    description: 'Sacred formulas, biographies & wisdom',
+    icon: BookOpen,
+    color: '#059669',
+    action: 'library-screen',
+  },
+  {
     title: 'Achievements',
     description: 'Your spiritual milestones',
     icon: Award,
@@ -211,6 +218,11 @@ const handleCardPress = (route: string) => {
         // Navigate to names
         router.push('/(tabs)/names');
         console.log('Navigate to names');
+        break;
+      case 'library-screen':
+        // Navigate to library
+        router.push('/(tabs)/library-screen');
+        console.log('Navigate to library');
         break;
       default:
         console.log(`Navigate to ${action}`);

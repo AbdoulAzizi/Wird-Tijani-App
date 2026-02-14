@@ -1,10 +1,12 @@
 import { Tabs, useRouter, usePathname } from 'expo-router';
-import { Heart, BookOpen, ChartBar as BarChart3, Settings as SettingsIcon, Star, Moon, Home, Info, Menu, X, ChevronRight, Sparkles } from 'lucide-react-native';
+import { Heart, BookOpen, ChartBar as BarChart3, Settings as SettingsIcon, Star, Moon, Home, Info, Menu, X, ChevronRight, Sparkles, Bell } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { View, Text, TouchableOpacity, Animated, StyleSheet, ScrollView, Pressable, PanResponder, Platform } from 'react-native';
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import * as Haptics from 'expo-haptics';
 import SpiritualHeader from '@/components/SpiritualHeader';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { useNotifications } from '@/contexts/Notificationcontext';
 
 // Types pour améliorer la sécurité du code
 interface MenuItem {
@@ -12,57 +14,162 @@ interface MenuItem {
   route: string;
   icon: any;
   description: string;
+  badge?: number;
+  dividerAfter?: boolean;
 }
+
+interface TabIconProps {
+  IconComponent: any;
+  color: string;
+  focused: boolean;
+  name?: string;
+}
+
+// Configuration des constantes
+const DRAWER_WIDTH = 300;
+const SWIPE_THRESHOLD = 150;
+const SWIPE_AREA_WIDTH = 30;
 
 export default function TabLayout() {
   const [drawerVisible, setDrawerVisible] = useState(false);
-  const slideAnim = useRef(new Animated.Value(-300)).current;
+  const slideAnim = useRef(new Animated.Value(-DRAWER_WIDTH)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
+  const scaleAnim = useRef(new Animated.Value(1)).current;
   const router = useRouter();
   const pathname = usePathname();
+  
+  const { unreadCount, markAllAsRead } = useNotifications();
 
   // Mémoiser les éléments du menu pour éviter les recréations
   const menuItems: MenuItem[] = useMemo(() => [
-    { name: 'Home', route: '/', icon: Home, description: 'Main page' },
-    { name: 'Wird', route: '/wird', icon: Heart, description: 'Daily prayers' },
-    { name: 'Wazifa', route: '/wazifa', icon: Star, description: 'Special invocations' },
-    { name: 'Hadra', route: '/hadra', icon: Moon, description: 'Spiritual sessions' },
-    { name: 'Names', route: '/names', icon: Sparkles, description: 'Divine names' },
-    { name: 'Library', route: '/library', icon: BookOpen, description: 'Resources' },
-    { name: 'Bibliothèque', route: '/library-screen', icon: BookOpen, description: 'Ressources' },
-    { name: 'Statistics', route: '/stats', icon: BarChart3, description: 'Your progress' },
-    { name: 'Settings', route: '/settings', icon: SettingsIcon, description: 'Configuration' },
-    { name: 'About', route: '/about', icon: Info, description: 'Information' },
-  ], []);
+    { 
+      name: 'Home', 
+      route: '/', 
+      icon: Home, 
+      description: 'Main page' 
+    },
+    { 
+      name: 'Wird', 
+      route: '/wird', 
+      icon: Heart, 
+      description: 'Daily prayers',
+      dividerAfter: false 
+    },
+    { 
+      name: 'Wazifa', 
+      route: '/wazifa', 
+      icon: Star, 
+      description: 'Special invocations' 
+    },
+    { 
+      name: 'Hadra', 
+      route: '/hadra', 
+      icon: Moon, 
+      description: 'Spiritual sessions',
+      dividerAfter: true 
+    },
+    { 
+      name: 'Names', 
+      route: '/names', 
+      icon: Sparkles, 
+      description: 'Divine names' 
+    },
+    { 
+      name: 'Library', 
+      route: '/library', 
+      icon: BookOpen, 
+      description: 'Resources',
+      dividerAfter: true 
+    },
+    { 
+      name: 'Statistics', 
+      route: '/stats', 
+      icon: BarChart3, 
+      description: 'Your progress' 
+    },
+    { 
+      name: 'Notifications', 
+      route: '/notifications', 
+      icon: Bell, 
+      description: 'Notifications',
+      badge: unreadCount 
+    },
+    { 
+      name: 'Settings', 
+      route: '/settings', 
+      icon: SettingsIcon, 
+      description: 'Configuration' 
+    },
+    { 
+      name: 'About', 
+      route: '/about', 
+      icon: Info, 
+      description: 'Information' 
+    },
+  ], [unreadCount]);
+
+  // Feedback haptique pour améliorer l'UX
+  const triggerHaptic = useCallback((type: 'light' | 'medium' | 'success' = 'light') => {
+    if (Platform.OS === 'ios') {
+      switch (type) {
+        case 'light':
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          break;
+        case 'medium':
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+          break;
+        case 'success':
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          break;
+      }
+    }
+  }, []);
 
   // Animations optimisées avec useCallback
   const openDrawer = useCallback(() => {
     setDrawerVisible(true);
-  }, []);
+    triggerHaptic('light');
+  }, [triggerHaptic]);
 
   const closeDrawer = useCallback(() => {
     setDrawerVisible(false);
-  }, []);
+    triggerHaptic('light');
+  }, [triggerHaptic]);
 
-  // PanResponder optimisé avec useCallback
+  // Handler pour les notifications avec feedback haptique
+  const handleNotifications = useCallback(() => {
+    triggerHaptic('medium');
+    router.push('/notifications' as any);
+    setTimeout(() => {
+      markAllAsRead();
+    }, 500);
+  }, [router, markAllAsRead, triggerHaptic]);
+
+  // PanResponder optimisé avec gestion améliorée du swipe
   const panResponder = useRef(
     PanResponder.create({
       onMoveShouldSetPanResponder: (evt, gestureState) => {
+        // Détecter le swipe depuis le bord gauche
         return gestureState.dx > 10 && Math.abs(gestureState.dy) < 80;
       },
+      onPanResponderGrant: () => {
+        if (Platform.OS === 'ios') {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        }
+      },
       onPanResponderMove: (evt, gestureState) => {
-        if (gestureState.dx > 0 && gestureState.dx < 300) {
-          slideAnim.setValue(-300 + gestureState.dx);
-          fadeAnim.setValue(gestureState.dx / 300);
+        if (gestureState.dx > 0 && gestureState.dx < DRAWER_WIDTH) {
+          slideAnim.setValue(-DRAWER_WIDTH + gestureState.dx);
+          fadeAnim.setValue(gestureState.dx / DRAWER_WIDTH);
         }
       },
       onPanResponderRelease: (evt, gestureState) => {
-        if (gestureState.dx > 150) {
+        if (gestureState.dx > SWIPE_THRESHOLD || gestureState.vx > 0.5) {
           openDrawer();
         } else {
           Animated.parallel([
             Animated.spring(slideAnim, {
-              toValue: -300,
+              toValue: -DRAWER_WIDTH,
               useNativeDriver: true,
               damping: 20,
               stiffness: 200,
@@ -78,7 +185,7 @@ export default function TabLayout() {
     })
   ).current;
 
-  // Effet pour les animations d'ouverture/fermeture
+  // Effet pour les animations d'ouverture/fermeture avec micro-interactions
   useEffect(() => {
     if (drawerVisible) {
       Animated.parallel([
@@ -93,11 +200,16 @@ export default function TabLayout() {
           duration: 300,
           useNativeDriver: true,
         }),
+        Animated.spring(scaleAnim, {
+          toValue: 0.95,
+          useNativeDriver: true,
+          damping: 15,
+        }),
       ]).start();
     } else {
       Animated.parallel([
         Animated.spring(slideAnim, {
-          toValue: -300,
+          toValue: -DRAWER_WIDTH,
           useNativeDriver: true,
           damping: 22,
           stiffness: 200,
@@ -107,20 +219,25 @@ export default function TabLayout() {
           duration: 250,
           useNativeDriver: true,
         }),
+        Animated.spring(scaleAnim, {
+          toValue: 1,
+          useNativeDriver: true,
+          damping: 15,
+        }),
       ]).start();
     }
-  }, [drawerVisible, slideAnim, fadeAnim]);
+  }, [drawerVisible, slideAnim, fadeAnim, scaleAnim]);
 
-  // Navigation optimisée
+  // Navigation optimisée avec feedback haptique
   const handleNavigation = useCallback((route: string) => {
+    triggerHaptic('success');
     closeDrawer();
-    // Utiliser requestAnimationFrame pour une meilleure performance
     requestAnimationFrame(() => {
       setTimeout(() => {
         router.push(route as any);
       }, 250);
     });
-  }, [router, closeDrawer]);
+  }, [router, closeDrawer, triggerHaptic]);
 
   // Vérification de la route active
   const isCurrentRoute = useCallback((route: string) => {
@@ -133,56 +250,74 @@ export default function TabLayout() {
     return currentItem?.name || 'Home';
   }, [pathname, menuItems]);
 
-  // Composant MenuItem optimisé
+  // Composant MenuItem optimisé avec badge et divider
   const MenuItem = useCallback(({ item, index }: { item: MenuItem; index: number }) => {
     const IconComponent = item.icon;
     const isActive = isCurrentRoute(item.route);
     
     return (
-      <TouchableOpacity
-        key={index}
-        style={[
-          styles.menuItem,
-          isActive && styles.menuItemActive
-        ]}
-        onPress={() => handleNavigation(item.route)}
-        activeOpacity={0.7}
-      >
-        <View style={[
-          styles.iconContainer,
-          isActive && styles.iconContainerActive
-        ]}>
-          <IconComponent 
-            color={isActive ? "#FFFFFF" : "#059669"} 
-            size={22}
-            strokeWidth={2.5}
-          />
-        </View>
-        <View style={styles.menuItemTextContainer}>
-          <Text style={[
-            styles.menuItemText,
-            isActive && styles.menuItemTextActive
+      <>
+        <TouchableOpacity
+          key={index}
+          style={[
+            styles.menuItem,
+            isActive && styles.menuItemActive
+          ]}
+          onPress={() => handleNavigation(item.route)}
+          activeOpacity={0.7}
+          accessibilityRole="button"
+          accessibilityLabel={`Navigate to ${item.name}`}
+          accessibilityState={{ selected: isActive }}
+        >
+          <View style={[
+            styles.iconContainer,
+            isActive && styles.iconContainerActive
           ]}>
-            {item.name}
-          </Text>
-          <Text style={styles.menuItemDescription}>
-            {item.description}
-          </Text>
-        </View>
-        <ChevronRight 
-          color={isActive ? "#059669" : "#9CA3AF"} 
-          size={20}
-          strokeWidth={2}
-        />
-      </TouchableOpacity>
+            <IconComponent 
+              color={isActive ? "#FFFFFF" : "#059669"} 
+              size={22}
+              strokeWidth={2.5}
+            />
+          </View>
+          <View style={styles.menuItemTextContainer}>
+            <View style={styles.menuItemTitleRow}>
+              <Text style={[
+                styles.menuItemText,
+                isActive && styles.menuItemTextActive
+              ]}>
+                {item.name}
+              </Text>
+              {item.badge !== undefined && item.badge > 0 && (
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>
+                    {item.badge > 99 ? '99+' : item.badge}
+                  </Text>
+                </View>
+              )}
+            </View>
+            <Text style={styles.menuItemDescription}>
+              {item.description}
+            </Text>
+          </View>
+          <ChevronRight 
+            color={isActive ? "#059669" : "#9CA3AF"} 
+            size={20}
+            strokeWidth={2}
+          />
+        </TouchableOpacity>
+        {item.dividerAfter && (
+          <View style={styles.menuDivider} />
+        )}
+      </>
     );
   }, [handleNavigation, isCurrentRoute]);
 
-  // Composant TabIcon optimisé
-  const TabIcon = useCallback(({ IconComponent, color, focused, name }: any) => (
-    <View style={[
+  // Composant TabIcon optimisé avec animation
+  const TabIcon = useCallback(({ IconComponent, color, focused, name }: TabIconProps) => (
+    <Animated.View style={[
       styles.tabIconContainer,
-      focused && styles.tabIconContainerActive
+      focused && styles.tabIconContainerActive,
+      { transform: [{ scale: focused ? 1.15 : 1 }] }
     ]}>
       {name === 'home' ? (
         <Ionicons 
@@ -197,15 +332,21 @@ export default function TabLayout() {
           strokeWidth={focused ? 2.5 : 2}
         />
       )}
-    </View>
+      {focused && <View style={styles.activeIndicator} />}
+    </Animated.View>
   ), []);
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header amélioré */}
       <SpiritualHeader 
         onMenuPress={openDrawer} 
-        currentPage={getTabName()} 
+        currentPage={getTabName()}
+        onNotificationPress={handleNotifications}
+        notificationCount={unreadCount}
+        showNotification={true}
+        showHijriDate={true}
+        theme="default"
       />
 
       {/* Zone de swipe pour ouvrir le drawer */}
@@ -222,6 +363,8 @@ export default function TabLayout() {
           <Pressable 
             style={styles.backdrop} 
             onPress={closeDrawer}
+            accessibilityRole="button"
+            accessibilityLabel="Close menu"
           >
             <Animated.View style={[styles.backdropFade, { opacity: fadeAnim }]} />
           </Pressable>
@@ -242,16 +385,20 @@ export default function TabLayout() {
                 onPress={closeDrawer}
                 style={styles.closeButton}
                 activeOpacity={0.7}
+                accessibilityRole="button"
+                accessibilityLabel="Close menu"
               >
                 <X color="#FFFFFF" size={24} strokeWidth={2.5} />
               </TouchableOpacity>
             </View>
 
-            {/* Liste des pages */}
+            {/* Liste des pages avec ScrollView optimisé */}
             <ScrollView 
               style={styles.menuList}
               showsVerticalScrollIndicator={false}
               contentContainerStyle={styles.menuListContent}
+              bounces={true}
+              overScrollMode="auto"
             >
               {menuItems.map((item, index) => (
                 <MenuItem key={item.route} item={item} index={index} />
@@ -277,6 +424,12 @@ export default function TabLayout() {
           tabBarStyle: styles.tabBar,
           tabBarLabelStyle: styles.tabBarLabel,
           tabBarItemStyle: styles.tabBarItem,
+          tabBarHideOnKeyboard: true,
+        }}
+        screenListeners={{
+          tabPress: () => {
+            triggerHaptic('light');
+          },
         }}
       >
         <Tabs.Screen
@@ -319,7 +472,7 @@ export default function TabLayout() {
           name="names"
           options={{ href: null }}
         />
-        <Tabs.Screen
+        {/* <Tabs.Screen
           name="library-screen"
           options={{
             title: 'Library',
@@ -327,7 +480,7 @@ export default function TabLayout() {
               <TabIcon IconComponent={BookOpen} color={color} focused={focused} />
             ),
           }}
-        />
+        /> */}
         <Tabs.Screen
           name="stats"
           options={{ href: null }}
@@ -349,6 +502,14 @@ export default function TabLayout() {
           name="library"
           options={{ href: null }}
         />
+        <Tabs.Screen
+          name="library-screen"
+            options={{ href: null }}
+        />  
+        <Tabs.Screen
+          name="notifications"
+          options={{ href: null }}
+        />
       </Tabs>
     </SafeAreaView>
   );
@@ -364,7 +525,7 @@ const styles = StyleSheet.create({
     left: 0,
     top: 0,
     bottom: 0,
-    width: 30,
+    width: SWIPE_AREA_WIDTH,
     zIndex: 999,
   },
   drawerOverlay: {
@@ -458,11 +619,15 @@ const styles = StyleSheet.create({
   menuItemTextContainer: {
     flex: 1,
   },
+  menuItemTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   menuItemText: {
     fontSize: 16,
     fontWeight: '600',
     color: '#1F2937',
-    marginBottom: 2,
   },
   menuItemTextActive: {
     color: '#059669',
@@ -471,6 +636,27 @@ const styles = StyleSheet.create({
   menuItemDescription: {
     fontSize: 12,
     color: '#6B7280',
+    marginTop: 2,
+  },
+  badge: {
+    backgroundColor: '#EF4444',
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    paddingHorizontal: 6,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  badgeText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  menuDivider: {
+    height: 1,
+    backgroundColor: '#E5E7EB',
+    marginVertical: 8,
+    marginHorizontal: 24,
   },
   drawerFooter: {
     padding: 20,
@@ -499,7 +685,7 @@ const styles = StyleSheet.create({
   tabBar: {
     backgroundColor: '#FFFFFF',
     borderTopWidth: 0,
-    paddingBottom: 8,
+    paddingBottom: Platform.OS === 'ios' ? 8 : 8,
     paddingTop: 8,
     height: Platform.OS === 'ios' ? 85 : 70,
     elevation: 20,
@@ -523,8 +709,17 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingTop: 2,
+    position: 'relative',
   },
   tabIconContainerActive: {
-    transform: [{ scale: 1.15 }],
+    // Animation gérée via Animated.View
+  },
+  activeIndicator: {
+    position: 'absolute',
+    bottom: -8,
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#059669',
   },
 });

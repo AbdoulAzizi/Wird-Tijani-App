@@ -6,6 +6,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { Animated, View, StyleSheet, Image } from 'react-native';
 import { useFrameworkReady } from '@/hooks/useFrameworkReady';
 import { AppProvider } from '@/contexts/AppContext';
+import { NotificationProvider } from '@/contexts/Notificationcontext';
 import Toast from 'react-native-toast-message';
 
 SplashScreen.preventAutoHideAsync();
@@ -53,16 +54,18 @@ export default function RootLayout() {
   }
 
   return (
-    <AppProvider>
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="+not-found" />
-      </Stack>
-      <StatusBar style="auto" />
-      
-      {/* 🔔 Toast component - OBLIGATOIRE à la racine */}
-      <Toast />
-    </AppProvider>
+    <NotificationProvider>
+      <AppProvider>
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="+not-found" />
+        </Stack>
+        <StatusBar style="auto" />
+        
+        {/* 🔔 Toast component - OBLIGATOIRE à la racine */}
+        <Toast />
+      </AppProvider>
+    </NotificationProvider>
   );
 }
 
