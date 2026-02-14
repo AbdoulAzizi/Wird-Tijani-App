@@ -9,6 +9,7 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "primaryColor": "#059669",
+
     "androidStatusBar": {
       "backgroundColor": "#059669",
       "barStyle": "light-content"
@@ -16,16 +17,19 @@
     "androidNavigationBar": {
       "backgroundColor": "#ffffff"
     },
+
     "splash": {
       "image": "./assets/images/splash.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
+
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.wirdtijani.app",
       "buildNumber": "1"
     },
+
     "android": {
       "package": "com.wirdtijani.app",
       "versionCode": 1,
@@ -35,11 +39,13 @@
         "backgroundColor": "#059669"
       }
     },
+
     "web": {
       "bundler": "metro",
       "output": "single",
       "favicon": "./assets/favicon.png"
     },
+
     "plugins": [
       "expo-router",
       "expo-font",
@@ -49,9 +55,8 @@
         "expo-build-properties",
         {
           "android": {
-            "compileSdkVersion": 34,
-            "targetSdkVersion": 34,
-            "buildToolsVersion": "34.0.0"
+            "compileSdkVersion": 35,
+            "targetSdkVersion": 35
           },
           "ios": {
             "useFrameworks": "static"
@@ -59,21 +64,26 @@
         }
       ]
     ],
+
     "experiments": {
       "typedRoutes": true
     },
+
     "extra": {
       "router": {},
       "eas": {
         "projectId": "eb0773c5-5f4c-4b64-b17e-13e4c8fa8955"
       }
     },
+
     "runtimeVersion": {
       "policy": "appVersion"
     },
+
     "updates": {
       "url": "https://u.expo.dev/d6804abc-7d41-4321-875e-181217620aeb"
     },
+
     "owner": "abdoul-aziz"
   }
 }
