@@ -32,8 +32,8 @@ export default function RootLayout() {
           // 🔔 Toast de bienvenue avec react-native-toast-message
           Toast.show({
             type: 'success',
-            text1: 'Bienvenue !',
-            text2: 'L\'application est prête à être utilisée',
+            text1: 'Welcome !',
+            text2: 'Peace be upon you 🌟',
             visibilityTime: 3000,
           });
         }, 800);

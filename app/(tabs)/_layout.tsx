@@ -5,6 +5,7 @@ import { View, Text, TouchableOpacity, Animated, StyleSheet, ScrollView, Pressab
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import * as Haptics from 'expo-haptics';
 import SpiritualHeader from '@/components/SpiritualHeader';
+import MinimalHeader from '@/components/MinimalHeader';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useNotifications } from '@/contexts/NotificationContext';
 
@@ -16,6 +17,7 @@ interface MenuItem {
   description: string;
   badge?: number;
   dividerAfter?: boolean;
+  useMinimalHeader?: boolean; // Nouveau: indique si cette page utilise le header minimal
 }
 
 interface TabIconProps {
@@ -30,6 +32,9 @@ const DRAWER_WIDTH = 300;
 const SWIPE_THRESHOLD = 150;
 const SWIPE_AREA_WIDTH = 30;
 
+// Pages principales qui utilisent le SpiritualHeader
+
+const MAIN_PAGES = ['/', '/wird', '/wazifa', '/hadra'];
 export default function TabLayout() {
   const [drawerVisible, setDrawerVisible] = useState(false);
   const slideAnim = useRef(new Animated.Value(-DRAWER_WIDTH)).current;
@@ -46,73 +51,100 @@ export default function TabLayout() {
       name: 'Home', 
       route: '/', 
       icon: Home, 
-      description: 'Main page' 
+      description: 'Main page',
+      useMinimalHeader: false // Page principale
     },
     { 
       name: 'Wird', 
       route: '/wird', 
       icon: Heart, 
       description: 'Daily prayers',
-      dividerAfter: false 
+      dividerAfter: false,
+      useMinimalHeader: true // Page principale
     },
     { 
       name: 'Wazifa', 
       route: '/wazifa', 
       icon: Star, 
-      description: 'Special invocations' 
+      description: 'Special invocations',
+      useMinimalHeader: true // Page principale
     },
     { 
       name: 'Hadra Jumuah', 
       route: '/hadra', 
       icon: Moon, 
       description: 'Spiritual sessions',
-      dividerAfter: true 
+      dividerAfter: true,
+      useMinimalHeader: true // Page principale
     },
     { 
       name: 'Names', 
       route: '/names', 
       icon: Sparkles, 
-      description: 'Divine names' 
+      description: 'Divine names',
+      useMinimalHeader: true // Page secondaire
     },
     { 
       name: 'Library', 
       route: '/library', 
       icon: BookOpen, 
       description: 'Resources',
-      dividerAfter: true 
+      dividerAfter: true,
+      useMinimalHeader: true // Page secondaire
     },
     { 
       name: 'Statistics', 
       route: '/stats', 
       icon: BarChart3, 
-      description: 'Your progress' 
+      description: 'Your progress',
+      useMinimalHeader: true // Page secondaire
     },
     { 
       name: 'Notifications', 
       route: '/notifications', 
       icon: Bell, 
       description: 'Notifications',
-      badge: unreadCount 
+      badge: unreadCount,
+      useMinimalHeader: true // Page secondaire
     },
     { 
       name: 'Notification Settings', 
       route: '/notification-settings', 
       icon: Bell, 
-      description: 'Manage notifications' 
+      description: 'Manage notifications',
+      useMinimalHeader: true // Page secondaire
     },
     { 
       name: 'Settings', 
       route: '/settings', 
       icon: SettingsIcon, 
-      description: 'Configuration' 
+      description: 'Configuration',
+      useMinimalHeader: true // Page secondaire
     },
     { 
       name: 'About', 
       route: '/about', 
       icon: Info, 
-      description: 'Information' 
+      description: 'Information',
+      useMinimalHeader: true // Page secondaire
     },
   ], [unreadCount]);
+
+  // Déterminer si on doit utiliser le header minimal
+  const shouldUseMinimalHeader = useMemo(() => {
+    return !MAIN_PAGES.includes(pathname);
+  }, [pathname]);
+
+  // Obtenir les infos de la page courante
+  const currentPageInfo = useMemo(() => {
+    const currentItem = menuItems.find(item => item.route === pathname);
+    return {
+      name: currentItem?.name || 'Home',
+      useMinimal: currentItem?.useMinimalHeader ?? shouldUseMinimalHeader,
+      icon: currentItem?.icon,
+      description: currentItem?.description,
+    };
+  }, [pathname, menuItems, shouldUseMinimalHeader]);
 
   // Feedback haptique pour améliorer l'UX
   const triggerHaptic = useCallback((type: 'light' | 'medium' | 'success' = 'light') => {
@@ -141,6 +173,16 @@ export default function TabLayout() {
     setDrawerVisible(false);
     triggerHaptic('light');
   }, [triggerHaptic]);
+
+  // Handler pour le retour (MinimalHeader)
+  const handleBackPress = useCallback(() => {
+    triggerHaptic('light');
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.push('/');
+    }
+  }, [router, triggerHaptic]);
 
   // Handler pour les notifications avec feedback haptique
   const handleNotifications = useCallback(() => {
@@ -250,12 +292,6 @@ export default function TabLayout() {
     return pathname === route;
   }, [pathname]);
 
-  // Obtenir le nom de l'onglet actuel
-  const getTabName = useCallback(() => {
-    const currentItem = menuItems.find(item => item.route === pathname);
-    return currentItem?.name || 'Home';
-  }, [pathname, menuItems]);
-
   // Composant MenuItem optimisé avec badge et divider
   const MenuItem = useCallback(({ item, index }: { item: MenuItem; index: number }) => {
     const IconComponent = item.icon;
@@ -342,21 +378,39 @@ export default function TabLayout() {
     </Animated.View>
   ), []);
 
+  const handleMorePress = useCallback(() => {
+    triggerHaptic('light');
+    // Logique pour le bouton "More" du MinimalHeader (ex: ouvrir un menu contextuel)
+    // Pour l'instant, on peut simplement afficher une alerte ou naviguer vers une page de paramètres rapides
+    // router.push('/settings' as any);
+  }, [router, triggerHaptic]);
+
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-      {/* Header amélioré */}
-      <SpiritualHeader 
-        onMenuPress={openDrawer} 
-        currentPage={getTabName()}
-        onNotificationPress={handleNotifications}
-        notificationCount={unreadCount}
-        showNotification={true}
-        showHijriDate={true}
-        theme="default"
-      />
+      {/* Header intelligent qui switch entre Spiritual et Minimal */}
+      {currentPageInfo.useMinimal ? (
+        <MinimalHeader
+          title={currentPageInfo.name}
+          subtitle={currentPageInfo.description}
+          onBackPress={handleBackPress}
+          showMore={true}
+          onMorePress={handleMorePress}
+          theme="default"
+        />
+      ) : (
+        <SpiritualHeader 
+          onMenuPress={openDrawer} 
+          currentPage={currentPageInfo.name}
+          onNotificationPress={handleNotifications}
+          notificationCount={unreadCount}
+          showNotification={true}
+          showHijriDate={true}
+          theme="default"
+        />
+      )}
 
-      {/* Zone de swipe pour ouvrir le drawer */}
-      {!drawerVisible && (
+      {/* Zone de swipe pour ouvrir le drawer (seulement sur pages principales) */}
+      {!drawerVisible && !currentPageInfo.useMinimal && (
         <View 
           style={styles.swipeArea}
           {...panResponder.panHandlers}
@@ -478,15 +532,6 @@ export default function TabLayout() {
           name="names"
           options={{ href: null }}
         />
-        {/* <Tabs.Screen
-          name="library-screen"
-          options={{
-            title: 'Library',
-            tabBarIcon: ({ color, focused }) => (
-              <TabIcon IconComponent={BookOpen} color={color} focused={focused} />
-            ),
-          }}
-        /> */}
         <Tabs.Screen
           name="stats"
           options={{ href: null }}
@@ -682,7 +727,7 @@ const styles = StyleSheet.create({
   footerDivider: {
     width: 40,
     height: 3,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: '#Es5E7EB',
     borderRadius: 2,
     marginBottom: 12,
   },
