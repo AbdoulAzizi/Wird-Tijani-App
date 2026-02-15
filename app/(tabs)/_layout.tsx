@@ -343,7 +343,7 @@ export default function TabLayout() {
   ), []);
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       {/* Header amélioré */}
       <SpiritualHeader 
         onMenuPress={openDrawer} 
