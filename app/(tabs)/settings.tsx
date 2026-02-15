@@ -13,10 +13,12 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { Settings as SettingsIcon, Volume2, Bell, Info, Share2, Heart, Moon, Globe, Type, Download, Upload, RotateCcw, Clock, ChevronRight, X, Save, CircleHelp as HelpCircle, Shield } from 'lucide-react-native';
+import { Settings as SettingsIcon, Volume2, Bell, Info, Share2, Heart, Moon, Globe, Type, Download, Upload, RotateCcw, Clock, ChevronRight, X, Save, CircleHelp as HelpCircle, Shield, Zap } from 'lucide-react-native';
 import GradientHeader from '../../components/GradientHeader';
 import { useApp } from '../../contexts/AppContext';
+import { useNotifications } from '../../contexts/NotificationContext';
 import ScreenBackground from '../../components/ScreenBackground';
+import { useRouter } from 'expo-router';
 
 const { width } = Dimensions.get('window');
 
@@ -28,6 +30,8 @@ interface TimePickerState {
 
 export default function SettingsScreen() {
   const { state, dispatch } = useApp();
+  const { unreadCount } = useNotifications();
+  const router = useRouter();
   const [timePicker, setTimePicker] = useState<TimePickerState>({
     show: false,
     type: null,
@@ -179,6 +183,86 @@ export default function SettingsScreen() {
         /> */}
 
         <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+          {/* Notifications Section - NOUVEAU */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Bell color="#059669" size={24} />
+              <Text style={styles.sectionTitle}>Notifications</Text>
+            </View>
+
+            {/* Quick Toggle */}
+            <View style={[styles.settingItem, state.settings.darkMode && styles.settingItemDark]}>
+              <View style={styles.settingInfo}>
+                <Bell color={state.settings.darkMode ? '#FFFFFF' : '#6B7280'} size={20} />
+                <View style={styles.settingTextContainer}>
+                  <View style={styles.settingTitleRow}>
+                    <Text style={[styles.settingTitle, state.settings.darkMode && styles.settingTitleDark]}>
+                      Enable Notifications
+                    </Text>
+                    {unreadCount > 0 && (
+                      <View style={styles.badge}>
+                        <Text style={styles.badgeText}>
+                          {unreadCount > 99 ? '99+' : unreadCount}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                  <Text style={[styles.settingDescription, state.settings.darkMode && styles.settingDescriptionDark]}>
+                    {state.settings.notificationsEnabled ? 'Enabled' : 'Disabled'} • Receive reminders and alerts
+                  </Text>
+                </View>
+              </View>
+              <Switch
+                value={state.settings.notificationsEnabled}
+                onValueChange={toggleNotifications}
+                trackColor={{ false: '#E5E7EB', true: '#059669' }}
+                thumbColor="#FFFFFF"
+              />
+            </View>
+
+            {/* Notification Settings */}
+            <TouchableOpacity 
+              style={[styles.settingItem, state.settings.darkMode && styles.settingItemDark]}
+              onPress={() => router.push('/notification-settings' as any)}
+              activeOpacity={0.7}
+            >
+              <View style={styles.settingInfo}>
+                <SettingsIcon color={state.settings.darkMode ? '#FFFFFF' : '#6B7280'} size={20} />
+                <View style={styles.settingTextContainer}>
+                  <Text style={[styles.settingTitle, state.settings.darkMode && styles.settingTitleDark]}>
+                    Notification Settings
+                  </Text>
+                  <Text style={[styles.settingDescription, state.settings.darkMode && styles.settingDescriptionDark]}>
+                    Configure reminders, times and preferences
+                  </Text>
+                </View>
+              </View>
+              <ChevronRight color={state.settings.darkMode ? '#FFFFFF' : '#6B7280'} size={20} />
+            </TouchableOpacity>
+
+            {/* Dev Only: Test Notifications */}
+            {__DEV__ && (
+              <TouchableOpacity 
+                style={[styles.settingItem, styles.settingItemDev, state.settings.darkMode && styles.settingItemDark]}
+                onPress={() => router.push('/notification-test' as any)}
+                activeOpacity={0.7}
+              >
+                <View style={styles.settingInfo}>
+                  <Zap color="#F59E0B" size={20} />
+                  <View style={styles.settingTextContainer}>
+                    <Text style={[styles.settingTitle, state.settings.darkMode && styles.settingTitleDark]}>
+                      🧪 Test Notifications
+                    </Text>
+                    <Text style={[styles.settingDescription, state.settings.darkMode && styles.settingDescriptionDark]}>
+                      Development mode only
+                    </Text>
+                  </View>
+                </View>
+                <ChevronRight color="#F59E0B" size={20} />
+              </TouchableOpacity>
+            )}
+          </View>
+
           {/* Appearance Settings */}
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
@@ -269,81 +353,6 @@ export default function SettingsScreen() {
                 thumbColor="#FFFFFF"
               />
             </View>
-          </View>
-
-          {/* Notification Settings */}
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Bell color="#059669" size={24} />
-              <Text style={styles.sectionTitle}>Notifications</Text>
-            </View>
-
-            <View style={[styles.settingItem, state.settings.darkMode && styles.settingItemDark]}>
-              <View style={styles.settingInfo}>
-                <Bell color={state.settings.darkMode ? '#FFFFFF' : '#6B7280'} size={20} />
-                <View style={styles.settingTextContainer}>
-                  <Text style={[styles.settingTitle, state.settings.darkMode && styles.settingTitleDark]}>
-                    Prayer Reminders
-                  </Text>
-                  <Text style={[styles.settingDescription, state.settings.darkMode && styles.settingDescriptionDark]}>
-                    Get notified for Wird and Wazīfa times
-                  </Text>
-                </View>
-              </View>
-              <Switch
-                value={state.settings.notificationsEnabled}
-                onValueChange={toggleNotifications}
-                trackColor={{ false: '#E5E7EB', true: '#059669' }}
-                thumbColor="#FFFFFF"
-              />
-            </View>
-          </View>
-
-          {/* Reminder Times */}
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Clock color="#059669" size={24} />
-              <Text style={styles.sectionTitle}>Reminder Times</Text>
-            </View>
-
-            <TouchableOpacity 
-              style={[styles.reminderItem, state.settings.darkMode && styles.reminderItemDark]}
-              onPress={() => showTimePicker('morning')}
-            >
-              <Text style={[styles.reminderLabel, state.settings.darkMode && styles.reminderLabelDark]}>
-                Morning Wird (after Fajr)
-              </Text>
-              <View style={styles.timeContainer}>
-                <Text style={styles.reminderTime}>{formatTime(reminderTimes.morning)}</Text>
-                <ChevronRight color="#059669" size={16} />
-              </View>
-            </TouchableOpacity>
-
-            <TouchableOpacity 
-              style={[styles.reminderItem, state.settings.darkMode && styles.reminderItemDark]}
-              onPress={() => showTimePicker('evening')}
-            >
-              <Text style={[styles.reminderLabel, state.settings.darkMode && styles.reminderLabelDark]}>
-                Evening Wird (before Maghrib)
-              </Text>
-              <View style={styles.timeContainer}>
-                <Text style={styles.reminderTime}>{formatTime(reminderTimes.evening)}</Text>
-                <ChevronRight color="#059669" size={16} />
-              </View>
-            </TouchableOpacity>
-
-            <TouchableOpacity 
-              style={[styles.reminderItem, state.settings.darkMode && styles.reminderItemDark]}
-              onPress={() => showTimePicker('friday')}
-            >
-              <Text style={[styles.reminderLabel, state.settings.darkMode && styles.reminderLabelDark]}>
-                Friday Wazīfa (after 'Asr)
-              </Text>
-              <View style={styles.timeContainer}>
-                <Text style={styles.reminderTime}>{formatTime(reminderTimes.friday)}</Text>
-                <ChevronRight color="#059669" size={16} />
-              </View>
-            </TouchableOpacity>
           </View>
 
           {/* Data Management */}
@@ -678,6 +687,11 @@ const styles = StyleSheet.create({
   settingItemDark: {
     backgroundColor: '#1F2937',
   },
+  settingItemDev: {
+    borderWidth: 2,
+    borderColor: '#FEF3C7',
+    backgroundColor: '#FFFBEB',
+  },
   settingInfo: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -686,6 +700,11 @@ const styles = StyleSheet.create({
   },
   settingTextContainer: {
     flex: 1,
+  },
+  settingTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   settingTitle: {
     fontSize: 16,
@@ -702,6 +721,19 @@ const styles = StyleSheet.create({
   },
   settingDescriptionDark: {
     color: '#D1D5DB',
+  },
+  badge: {
+    backgroundColor: '#EF4444',
+    borderRadius: 10,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    minWidth: 20,
+    alignItems: 'center',
+  },
+  badgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
   versionBadge: {
     backgroundColor: '#EAB308',

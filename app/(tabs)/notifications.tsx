@@ -1,7 +1,7 @@
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Bell, Trash2 } from 'lucide-react-native';
-import { useNotifications, formatTimestamp, getNotificationColor, NotificationType } from '@/contexts/Notificationcontext';
+import { useNotifications, formatTimestamp, getNotificationColor, NotificationType } from '@/contexts/NotificationContext';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
 export default function NotificationsScreen() {

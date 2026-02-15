@@ -6,7 +6,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { Animated, View, StyleSheet, Image } from 'react-native';
 import { useFrameworkReady } from '@/hooks/useFrameworkReady';
 import { AppProvider } from '@/contexts/AppContext';
-import { NotificationProvider } from '@/contexts/Notificationcontext';
+import { NotificationProvider } from '@/contexts/NotificationContext';
 import Toast from 'react-native-toast-message';
 
 SplashScreen.preventAutoHideAsync();

@@ -6,7 +6,7 @@ import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import * as Haptics from 'expo-haptics';
 import SpiritualHeader from '@/components/SpiritualHeader';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { useNotifications } from '@/contexts/Notificationcontext';
+import { useNotifications } from '@/contexts/NotificationContext';
 
 // Types pour améliorer la sécurité du code
 interface MenuItem {
@@ -62,7 +62,7 @@ export default function TabLayout() {
       description: 'Special invocations' 
     },
     { 
-      name: 'Hadra', 
+      name: 'Hadra Jumuah', 
       route: '/hadra', 
       icon: Moon, 
       description: 'Spiritual sessions',
@@ -93,6 +93,12 @@ export default function TabLayout() {
       icon: Bell, 
       description: 'Notifications',
       badge: unreadCount 
+    },
+    { 
+      name: 'Notification Settings', 
+      route: '/notification-settings', 
+      icon: Bell, 
+      description: 'Manage notifications' 
     },
     { 
       name: 'Settings', 
@@ -508,6 +514,14 @@ export default function TabLayout() {
         />  
         <Tabs.Screen
           name="notifications"
+          options={{ href: null }}
+        />
+        <Tabs.Screen
+          name="notification-settings"
+          options={{ href: null }}
+        />
+        <Tabs.Screen
+          name="notification-test"
           options={{ href: null }}
         />
       </Tabs>

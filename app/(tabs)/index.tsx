@@ -733,7 +733,7 @@ const styles = StyleSheet.create({
 
   // Quick Actions
   quickActionsSection: {
-    marginTop: 32,
+    // marginLeft: 4,
   },
   quickActionsContainer: {
     paddingHorizontal: 16,

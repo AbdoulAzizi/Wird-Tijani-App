@@ -1,5 +1,6 @@
 import * as Notifications from 'expo-notifications';
-import { NotificationType } from './Notificationcontext';
+import { Platform } from 'react-native';
+import { NotificationType } from './NotificationContext';
 
 // ============================================================================
 // CONFIGURATION DES RAPPELS
@@ -9,6 +10,14 @@ export interface ReminderConfig {
   morning: string;   // "05:30"
   evening: string;   // "18:45"
   friday: string;    // "15:30"
+}
+
+export interface ReminderPreferences {
+  wirdMorning: boolean;
+  wirdEvening: boolean;
+  wazifa: boolean;
+  hadra: boolean;
+  encouragement: boolean;
 }
 
 // ============================================================================
@@ -28,42 +37,70 @@ export class ReminderService {
   }
 
   // ============================================================================
-  // SCHEDULING
+  // SCHEDULING WITH PREFERENCES
   // ============================================================================
 
-  async scheduleAllReminders(config: ReminderConfig) {
+  async scheduleAllReminders(config: ReminderConfig, preferences?: ReminderPreferences) {
     await this.cancelAllReminders();
     
-    await this.scheduleWirdReminders(config.morning, config.evening);
-    await this.scheduleWazifaReminder();
-    await this.scheduleHadraReminder(config.friday);
+    const prefs = preferences || {
+      wirdMorning: true,
+      wirdEvening: true,
+      wazifa: true,
+      hadra: true,
+      encouragement: true,
+    };
+    
+    if (prefs.wirdMorning || prefs.wirdEvening) {
+      await this.scheduleWirdReminders(
+        prefs.wirdMorning ? config.morning : null,
+        prefs.wirdEvening ? config.evening : null
+      );
+    }
+    
+    if (prefs.wazifa) {
+      await this.scheduleWazifaReminder();
+    }
+    
+    if (prefs.hadra) {
+      await this.scheduleHadraReminder(config.friday);
+    }
+    
+    if (prefs.encouragement) {
+      await this.scheduleEncouragementNotifications();
+    }
   }
 
   // ============================================================================
   // WIRD REMINDERS
   // ============================================================================
 
-  async scheduleWirdReminders(morningTime: string, eveningTime: string) {
-    const [morningHour, morningMin] = morningTime.split(':').map(Number);
-    const [eveningHour, eveningMin] = eveningTime.split(':').map(Number);
-
-    // Morning Wird (after Fajr)
-    await this.scheduleDailyNotification({
-      hour: morningHour,
-      minute: morningMin,
-      title: 'Morning Wird Reminder 🌅',
-      body: 'Time for your morning wird after Fajr prayer.',
-      type: 'wird_reminder',
-    });
-
-    // Evening Wird (before Maghrib)
-    await this.scheduleDailyNotification({
-      hour: eveningHour,
-      minute: eveningMin,
-      title: 'Evening Wird Reminder 🌆',
-      body: 'Don\'t forget your evening wird before Maghrib.',
-      type: 'wird_reminder',
-    });
+  async scheduleWirdReminders(morningTime: string | null, eveningTime: string | null) {
+    if (morningTime) {
+      const [morningHour, morningMin] = morningTime.split(':').map(Number);
+      
+      // Morning Wird (after Fajr)
+      await this.scheduleDailyNotification({
+        hour: morningHour,
+        minute: morningMin,
+        title: 'Morning Wird Reminder 🌅',
+        body: 'Time for your morning wird after Fajr prayer.',
+        type: 'wird_reminder',
+      });
+    }
+    
+    if (eveningTime) {
+      const [eveningHour, eveningMin] = eveningTime.split(':').map(Number);
+      
+      // Evening Wird (before Maghrib)
+      await this.scheduleDailyNotification({
+        hour: eveningHour,
+        minute: eveningMin,
+        title: 'Evening Wird Reminder 🌆',
+        body: 'Don\'t forget your evening wird before Maghrib.',
+        type: 'wird_reminder',
+      });
+    }
   }
 
   // ============================================================================
@@ -90,7 +127,7 @@ export class ReminderService {
 
     // Hadra on Friday after Maghrib
     await this.scheduleWeeklyNotification({
-      weekday: 5, // Friday
+      weekday: 6, // Friday (in iOS: 1=Sun, 6=Fri)
       hour,
       minute,
       title: 'Hadra Joumou\'a Reminder 🌙',
@@ -123,12 +160,38 @@ export class ReminderService {
     const randomEncouragement = encouragements[Math.floor(Math.random() * encouragements.length)];
     
     await this.scheduleWeeklyNotification({
-      weekday: 3, // Wednesday
+      weekday: 4, // Wednesday (in iOS: 1=Sun, 4=Wed)
       hour: 14,
       minute: 0,
       title: randomEncouragement.title,
       body: randomEncouragement.body,
       type: 'encouragement',
+    });
+  }
+
+  // ============================================================================
+  // INDIVIDUAL REMINDER MANAGEMENT
+  // ============================================================================
+
+  async scheduleWirdMorningOnly(time: string) {
+    const [hour, minute] = time.split(':').map(Number);
+    await this.scheduleDailyNotification({
+      hour,
+      minute,
+      title: 'Morning Wird Reminder 🌅',
+      body: 'Time for your morning wird after Fajr prayer.',
+      type: 'wird_reminder',
+    });
+  }
+
+  async scheduleWirdEveningOnly(time: string) {
+    const [hour, minute] = time.split(':').map(Number);
+    await this.scheduleDailyNotification({
+      hour,
+      minute,
+      title: 'Evening Wird Reminder 🌆',
+      body: 'Don\'t forget your evening wird before Maghrib.',
+      type: 'wird_reminder',
     });
   }
 
@@ -165,7 +228,7 @@ export class ReminderService {
   }
 
   private async scheduleWeeklyNotification(params: {
-    weekday: number; // 1 = Monday, 5 = Friday, 7 = Sunday
+    weekday: number; // iOS: 1=Sun, 2=Mon, 6=Fri | Android: 1=Mon, 5=Fri
     hour: number;
     minute: number;
     title: string;
@@ -173,6 +236,9 @@ export class ReminderService {
     type: NotificationType;
   }) {
     try {
+      // Adjust weekday for platform differences
+      const weekday = Platform.OS === 'ios' ? params.weekday : (params.weekday === 6 ? 5 : params.weekday - 1);
+      
       await Notifications.scheduleNotificationAsync({
         content: {
           title: params.title,
@@ -183,7 +249,7 @@ export class ReminderService {
         },
         trigger: {
           type: Notifications.SchedulableTriggerInputTypes.WEEKLY,
-          weekday: params.weekday,
+          weekday,
           hour: params.hour,
           minute: params.minute,
           repeats: true,
@@ -212,6 +278,16 @@ export class ReminderService {
     } catch (error) {
       console.error('Error getting scheduled notifications:', error);
       return [];
+    }
+  }
+
+  async getScheduledCount(): Promise<number> {
+    try {
+      const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+      return scheduled.length;
+    } catch (error) {
+      console.error('Error getting scheduled count:', error);
+      return 0;
     }
   }
 }

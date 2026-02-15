@@ -103,7 +103,7 @@ export default function AboutScreen() {
   };
 
   const handleWebsitePress = () => {
-    Linking.openURL('https://hadaramap.com');
+    Linking.openURL('https://tijaniapp.com');
   };
 
   const handleGithubPress = () => {
@@ -341,7 +341,7 @@ export default function AboutScreen() {
                 styles.contactDescription,
                 state.settings.darkMode && styles.contactDescriptionDark
               ]}>
-                hadaramap.com
+                tijaniapp.com
               </Text>
             </View>
           </TouchableOpacity>
