@@ -1,8 +1,46 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform } from 'react-native';
+import React, { useCallback } from 'react';
+import { 
+  View, 
+  Text, 
+  StyleSheet, 
+  ScrollView, 
+  TouchableOpacity, 
+  Platform, 
+  StatusBar,
+  Alert
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Bell, Trash2 } from 'lucide-react-native';
-import { useNotifications, formatTimestamp, getNotificationColor, NotificationType } from '@/contexts/NotificationContext';
-import Ionicons from '@expo/vector-icons/Ionicons';
+import { 
+  Bell, 
+  Trash2, 
+  CheckCircle2, 
+  Flame, 
+  Star, 
+  Info, 
+  BellRing,
+  CheckCheck
+} from 'lucide-react-native';
+import * as Haptics from 'expo-haptics';
+import { 
+  useNotifications, 
+  formatTimestamp, 
+  getNotificationColor, 
+  NotificationType 
+} from '@/contexts/NotificationContext';
+
+// --- Composant Icone Dynamique ---
+const NotificationIcon = ({ type, color }: { type: NotificationType; color: string }) => {
+  const size = 22;
+  switch (type) {
+    case 'completion': return <CheckCircle2 size={size} color={color} />;
+    case 'streak': return <Flame size={size} color={color} />;
+    case 'wird_reminder':
+    case 'wazifa_reminder':
+    case 'hadra_reminder': return <BellRing size={size} color={color} />;
+    case 'encouragement': return <Star size={size} color={color} />;
+    default: return <Info size={size} color={color} />;
+  }
+};
 
 export default function NotificationsScreen() {
   const { 
@@ -14,88 +52,87 @@ export default function NotificationsScreen() {
     clearAll
   } = useNotifications();
 
-  const getIcon = (type: NotificationType): string => {
-    switch (type) {
-      case 'completion':
-        return 'checkmark-circle';
-      case 'streak':
-        return 'flame';
-      case 'wird_reminder':
-      case 'wazifa_reminder':
-      case 'hadra_reminder':
-        return 'notifications';
-      case 'encouragement':
-        return 'star';
-      default:
-        return 'information-circle';
-    }
+  // Helper pour les fonds d'icônes
+  const getIconBackground = (type: NotificationType): string => {
+    const baseColor = getNotificationColor(type);
+    return `${baseColor}15`; // Ajoute 10% d'opacité à la couleur hexadécimale
   };
 
-  const getIconBackground = (type: NotificationType): string => {
-    const color = getNotificationColor(type);
-    // Convertir la couleur en background light
-    switch (type) {
-      case 'completion':
-        return '#F0FDF4';
-      case 'streak':
-        return '#FFFBEB';
-      case 'wird_reminder':
-      case 'wazifa_reminder':
-      case 'hadra_reminder':
-        return '#EFF6FF';
-      case 'encouragement':
-        return '#F5F3FF';
-      default:
-        return '#F3F4F6';
-    }
+  const handleMarkAll = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    markAllAsRead();
+  };
+
+  const handleDelete = (id: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    deleteNotification(id);
+  };
+
+  const handleClearAll = () => {
+    Alert.alert(
+      "Effacer tout",
+      "Voulez-vous supprimer toutes les notifications ?",
+      [
+        { text: "Annuler", style: "cancel" },
+        { 
+          text: "Supprimer", 
+          style: "destructive", 
+          onPress: () => {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            clearAll();
+          }
+        }
+      ]
+    );
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <StatusBar barStyle="dark-content" />
+      
       {/* Header */}
       <View style={styles.header}>
-        <View style={styles.headerTop}>
-          <View>
-            <Text style={styles.title}>Notifications</Text>
-            {unreadCount > 0 && (
-              <Text style={styles.subtitle}>{unreadCount} unread</Text>
-            )}
-          </View>
-          <View style={styles.headerActions}>
-            {unreadCount > 0 && (
-              <TouchableOpacity
-                style={styles.markAllButton}
-                onPress={markAllAsRead}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.markAllText}>Mark all read</Text>
-              </TouchableOpacity>
-            )}
-            {notifications.length > 0 && (
-              <TouchableOpacity
-                style={styles.clearButton}
-                onPress={clearAll}
-                activeOpacity={0.7}
-              >
-                <Trash2 color="#EF4444" size={18} />
-              </TouchableOpacity>
-            )}
-          </View>
+        <View>
+          <Text style={styles.title}>Notifications</Text>
+          <Text style={styles.subtitle}>
+            {unreadCount > 0 ? `${unreadCount} non lues` : 'Tout est à jour'}
+          </Text>
+        </View>
+        
+        <View style={styles.headerActions}>
+          {unreadCount > 0 && (
+            <TouchableOpacity 
+              onPress={handleMarkAll}
+              style={styles.iconActionButton}
+              accessibilityLabel="Tout marquer comme lu"
+            >
+              <CheckCheck size={20} color="#059669" />
+            </TouchableOpacity>
+          )}
+          {notifications.length > 0 && (
+            <TouchableOpacity 
+              onPress={handleClearAll}
+              style={[styles.iconActionButton, styles.clearButton]}
+            >
+              <Trash2 size={20} color="#EF4444" />
+            </TouchableOpacity>
+          )}
         </View>
       </View>
 
       {/* Notifications List */}
       <ScrollView
-        style={styles.scrollView}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
         {notifications.length === 0 ? (
           <View style={styles.emptyState}>
-            <Bell color="#9CA3AF" size={64} strokeWidth={1.5} />
-            <Text style={styles.emptyTitle}>No notifications</Text>
+            <View style={styles.emptyIconCircle}>
+              <Bell color="#9CA3AF" size={40} strokeWidth={1.5} />
+            </View>
+            <Text style={styles.emptyTitle}>Aucune notification</Text>
             <Text style={styles.emptyMessage}>
-              You're all caught up! Check back later for updates.
+              Nous vous préviendrons dès qu'il y aura du nouveau !
             </Text>
           </View>
         ) : (
@@ -104,52 +141,42 @@ export default function NotificationsScreen() {
               key={notif.id}
               style={[
                 styles.notificationCard,
-                !notif.read && styles.notificationCardUnread,
+                !notif.read && styles.unreadCard,
               ]}
               onPress={() => markAsRead(notif.id)}
-              activeOpacity={0.7}
+              activeOpacity={0.8}
             >
-              <View
-                style={[
-                  styles.iconContainer,
-                  { backgroundColor: getIconBackground(notif.type) },
-                ]}
-              >
-                <Ionicons
-                  name={getIcon(notif.type) as any}
-                  size={24}
-                  color={getNotificationColor(notif.type)}
-                />
+              <View style={[styles.iconContainer, { backgroundColor: getIconBackground(notif.type) }]}>
+                <NotificationIcon type={notif.type} color={getNotificationColor(notif.type)} />
               </View>
 
-              <View style={styles.notificationContent}>
-                <View style={styles.notificationHeader}>
-                  <Text style={styles.notificationTitle}>{notif.title}</Text>
-                  {!notif.read && <View style={styles.unreadDot} />}
+              <View style={styles.cardMainContent}>
+                <View style={styles.cardHeader}>
+                  <Text numberOfLines={1} style={[styles.notifTitle, !notif.read && styles.unreadText]}>
+                    {notif.title}
+                  </Text>
+                  {!notif.read && <View style={styles.unreadIndicator} />}
                 </View>
-                <Text style={styles.notificationMessage}>{notif.message}</Text>
-                <Text style={styles.notificationTime}>
-                  {formatTimestamp(notif.timestamp)}
+
+                <Text numberOfLines={2} style={styles.notifMessage}>
+                  {notif.message}
                 </Text>
-                {notif.metadata && (
-                  <View style={styles.metadataContainer}>
-                    {notif.metadata.practice && (
-                      <View style={styles.metadataBadge}>
-                        <Text style={styles.metadataBadgeText}>
-                          {notif.metadata.practice}
-                        </Text>
-                      </View>
-                    )}
-                  </View>
-                )}
+
+                <View style={styles.cardFooter}>
+                  <Text style={styles.notifTime}>{formatTimestamp(notif.timestamp)}</Text>
+                  {notif.metadata?.practice && (
+                    <View style={styles.badge}>
+                      <Text style={styles.badgeText}>{notif.metadata.practice}</Text>
+                    </View>
+                  )}
+                </View>
               </View>
 
               <TouchableOpacity
-                style={styles.deleteButton}
-                onPress={() => deleteNotification(notif.id)}
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                style={styles.inlineDelete}
+                onPress={() => handleDelete(notif.id)}
               >
-                <Trash2 color="#9CA3AF" size={18} strokeWidth={2} />
+                <Trash2 color="#D1D5DB" size={18} />
               </TouchableOpacity>
             </TouchableOpacity>
           ))
@@ -162,158 +189,166 @@ export default function NotificationsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: '#F8FAFC', // Slate 50
   },
   header: {
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 20,
-    paddingTop: Platform.OS === 'ios' ? 20 : 16,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
-  },
-  headerTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  headerActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
+    alignItems: 'flex-end',
+    paddingHorizontal: 24,
+    paddingBottom: 20,
+    paddingTop: 12,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
   },
   title: {
-    fontSize: 28,
+    fontSize: 26,
     fontWeight: '800',
-    color: '#111827',
-    letterSpacing: 0.5,
+    color: '#0F172A',
+    letterSpacing: -0.5,
   },
   subtitle: {
     fontSize: 14,
-    color: '#6B7280',
-    marginTop: 4,
+    color: '#64748B',
     fontWeight: '500',
+    marginTop: 2,
   },
-  markAllButton: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 8,
+  headerActions: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  iconActionButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
     backgroundColor: '#F0FDF4',
-  },
-  markAllText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#059669',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   clearButton: {
-    padding: 8,
-    borderRadius: 8,
     backgroundColor: '#FEF2F2',
-  },
-  scrollView: {
-    flex: 1,
   },
   scrollContent: {
     padding: 16,
-    paddingBottom: 32,
-  },
-  emptyState: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 80,
-    paddingHorizontal: 32,
-  },
-  emptyTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#111827',
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  emptyMessage: {
-    fontSize: 14,
-    color: '#6B7280',
-    textAlign: 'center',
-    lineHeight: 20,
+    paddingBottom: 40,
   },
   notificationCard: {
     flexDirection: 'row',
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 16,
+    borderRadius: 20,
+    padding: 14,
     marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 2,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.04,
+        shadowRadius: 12,
+      },
+      android: {
+        elevation: 3,
+      },
+    }),
   },
-  notificationCardUnread: {
-    borderLeftWidth: 3,
-    borderLeftColor: '#059669',
-    paddingLeft: 13,
-    backgroundColor: '#F9FAFB',
+  unreadCard: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
   },
   iconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
+    width: 52,
+    height: 52,
+    borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 14,
   },
-  notificationContent: {
+  cardMainContent: {
     flex: 1,
+    justifyContent: 'center',
   },
-  notificationHeader: {
+  cardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: 4,
   },
-  notificationTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#111827',
+  notifTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#334155',
     flex: 1,
   },
-  unreadDot: {
+  unreadText: {
+    color: '#0F172A',
+    fontWeight: '700',
+  },
+  unreadIndicator: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#059669',
+    backgroundColor: '#10B981',
     marginLeft: 8,
   },
-  notificationMessage: {
+  notifMessage: {
     fontSize: 14,
-    color: '#6B7280',
-    lineHeight: 20,
-    marginBottom: 6,
+    color: '#64748B',
+    lineHeight: 18,
+    marginBottom: 8,
   },
-  notificationTime: {
+  cardFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  notifTime: {
     fontSize: 12,
-    color: '#9CA3AF',
+    color: '#94A3B8',
     fontWeight: '500',
   },
-  metadataContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-    marginTop: 8,
-  },
-  metadataBadge: {
+  badge: {
     paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingVertical: 2,
     borderRadius: 6,
-    backgroundColor: '#F0FDF4',
+    backgroundColor: '#F1F5F9',
   },
-  metadataBadgeText: {
-    fontSize: 11,
+  badgeText: {
+    fontSize: 10,
     fontWeight: '600',
-    color: '#059669',
-    textTransform: 'capitalize',
+    color: '#475569',
+    textTransform: 'uppercase',
   },
-  deleteButton: {
-    padding: 4,
-    marginLeft: 8,
+  inlineDelete: {
+    paddingLeft: 10,
+    justifyContent: 'center',
+  },
+  emptyState: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 100,
+    paddingHorizontal: 40,
+  },
+  emptyIconCircle: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: '#F1F5F9',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1E293B',
+    marginBottom: 8,
+  },
+  emptyMessage: {
+    fontSize: 14,
+    color: '#94A3B8',
+    textAlign: 'center',
+    lineHeight: 20,
   },
 });
