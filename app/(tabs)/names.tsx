@@ -509,7 +509,7 @@ export default function NamesScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
       {/* <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} backgroundColor={isDarkMode ? "#0f172a" : "#064e3b"} /> */}
       <StatusBar  />
       {/* Header fixe avec plus d'options */}
@@ -787,7 +787,7 @@ export default function NamesScreen() {
           )}
         </LinearGradient>
       </View>
-    </SafeAreaView>
+    </View>
   );
 }
 

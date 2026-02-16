@@ -170,7 +170,7 @@ export default function SettingsScreen() {
   };
 
   return (
-    <SafeAreaView style={[
+    <View style={[
       styles.container,
       state.settings.darkMode && styles.containerDark
     ]}>
@@ -241,7 +241,7 @@ export default function SettingsScreen() {
             </TouchableOpacity>
 
             {/* Dev Only: Test Notifications */}
-            {__DEV__ && (
+            {/* {__DEV__ && (
               <TouchableOpacity 
                 style={[styles.settingItem, styles.settingItemDev, state.settings.darkMode && styles.settingItemDark]}
                 onPress={() => router.push('/notification-test' as any)}
@@ -260,7 +260,7 @@ export default function SettingsScreen() {
                 </View>
                 <ChevronRight color="#F59E0B" size={20} />
               </TouchableOpacity>
-            )}
+            )} */}
           </View>
 
           {/* Appearance Settings */}
@@ -635,7 +635,7 @@ export default function SettingsScreen() {
           </View>
         </View>
       </ModalContainer>
-    </SafeAreaView>
+    </View>
   );
 }
 

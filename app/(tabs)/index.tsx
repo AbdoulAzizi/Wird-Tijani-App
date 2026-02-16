@@ -289,10 +289,11 @@ const handleCardPress = (route: string) => {
   };
 
   return (
-    <SafeAreaView style={[
+    <View style={[
       styles.container,
       state.settings.darkMode && styles.containerDark
-    ]}>
+    ]}
+    >
       {/* <GradientHeader
         arabicTitle="بِسْمِ اللّٰهِ الرَّحْمٰنِ الرَّحِيمِ"
         englishTitle="Wird & Wazīfa Tijāniyya"
@@ -621,7 +622,7 @@ const handleCardPress = (route: string) => {
 
         <View style={styles.bottomSpacing} />
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -642,7 +643,7 @@ const styles = StyleSheet.create({
 
   // Progress Section
   progressSection: {
-    marginTop: 2,
+    marginTop: 4,
     paddingHorizontal: 16,
   },
   progressCard: {

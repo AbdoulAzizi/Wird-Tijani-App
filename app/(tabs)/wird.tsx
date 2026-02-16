@@ -119,7 +119,7 @@ export default function WirdScreen() {
   const toggleSettingsModal = useCallback(() => setShowSettingsModal(prev => !prev), []);
 
   return (
-    <SafeAreaView style={[styles.container, darkMode && styles.containerDark]}>
+    <View style={[styles.container, darkMode && styles.containerDark]} >
       <ScreenBackground>
         {/* Progress Header */}
         <View style={[styles.progressContainer, darkMode && styles.progressContainerDark]}>
@@ -177,9 +177,9 @@ export default function WirdScreen() {
               style={[styles.overallProgressFill, { width: `${progress}%` }]} 
             />
           </View>
-          <Text style={[styles.progressPercentage, darkMode && styles.progressPercentageDark]}>
+          {/* <Text style={[styles.progressPercentage, darkMode && styles.progressPercentageDark]}>
             {Math.round(progress)}%
-          </Text>
+          </Text> */}
         </View>
 
         <ScrollView 
@@ -281,7 +281,7 @@ export default function WirdScreen() {
           darkMode={darkMode}
         />
       </ScreenBackground>
-    </SafeAreaView>
+    </View>
   );
 }
 

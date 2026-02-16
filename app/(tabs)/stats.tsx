@@ -79,7 +79,7 @@ export default function StatsScreen() {
   }, [achievements, unlockedAchievements]);
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <ScreenBackground>
         {/* <GradientHeader
           arabicTitle="الإحصائيات"
@@ -153,7 +153,7 @@ export default function StatsScreen() {
           </View>
         </ScrollView>
       </ScreenBackground>
-    </SafeAreaView>
+    </View>
   );
 }
 

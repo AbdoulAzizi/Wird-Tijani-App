@@ -386,7 +386,7 @@ export default function TabLayout() {
   }, [router, triggerHaptic]);
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+    <SafeAreaView style={styles.container} edges={['bottom']}>
       {/* Header intelligent qui switch entre Spiritual et Minimal */}
       {currentPageInfo.useMinimal ? (
         <MinimalHeader

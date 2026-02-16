@@ -155,7 +155,7 @@ const MinimalHeader = ({
 
 const styles = StyleSheet.create({
   container: {
-    paddingTop: Platform.OS === 'ios' ? 44 : StatusBar.currentHeight ? StatusBar.currentHeight : 12,
+    paddingTop: Platform.OS === 'ios' ? 44 : StatusBar.currentHeight ? StatusBar.currentHeight + 8 : 12,
     paddingBottom: 12,
     paddingHorizontal: 16,
   },

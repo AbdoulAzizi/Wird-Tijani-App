@@ -129,7 +129,7 @@ export default function HadraScreen() {
   const toggleSettings = useCallback(() => setShowSettings(prev => !prev), []);
 
   return (
-    <SafeAreaView style={[styles.container, darkMode && styles.containerDark]}>
+    <View style={[styles.container, darkMode && styles.containerDark]} >
       <ScreenBackground>
         {/* Progress Header */}
         <View style={[styles.progressContainer, darkMode && styles.progressContainerDark]}>
@@ -185,9 +185,9 @@ export default function HadraScreen() {
           <View style={[styles.overallProgressBar, darkMode && styles.overallProgressBarDark]}>
             <View style={[styles.overallProgressFill, { width: `${progress}%` }]} />
           </View>
-          <Text style={[styles.progressPercentage, darkMode && styles.progressPercentageDark]}>
+          {/* <Text style={[styles.progressPercentage, darkMode && styles.progressPercentageDark]}>
             {Math.round(progress)}%
-          </Text>
+          </Text> */}
         </View>
 
         <ScrollView 
@@ -279,7 +279,7 @@ export default function HadraScreen() {
           darkMode={darkMode}
         />
       </ScreenBackground>
-    </SafeAreaView>
+    </View>
   );
 }
 

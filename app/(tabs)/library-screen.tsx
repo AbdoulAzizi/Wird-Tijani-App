@@ -87,7 +87,7 @@ export default function LibraryScreen() {
   const currentCategory = categories.find(c => c.id === selectedCategory);
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <View style={styles.container}>
       <ScreenBackground>
         <View style={styles.wrapper}>
           {/* Header seulement pour la vue catégories */}
@@ -151,7 +151,7 @@ export default function LibraryScreen() {
           />
         </View>
       </ScreenBackground>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -159,7 +159,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
-    marginTop: -24,
   },
   wrapper: {
     flex: 1,

@@ -818,7 +818,7 @@ export default function LibraryScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <ScreenBackground>
       {/* <GradientHeader
         arabicTitle="المكتبة الروحية"
@@ -1091,7 +1091,7 @@ export default function LibraryScreen() {
         </View>
       </Modal>
       </ScreenBackground>
-    </SafeAreaView>
+    </View>
   );
 }
 

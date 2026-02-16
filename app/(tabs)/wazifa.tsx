@@ -174,7 +174,7 @@ export default function WazifaScreen() {
   }, [state.wazifaSettings.useJawhara, state.wazifaSettings.jawharaCount]);
 
   return (
-    <SafeAreaView style={[styles.container, darkMode && styles.containerDark]}>
+    <View style={[styles.container, darkMode && styles.containerDark]}>
       <ScreenBackground>
         {/* Progress Header */}
         <View style={[styles.progressContainer, darkMode && styles.progressContainerDark]}>
@@ -230,9 +230,9 @@ export default function WazifaScreen() {
           <View style={[styles.overallProgressBar, darkMode && styles.overallProgressBarDark]}>
             <View style={[styles.overallProgressFill, { width: `${progress}%` }]} />
           </View>
-          <Text style={[styles.progressPercentage, darkMode && styles.progressPercentageDark]}>
+          {/* <Text style={[styles.progressPercentage, darkMode && styles.progressPercentageDark]}>
             {Math.round(progress)}%
-          </Text>
+          </Text> */}
         </View>
 
         <ScrollView 
@@ -347,7 +347,7 @@ export default function WazifaScreen() {
           presentationStyle="pageSheet"
           onRequestClose={toggleSettings}
         >
-          <SafeAreaView style={[styles.modalContainer, darkMode && styles.modalContainerDark]}>
+          <SafeAreaView style={[styles.modalContainer, darkMode && styles.modalContainerDark]} >
             <View style={[styles.modalHeader, darkMode && styles.modalHeaderDark]}>
               <Text style={[styles.modalTitle, darkMode && styles.modalTitleDark]}>
                 Wazīfa Settings
@@ -491,7 +491,7 @@ export default function WazifaScreen() {
           darkMode={darkMode}
         />
       </ScreenBackground>
-    </SafeAreaView>
+    </View>
   );
 }
 

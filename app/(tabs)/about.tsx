@@ -112,10 +112,11 @@ export default function AboutScreen() {
   };
 
   return (
-    <SafeAreaView style={[
+    <View style={[
       styles.container,
       state.settings.darkMode && styles.containerDark
-    ]}>
+    ]} 
+    >
       <ScreenBackground>
       {/* <GradientHeader
         arabicTitle="حول التطبيق"
@@ -421,7 +422,7 @@ export default function AboutScreen() {
         <View style={styles.bottomSpacing} />
       </ScrollView>
       </ScreenBackground>
-    </SafeAreaView>
+    </View>
   );
 }
 
