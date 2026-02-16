@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { 
@@ -18,19 +18,19 @@ import {
   Sparkles,
   LucideIcon
 } from 'lucide-react-native';
-import GradientHeader from '../../components/GradientHeader';
 import { useApp } from '../../contexts/AppContext';
 import { openHadraMap } from "../../utils/OpenHadraMap";
 import QuickActionsBar from '../../components/QuickActionsBar';
+import PracticeCard from '../../components/PracticeCard';
 
 // Interface pour les cartes de pratique
-interface PracticeCard {
+interface PracticeCardData {
   id: string;
   title: string;
   arabicTitle: string;
   description: string;
   icon?: LucideIcon;
-  image?: any; // Pour les images requises avec require()
+  image?: any;
   color: string;
   lightColor: string;
   route: string;
@@ -47,15 +47,14 @@ interface QuickAction {
 }
 
 const { width } = Dimensions.get('window');
-const CARD_WIDTH = (width - 48) / 2;
 
-const practiceCards: PracticeCard[] = [
+const practiceCards: PracticeCardData[] = [
   {
     id: 'wird',
     title: 'Wird Tijāni',
     arabicTitle: 'الوِرد التجاني',
     description: 'Daily spiritual practice',
-    icon: Heart, // Utilise une icône
+    icon: Heart,
     color: '#DC2626',
     lightColor: '#FEE2E2',
     route: '/wird',
@@ -67,7 +66,7 @@ const practiceCards: PracticeCard[] = [
     title: 'Wazīfa Tijāniyya',
     arabicTitle: 'الوَظِيفَة التِّجَانِيَّة',
     description: 'Daily spiritual practice',
-    icon: Star, // Utilise une icône
+    icon: Star,
     color: '#D97706',
     lightColor: '#FEF3C7',
     route: '/wazifa',
@@ -79,9 +78,7 @@ const practiceCards: PracticeCard[] = [
     title: 'Haḍratu-Jumūʿa',
     arabicTitle: 'حضرة الجمعة',
     description: 'Friday spiritual gathering',
-    // Exemple avec image au lieu d'icône
-    // image: require('../../assets/images/hadra.png'), // Utilise une image
-    icon: Users, // Utilise une icône
+    icon: Users,
     color: '#7C3AED',
     lightColor: '#EDE9FE',
     route: '/hadra-jumua',
@@ -92,22 +89,20 @@ const practiceCards: PracticeCard[] = [
     id: 'hadra-map',
     title: 'Hadara Map',
     arabicTitle: 'خريطة الحضرة',
-    description: 'Find local Zawiya & spiritual gatherings',
-    // icon: MapPin, // Utilise une icône
-    image: require('../../assets/images/hadara-map-logo.png'), // Utilise une image
+    description: 'Find local Zawiya & gatherings',
+    image: require('../../assets/images/hadara-map-logo.png'),
     color: '#059669',
     lightColor: '#D1FAE5',
-    // lightColor: 'transparent',
     route: '/hadra-map',
     time: 'Dhikr, Prayer & Zakat',
     priority: 'low',
   },
-   {
+  {
     id: 'names-allah',
     title: 'Asmā\' Al-Husnā',
     arabicTitle: 'أسماء الله الحسنى',
     description: 'The 99 Beautiful Names of Allah',
-    icon: Sparkles, // Utilise une icône
+    icon: Sparkles,
     color: '#1e40af',
     lightColor: '#dbeafe',
     route: '/names',
@@ -118,10 +113,8 @@ const practiceCards: PracticeCard[] = [
     id: 'library',
     title: 'Spiritual Library',
     arabicTitle: 'المكتبة الروحية',
-    description: 'Sacred formulas, biographies & wisdom',
-    // Exemple avec image au lieu d'icône
-    // image: require('../../assets/images/library.png'), // Utilise une image
-    icon: BookOpen, // Utilise une icône
+    description: 'Sacred texts & wisdom',
+    icon: BookOpen,
     color: '#059669',
     lightColor: '#D1FAE5',
     route: '/library',
@@ -145,7 +138,7 @@ const quickActions: QuickAction[] = [
     color: '#7C3AED',
     action: 'schedule',
   },
-    {
+  {
     title: "Asm'a Al-Husn'a",
     description: 'The 99 Beautiful Names of Allah',
     icon: Sparkles,
@@ -171,58 +164,48 @@ const quickActions: QuickAction[] = [
 export default function HomeScreen() {
   const { state, getWirdProgress, getWazifaProgress } = useApp();
 
-const handleCardPress = (route: string) => {
-  switch (route) {
-    case '/wird':
-      router.push('/(tabs)/wird');
-      break;
-    case '/wazifa':
-      router.push('/(tabs)/wazifa');
-      break;
-    case '/names':
-      router.push('/(tabs)/names');
-      break;
-    case '/library':
-      router.push('/(tabs)/library');
-      break;
-    case '/hadra-jumua':
-      router.push('/(tabs)/hadra');
-      break;
-    case '/hadra-map':
-      console.log('Navigate to Hadra Map');
-      openHadraMap(); // ✅ Appel du composant indépendant
-      break;
-    default:
-      console.log(`Navigate to ${route}`);
-      break;
-  }
-};
+  const handleCardPress = (route: string) => {
+    switch (route) {
+      case '/wird':
+        router.push('/(tabs)/wird');
+        break;
+      case '/wazifa':
+        router.push('/(tabs)/wazifa');
+        break;
+      case '/names':
+        router.push('/(tabs)/names');
+        break;
+      case '/library':
+        router.push('/(tabs)/library');
+        break;
+      case '/hadra-jumua':
+        router.push('/(tabs)/hadra');
+        break;
+      case '/hadra-map':
+        openHadraMap();
+        break;
+      default:
+        console.log(`Navigate to ${route}`);
+        break;
+    }
+  };
 
   const handleQuickAction = (action: string) => {
     switch (action) {
       case 'continue':
-        // Navigate to the practice with highest priority or incomplete progress
         router.push('/(tabs)/wird');
         break;
       case 'schedule':
-        // Navigate to schedule/calendar view
-        console.log('Navigate to schedule');
         openHadraMap();
         break;
       case 'achievements':
-        // Navigate to achievements
         router.push('/(tabs)/stats');
-        console.log('Navigate to achievements');
         break;
       case 'names':
-        // Navigate to names
         router.push('/(tabs)/names');
-        console.log('Navigate to names');
         break;
       case 'library-screen':
-        // Navigate to library
         router.push('/(tabs)/library-screen');
-        console.log('Navigate to library');
         break;
       default:
         console.log(`Navigate to ${action}`);
@@ -230,77 +213,29 @@ const handleCardPress = (route: string) => {
     }
   };
 
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return { 
-      text: 'Good Morning', 
-      icon: Sunrise, 
-      arabic: 'صباح الخير',
-      message: 'Start your day with remembrance'
-    };
-    if (hour < 18) return { 
-      text: 'Good Afternoon', 
-      icon: Calendar, 
-      arabic: 'مساء الخير',
-      message: 'Continue your spiritual journey'
-    };
-    return { 
-      text: 'Good Evening', 
-      icon: Moon, 
-      arabic: 'مساء الخير',
-      message: 'End your day with gratitude'
-    };
-  };
-
-  const greeting = getGreeting();
-  const GreetingIcon = greeting.icon;
-
   // Get today's progress stats
   const wirdProgress = getWirdProgress();
   const wazifaProgress = getWazifaProgress();
   const totalProgress = Math.round((wirdProgress + wazifaProgress) / 2);
-  const streak = 5; // This should come from your context
+  const streak = state.streak || 0;
 
-  // Fonction pour rendre l'icône ou l'image
-  const renderCardIcon = (card: PracticeCard, isDarkMode: boolean) => {
-    if (card.image) {
-      // Si c'est une image
-      return (
-        <Image
-          source={card.image}
-          style={[
-            styles.cardImage,
-            isDarkMode && styles.cardImageDark
-          ]}
-          resizeMode="cover"
-        />
-      );
-    } else if (card.icon) {
-      // Si c'est une icône
-      const CardIcon = card.icon;
-      return (
-        <CardIcon 
-          color={isDarkMode ? "#FFFFFF" : card.color} 
-          size={24} 
-        />
-      );
+  // Get progress for specific cards
+  const getCardProgress = (cardId: string): number => {
+    switch (cardId) {
+      case 'wird':
+        return wirdProgress;
+      case 'wazifa':
+        return wazifaProgress;
+      default:
+        return 0;
     }
-    return null;
   };
 
   return (
     <View style={[
       styles.container,
       state.settings.darkMode && styles.containerDark
-    ]}
-    >
-      {/* <GradientHeader
-        arabicTitle="بِسْمِ اللّٰهِ الرَّحْمٰنِ الرَّحِيمِ"
-        englishTitle="Wird & Wazīfa Tijāniyya"
-        subtitle="Spiritual Practice Companion"
-        icon={<Heart color="#FFFFFF" size={32} fill="#FFFFFF" />}
-      /> */}
-
+    ]}>
       <ScrollView 
         style={styles.scrollView} 
         showsVerticalScrollIndicator={false}
@@ -322,7 +257,7 @@ const handleCardPress = (route: string) => {
             ]}>
               <View style={styles.progressHeader}>
                 <View style={styles.progressIconContainer}>
-                  <TrendingUp color="#059669" size={24} />
+                  <TrendingUp color="#059669" size={24} strokeWidth={2} />
                 </View>
                 <View style={styles.progressInfo}>
                   <Text style={[
@@ -339,12 +274,11 @@ const handleCardPress = (route: string) => {
                   </Text>
                 </View>
                 <View style={styles.streakContainer}>
-                  <Text style={[
-                    styles.streakValue,
-                    state.settings.darkMode && styles.streakValueDark
-                  ]}>
-                    {streak}
-                  </Text>
+                  <View style={styles.streakBadge}>
+                    <Text style={styles.streakValue}>
+                      {streak}
+                    </Text>
+                  </View>
                   <Text style={[
                     styles.streakLabel,
                     state.settings.darkMode && styles.streakLabelDark
@@ -373,60 +307,14 @@ const handleCardPress = (route: string) => {
 
         {/* Quick Actions */}
         <View style={styles.quickActionsSection}>
-          
-           <QuickActionsBar
+          <QuickActionsBar
             quickActions={quickActions}
             handleQuickAction={handleQuickAction}
             darkMode={state.settings.darkMode}
           />
-          {/* <Text style={[
-            styles.sectionTitle, {
-              marginHorizontal: 20, marginBottom: 10,
-            },
-            state.settings.darkMode && styles.sectionTitleDark
-          ]}>
-            Quick Actions
-          </Text>
-          
-          <ScrollView 
-            horizontal 
-            showsHorizontalScrollIndicator={true}
-            contentContainerStyle={styles.quickActionsContainer}
-          >
-            {quickActions.map((action, index) => {
-              const ActionIcon = action.icon;
-              return (
-                <TouchableOpacity
-                  key={index}
-                  style={[
-                    styles.quickActionCard,
-                    state.settings.darkMode && styles.quickActionCardDark
-                  ]}
-                  onPress={() => handleQuickAction(action.action)}
-                  activeOpacity={0.7}
-                >
-                  <View style={[styles.quickActionIcon, { backgroundColor: action.color }]}>
-                    <ActionIcon color="#FFFFFF" size={20} />
-                  </View>
-                  <Text style={[
-                    styles.quickActionTitle,
-                    state.settings.darkMode && styles.quickActionTitleDark
-                  ]}>
-                    {action.title}
-                  </Text>
-                  <Text style={[
-                    styles.quickActionDescription,
-                    state.settings.darkMode && styles.quickActionDescriptionDark
-                  ]}>
-                    {action.description}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView> */}
         </View>
 
-        {/* Redesigned Practice Cards */}
+        {/* Practice Cards Grid */}
         <View style={styles.practiceSection}>
           <View style={styles.sectionHeader}>
             <Text style={[
@@ -435,105 +323,22 @@ const handleCardPress = (route: string) => {
             ]}>
               Spiritual Practices
             </Text>
-            <TouchableOpacity style={styles.seeAllButton}>
-              <Text style={styles.seeAllText}>See All</Text>
-              <ChevronRight color="#6B7280" size={16} />
-            </TouchableOpacity>
           </View>
 
           <View style={styles.cardsGrid}>
-            {practiceCards.map((card) => {
-              const isWird = card.id === 'wird';
-              const isWazifa = card.id === 'wazifa';
-              const progress = isWird ? wirdProgress : isWazifa ? wazifaProgress : 0;
-              
-              return (
-                <TouchableOpacity
-                  key={card.id}
-                  style={[
-                    styles.practiceCard,
-                    state.settings.darkMode && styles.practiceCardDark,
-                    { width: CARD_WIDTH }
-                  ]}
-                  onPress={() => handleCardPress(card.route)}
-                  activeOpacity={0.8}
-                >
-                  <View style={styles.cardHeader}>
-                    <View style={[
-                      styles.cardIconContainer,
-                      card.image && styles.cardIconContainerImage,
-                      state.settings.darkMode 
-                        ? { backgroundColor: card.color }
-                        : { backgroundColor: card.lightColor }
-                    ]}>
-                      {renderCardIcon(card, state.settings.darkMode)}
-                    </View>
-                    {card.priority === 'high' && (
-                      <View style={styles.priorityBadge}>
-                        <Text style={styles.priorityText}>Priority</Text>
-                      </View>
-                    )}
-                  </View>
-                  
-                  <Text style={[
-                    styles.cardArabicTitle,
-                    state.settings.darkMode && styles.cardArabicTitleDark
-                  ]}>
-                    {card.arabicTitle}
-                  </Text>
-                  
-                  <Text style={[
-                    styles.cardTitle,
-                    state.settings.darkMode && styles.cardTitleDark
-                  ]}>
-                    {card.title}
-                  </Text>
-                  
-                  <Text style={[
-                    styles.cardDescription,
-                    state.settings.darkMode && styles.cardDescriptionDark
-                  ]}>
-                    {card.description}
-                  </Text>
-
-                  {(isWird || isWazifa) && progress > 0 && (
-                    <View style={styles.cardProgressContainer}>
-                      <View style={[
-                        styles.cardProgressBar,
-                        state.settings.darkMode && styles.cardProgressBarDark
-                      ]}>
-                        <View 
-                          style={[
-                            styles.cardProgressFill,
-                            { width: `${progress}%`, backgroundColor: card.color }
-                          ]} 
-                        />
-                      </View>
-                      <Text style={[
-                        styles.cardProgressText,
-                        state.settings.darkMode && styles.cardProgressTextDark
-                      ]}>
-                        {Math.round(progress)}%
-                      </Text>
-                    </View>
-                  )}
-                  
-                  <View style={styles.cardFooter}>
-                    <Clock color="#9CA3AF" size={12} />
-                    <Text style={[
-                      styles.cardTime,
-                      state.settings.darkMode && styles.cardTimeDark
-                    ]}>
-                      {card.time}
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-              );
-            })}
+            {practiceCards.map((card) => (
+              <PracticeCard
+                key={card.id}
+                card={card}
+                progress={getCardProgress(card.id)}
+                onPress={handleCardPress}
+                darkMode={state.settings.darkMode}
+              />
+            ))}
           </View>
         </View>
 
-          {/* Featured: 99 Names of Allah */}
+        {/* Featured: 99 Names of Allah */}
         <TouchableOpacity
           style={[
             styles.featuredCard,
@@ -546,7 +351,7 @@ const handleCardPress = (route: string) => {
             <View style={styles.featuredContent}>
               <View style={styles.featuredLeft}>
                 <View style={styles.featuredIconContainer}>
-                  <Sparkles color="#FFFFFF" size={32} />
+                  <Sparkles color="#FFFFFF" size={32} strokeWidth={2} />
                 </View>
                 <View style={styles.featuredTextContainer}>
                   <Text style={styles.featuredArabicTitle}>
@@ -577,7 +382,7 @@ const handleCardPress = (route: string) => {
           <View style={styles.libraryContent}>
             <View style={styles.libraryLeft}>
               <View style={styles.libraryIconContainer}>
-                <BookOpen color="#FFFFFF" size={28} />
+                <BookOpen color="#FFFFFF" size={28} strokeWidth={2} />
               </View>
               <View style={styles.libraryTextContainer}>
                 <Text style={styles.libraryTitle}>
@@ -592,7 +397,7 @@ const handleCardPress = (route: string) => {
           </View>
         </TouchableOpacity>
 
-        {/* Inspirational Quote with better design */}
+        {/* Inspirational Quote */}
         <View style={[
           styles.quoteContainer,
           state.settings.darkMode && styles.quoteContainerDark
@@ -651,13 +456,13 @@ const styles = StyleSheet.create({
   },
   progressMainCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 20,
+    borderRadius: 24,
     padding: 24,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 5,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.1,
+    shadowRadius: 16,
+    elevation: 6,
   },
   progressMainCardDark: {
     backgroundColor: '#1E293B',
@@ -668,9 +473,9 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   progressIconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
     backgroundColor: '#F0FDF4',
     justifyContent: 'center',
     alignItems: 'center',
@@ -680,9 +485,10 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   progressValue: {
-    fontSize: 24,
-    fontWeight: 'bold',
+    fontSize: 28,
+    fontWeight: '800',
     color: '#1E293B',
+    letterSpacing: -0.5,
   },
   progressValueDark: {
     color: '#F8FAFC',
@@ -691,6 +497,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#64748B',
     marginTop: 2,
+    fontWeight: '600',
   },
   progressLabelDark: {
     color: '#CBD5E1',
@@ -698,18 +505,24 @@ const styles = StyleSheet.create({
   streakContainer: {
     alignItems: 'center',
   },
+  streakBadge: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#FEF3C7',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
   streakValue: {
-    fontSize: 20,
-    fontWeight: 'bold',
+    fontSize: 18,
+    fontWeight: '800',
     color: '#D97706',
   },
-  streakValueDark: {
-    color: '#FBBF24',
-  },
   streakLabel: {
-    fontSize: 12,
+    fontSize: 11,
     color: '#64748B',
-    marginTop: 2,
+    fontWeight: '600',
   },
   streakLabelDark: {
     color: '#CBD5E1',
@@ -718,9 +531,9 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   progressBar: {
-    height: 8,
+    height: 10,
     backgroundColor: '#F1F5F9',
-    borderRadius: 4,
+    borderRadius: 5,
     overflow: 'hidden',
   },
   progressBarDark: {
@@ -729,68 +542,48 @@ const styles = StyleSheet.create({
   progressFill: {
     height: '100%',
     backgroundColor: '#059669',
-    borderRadius: 4,
+    borderRadius: 5,
   },
 
   // Quick Actions
   quickActionsSection: {
-    // marginLeft: 4,
+    marginTop: 24,
   },
-  quickActionsContainer: {
+
+  // Practice Section
+  practiceSection: {
+    marginTop: 32,
     paddingHorizontal: 16,
-    paddingVertical: 4,
   },
-  quickActionCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 16,
-    marginRight: 12,
-    width: 140,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  quickActionCardDark: {
-    backgroundColor: '#1E293B',
-  },
-  quickActionIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  quickActionTitle: {
-    fontSize: 14,
-    fontWeight: '600',
+  sectionTitle: {
+    fontSize: 22,
+    fontWeight: '800',
     color: '#1E293B',
-    marginBottom: 4,
+    letterSpacing: -0.5,
   },
-  quickActionTitleDark: {
+  sectionTitleDark: {
     color: '#F8FAFC',
   },
-  quickActionDescription: {
-    fontSize: 12,
-    color: '#64748B',
-    lineHeight: 16,
+  sectionHeader: {
+    marginBottom: 20,
   },
-  quickActionDescriptionDark: {
-    color: '#CBD5E1',
+  cardsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    gap: 16,
   },
 
   // Featured Card for 99 Names
   featuredCard: {
     marginHorizontal: 16,
-    marginTop: 24,
-    borderRadius: 20,
+    marginTop: 32,
+    borderRadius: 24,
     overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
+    shadowColor: '#1e40af',
+    shadowOffset: { width: 0, height: 12 },
     shadowOpacity: 0.3,
-    shadowRadius: 16,
+    shadowRadius: 20,
     elevation: 8,
   },
   featuredCardDark: {
@@ -811,9 +604,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   featuredIconContainer: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     backgroundColor: 'rgba(255, 255, 255, 0.15)',
     justifyContent: 'center',
     alignItems: 'center',
@@ -825,179 +618,19 @@ const styles = StyleSheet.create({
   featuredArabicTitle: {
     fontSize: 16,
     color: 'rgba(255, 255, 255, 0.9)',
-    marginBottom: 4,
+    marginBottom: 6,
     textAlign: 'right',
   },
   featuredTitle: {
     fontSize: 18,
     fontWeight: '700',
     color: '#FFFFFF',
-    marginBottom: 4,
+    marginBottom: 6,
   },
   featuredSubtitle: {
     fontSize: 14,
     color: 'rgba(255, 255, 255, 0.8)',
-    lineHeight: 18,
-  },
-
-  // Section Headers
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#1E293B',
-  },
-  sectionTitleDark: {
-    color: '#F8FAFC',
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  seeAllButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-  },
-  seeAllText: {
-    fontSize: 14,
-    color: '#6B7280',
-    marginRight: 4,
-    fontWeight: '500',
-  },
-
-  // Practice Section
-  practiceSection: {
-    marginTop: 32,
-    paddingHorizontal: 16,
-  },
-  cardsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    gap: 16,
-  },
-  practiceCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 5,
-  },
-  practiceCardDark: {
-    backgroundColor: '#1E293B',
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 16,
-  },
-  cardIconContainer: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  // Nouveau style pour les containers d'images
-  cardIconContainerImage: {
-    overflow: 'hidden',
-    backgroundColor: 'transparent',
-  },
-  // Style pour les images dans les cartes
-  cardImage: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-  },
-  cardImageDark: {
-    opacity: 0.9,
-  },
-  priorityBadge: {
-    backgroundColor: '#FEF3C7',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 8,
-  },
-  priorityText: {
-    fontSize: 10,
-    color: '#D97706',
-    fontWeight: '600',
-  },
-  cardArabicTitle: {
-    fontSize: 16,
-    color: '#1E293B',
-    fontFamily: 'Amiri_400Regular',
-    marginBottom: 4,
-  },
-  cardArabicTitleDark: {
-    color: '#F8FAFC',
-  },
-  cardTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1E293B',
-    marginBottom: 6,
-  },
-  cardTitleDark: {
-    color: '#F8FAFC',
-  },
-  cardDescription: {
-    fontSize: 13,
-    color: '#64748B',
-    marginBottom: 16,
-    lineHeight: 18,
-  },
-  cardDescriptionDark: {
-    color: '#CBD5E1',
-  },
-  cardProgressContainer: {
-    marginBottom: 16,
-  },
-  cardProgressBar: {
-    height: 3,
-    backgroundColor: '#F1F5F9',
-    borderRadius: 2,
-    overflow: 'hidden',
-    marginBottom: 6,
-  },
-  cardProgressBarDark: {
-    backgroundColor: '#334155',
-  },
-  cardProgressFill: {
-    height: '100%',
-    borderRadius: 2,
-  },
-  cardProgressText: {
-    fontSize: 11,
-    color: '#64748B',
-    textAlign: 'right',
-    fontWeight: '500',
-  },
-  cardProgressTextDark: {
-    color: '#CBD5E1',
-  },
-  cardFooter: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderTopWidth: 1,
-    borderTopColor: '#F1F5F9',
-    paddingTop: 12,
-  },
-  cardTime: {
-    fontSize: 11,
-    color: '#9CA3AF',
-    fontWeight: '500',
-    marginLeft: 4,
-  },
-  cardTimeDark: {
-    color: '#9CA3AF',
+    lineHeight: 20,
   },
 
   // Library Card
@@ -1005,7 +638,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#059669',
     marginHorizontal: 16,
     marginTop: 24,
-    borderRadius: 20,
+    borderRadius: 24,
     padding: 24,
     shadowColor: '#059669',
     shadowOffset: { width: 0, height: 8 },
@@ -1027,9 +660,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   libraryIconContainer: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
     justifyContent: 'center',
     alignItems: 'center',
@@ -1047,22 +680,22 @@ const styles = StyleSheet.create({
   librarySubtitle: {
     fontSize: 14,
     color: 'rgba(255, 255, 255, 0.8)',
-    lineHeight: 18,
+    lineHeight: 20,
   },
 
   // Quote
   quoteContainer: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 20,
+    borderRadius: 24,
     padding: 28,
     marginHorizontal: 16,
     marginTop: 24,
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 5,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.1,
+    shadowRadius: 16,
+    elevation: 6,
     borderLeftWidth: 4,
     borderLeftColor: '#059669',
   },

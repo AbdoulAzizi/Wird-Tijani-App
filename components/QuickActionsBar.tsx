@@ -27,7 +27,7 @@ export default function QuickActionsBar({
   const ITEM_WIDTH = 140 + 12;
 
   return (
-    <View style={{ marginTop: 32 }}>
+    <View style={{ marginTop: 4 }}>
       <Text style={[styles.sectionTitle, darkMode && styles.sectionTitleDark]}>
         Quick Actions
       </Text>
