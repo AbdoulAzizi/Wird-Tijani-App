@@ -1,8 +1,13 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { Minus, Plus, RotateCcw, Volume2 } from 'lucide-react-native';
+import React, { useEffect, useRef, useCallback } from 'react';
+import {
+  View, Text, StyleSheet, TouchableOpacity,
+  Animated, Easing, Platform
+} from 'react-native';
+import { Minus, Plus, RotateCcw, Volume2, CheckCircle } from 'lucide-react-native';
+import * as Haptics from 'expo-haptics';
 import { useApp } from '../contexts/AppContext';
 
+// ─── Types ────────────────────────────────────────────────────────────────────
 interface DhikrCardProps {
   title: string;
   arabic: string;
@@ -18,6 +23,19 @@ interface DhikrCardProps {
   blessing?: string;
 }
 
+// ─── Haptic helper ────────────────────────────────────────────────────────────
+const haptic = (type: 'light' | 'medium' | 'success') => {
+  if (Platform.OS !== 'ios') return;
+  if (type === 'success') {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+  } else if (type === 'medium') {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+  } else {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  }
+};
+
+// ─── Main Component ───────────────────────────────────────────────────────────
 export default function DhikrCard({
   title,
   arabic,
@@ -32,365 +50,542 @@ export default function DhikrCard({
   status = 'active',
   blessing,
 }: DhikrCardProps) {
-  const { state } = useApp();
+  const { state }  = useApp();
+  const dark       = state.settings.darkMode;
   const isComplete = count >= target;
   const isDisabled = status === 'disabled';
-  const progressPercentage = (count / target) * 100;
+  const progress   = Math.min((count / target) * 100, 100);
+  const remaining  = Math.max(target - count, 0);
 
-  const getCardStyle = () => {
-    if (state.settings.darkMode) {
-      if (status === 'completed') return [styles.card, styles.cardDark, styles.cardCompleted];
-      if (status === 'disabled') return [styles.card, styles.cardDark, styles.cardDisabled];
-      return [styles.card, styles.cardDark];
-    } else {
-      if (status === 'completed') return [styles.card, styles.cardCompletedLight];
-      if (status === 'disabled') return [styles.card, styles.cardDisabled];
-      return styles.card;
+  // ── Animated values ──
+  const progressAnim  = useRef(new Animated.Value(0)).current;
+  const countScale    = useRef(new Animated.Value(1)).current;
+  const btnScale      = useRef(new Animated.Value(1)).current;
+  const completionBg  = useRef(new Animated.Value(0)).current;
+  const blessingSlide = useRef(new Animated.Value(20)).current;
+  const blessingFade  = useRef(new Animated.Value(0)).current;
+
+  // Animate progress bar
+  useEffect(() => {
+    Animated.timing(progressAnim, {
+      toValue: progress,
+      duration: 500,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: false,
+    }).start();
+  }, [progress]);
+
+  // Animate counter pop on each increment
+  useEffect(() => {
+    if (count > 0) {
+      Animated.sequence([
+        Animated.spring(countScale, { toValue: 1.25, useNativeDriver: true, damping: 8, stiffness: 400 }),
+        Animated.spring(countScale, { toValue: 1,    useNativeDriver: true, damping: 12, stiffness: 200 }),
+      ]).start();
     }
-  };
+  }, [count]);
+
+  // Completion celebration
+  useEffect(() => {
+    if (isComplete) {
+      haptic('success');
+      Animated.parallel([
+        Animated.spring(completionBg, { toValue: 1, useNativeDriver: false, damping: 14 }),
+        Animated.timing(blessingFade, { toValue: 1, duration: 500, delay: 300, useNativeDriver: true }),
+        Animated.spring(blessingSlide, { toValue: 0, useNativeDriver: true, damping: 14, delay: 300 }),
+      ]).start();
+    } else {
+      completionBg.setValue(0);
+      blessingFade.setValue(0);
+      blessingSlide.setValue(20);
+    }
+  }, [isComplete]);
+
+  // Press animation for + button
+  const handleIncrement = useCallback(() => {
+    if (isDisabled || isComplete) return;
+    haptic('light');
+    Animated.sequence([
+      Animated.spring(btnScale, { toValue: 0.87, useNativeDriver: true, damping: 8,  stiffness: 500 }),
+      Animated.spring(btnScale, { toValue: 1,    useNativeDriver: true, damping: 12, stiffness: 250 }),
+    ]).start();
+    onIncrement();
+  }, [isDisabled, isComplete, onIncrement]);
+
+  const handleDecrement = useCallback(() => {
+    if (isDisabled || count <= 0) return;
+    haptic('light');
+    onDecrement();
+  }, [isDisabled, count, onDecrement]);
+
+  const handleReset = useCallback(() => {
+    if (isDisabled) return;
+    haptic('medium');
+    onReset();
+  }, [isDisabled, onReset]);
+
+  // ── Dynamic colors ──
+  const cardBg = dark
+    ? (isComplete ? '#052E16' : '#1E293B')
+    : (isComplete ? '#FAFFFE' : '#FFFFFF');
+
+  const progressWidth = progressAnim.interpolate({
+    inputRange: [0, 100],
+    outputRange: ['0%', '100%'],
+  });
+
+  const accentBorderColor = isComplete ? '#059669' : (dark ? '#334155' : '#E2E8F0');
 
   return (
-    <View style={getCardStyle()}>
-      <View style={styles.cardHeader}>
-        <Text style={[
-          styles.title, 
-          state.settings.darkMode && styles.titleDark,
-          isDisabled && styles.titleDisabled
-        ]}>
-          {title}
-        </Text>
-        {onPlayAudio && (
-          <TouchableOpacity 
-            onPress={onPlayAudio} 
-            style={[
-              styles.audioButton,
-              state.settings.darkMode && styles.audioButtonDark,
-              isDisabled && styles.audioButtonDisabled
-            ]}
-            disabled={isDisabled}
-          >
-            <Volume2 color={isDisabled ? '#9CA3AF' : '#059669'} size={20} />
-          </TouchableOpacity>
-        )}
+    <View style={[
+      styles.card,
+      { backgroundColor: cardBg },
+      { borderColor: accentBorderColor },
+      isDisabled && styles.cardDisabled,
+    ]}>
+
+      {/* ── Top progress strip ── */}
+      <View style={[styles.strip, dark ? styles.stripDark : null]}>
+        <Animated.View style={[
+          styles.stripFill,
+          {
+            width: progressWidth,
+            backgroundColor: isComplete ? '#F59E0B' : '#059669',
+          }
+        ]} />
       </View>
 
-      <Text style={[
-        styles.arabic, 
-        state.settings.darkMode && styles.arabicDark,
-        isDisabled && styles.textDisabled
-      ]}>
-        {arabic}
-      </Text>
-      <Text style={[
-        styles.transliteration,
-        state.settings.darkMode && styles.transliterationDark,
-        isDisabled && styles.textDisabled
-      ]}>
-        {transliteration}
-      </Text>
-      <Text style={[
-        styles.translation,
-        state.settings.darkMode && styles.translationDark,
-        isDisabled && styles.textDisabled
-      ]}>
-        {translation}
-      </Text>
-
-      {/* Progress Bar */}
-      <View style={styles.progressContainer}>
+      {/* ── Header: title + audio ── */}
+      <View style={styles.header}>
         <View style={[
-          styles.progressBar,
-          state.settings.darkMode && styles.progressBarDark
+          styles.titlePill,
+          { backgroundColor: isComplete
+              ? (dark ? '#14532D' : '#D1FAE5')
+              : (dark ? '#1E3A2F' : '#F0FDF4') }
         ]}>
-          <View 
-            style={[
-              styles.progressFill,
-              { width: `${progressPercentage}%` },
-              isComplete && styles.progressComplete
-            ]} 
-          />
-        </View>
-      </View>
-
-      <View style={styles.counterContainer}>
-        <View style={[styles.countDisplay, isComplete && styles.countComplete]}>
-          <Text style={[
-            styles.countText, 
-            isComplete && styles.countTextComplete,
-            state.settings.darkMode && !isComplete && styles.countTextDark
-          ]}>
-            {count}
+          <Text style={[styles.title, dark && styles.titleDark]}>
+            {title}
           </Text>
         </View>
-        <Text style={[
-          styles.targetText,
-          state.settings.darkMode && styles.targetTextDark,
-          isDisabled && styles.textDisabled
-        ]}>
-          of {target}
+
+        <View style={styles.headerRight}>
+          <Text style={[styles.remainingText, dark && styles.remainingTextDark, isComplete && styles.remainingComplete]}>
+            {isComplete ? '✓ Done' : `${remaining} left`}
+          </Text>
+          {onPlayAudio && (
+            <TouchableOpacity
+              onPress={onPlayAudio}
+              disabled={isDisabled}
+              style={[styles.audioBtn, dark && styles.audioBtnDark]}
+              activeOpacity={0.7}
+            >
+              <Volume2 color={isDisabled ? '#9CA3AF' : '#059669'} size={18} strokeWidth={2} />
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
+
+      {/* ── Arabic text block ── */}
+      <View style={[
+        styles.arabicBlock,
+        dark ? styles.arabicBlockDark : null,
+        isComplete && (dark ? styles.arabicBlockCompleteDark : styles.arabicBlockCompleteLight),
+      ]}>
+        <Text style={[styles.arabic, dark && styles.arabicDark, isDisabled && styles.muted]} numberOfLines={4}>
+          {arabic}
+        </Text>
+        <View style={styles.dividerLine} />
+        <Text style={[styles.transliteration, dark && styles.transliterationDark, isDisabled && styles.muted]}>
+          {transliteration}
+        </Text>
+        <Text style={[styles.translation, dark && styles.translationDark, isDisabled && styles.muted]}>
+          {translation}
         </Text>
       </View>
 
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity
-          onPress={onDecrement}
-          style={[
-            styles.button, 
-            styles.decrementButton,
-            state.settings.darkMode && styles.decrementButtonDark
-          ]}
-          disabled={count <= 0 || isDisabled}
-        >
-          <Minus color={count <= 0 || isDisabled ? '#D1D5DB' : '#6B7280'} size={24} />
-        </TouchableOpacity>
+      {/* ── Counter + Controls ── */}
+      <View style={styles.counterRow}>
 
-        <TouchableOpacity
-          onPress={onIncrement}
-          style={[styles.button, styles.incrementButton]}
-          disabled={count >= target || isDisabled}
-        >
-          <Plus color={count >= target || isDisabled ? '#9CA3AF' : '#FFFFFF'} size={24} />
-        </TouchableOpacity>
+        {/* Circular counter display */}
+        <View style={styles.ringSection}>
+          <View style={[
+            styles.ringOuter,
+            { borderColor: isComplete ? '#F59E0B' : (dark ? '#334155' : '#E2E8F0') }
+          ]}>
+            <View style={[
+              styles.ringInner,
+              { backgroundColor: isComplete ? '#059669' : (dark ? '#0F172A' : '#F8FAFC') }
+            ]}>
+              {isComplete ? (
+                <CheckCircle color="#FFFFFF" size={30} strokeWidth={2.5} />
+              ) : (
+                <Animated.Text
+                  style={[
+                    styles.countText,
+                    dark && styles.countTextDark,
+                    { transform: [{ scale: countScale }] }
+                  ]}
+                >
+                  {count}
+                </Animated.Text>
+              )}
+            </View>
+          </View>
+          <Text style={[styles.ofTarget, dark && styles.ofTargetDark]}>of {target}</Text>
+        </View>
 
-        <TouchableOpacity 
-          onPress={onReset} 
-          style={[
-            styles.button, 
-            styles.resetButton,
-            state.settings.darkMode && styles.resetButtonDark
-          ]}
-          disabled={isDisabled}
-        >
-          <RotateCcw color={isDisabled ? '#9CA3AF' : '#6B7280'} size={20} />
-        </TouchableOpacity>
+        {/* Right side: bar + buttons */}
+        <View style={styles.rightSection}>
+          {/* Progress percentage row */}
+          <View style={styles.progressRow}>
+            <View style={[styles.progressTrack, dark && styles.progressTrackDark]}>
+              <Animated.View style={[
+                styles.progressFill,
+                {
+                  width: progressWidth,
+                  backgroundColor: isComplete ? '#F59E0B' : '#059669',
+                }
+              ]} />
+            </View>
+            <Text style={[styles.pct, dark && styles.pctDark, isComplete && styles.pctComplete]}>
+              {Math.round(progress)}%
+            </Text>
+          </View>
+
+          {/* − / + / ↺ */}
+          <View style={styles.buttons}>
+            {/* Decrement */}
+            <TouchableOpacity
+              onPress={handleDecrement}
+              disabled={count <= 0 || isDisabled}
+              style={[
+                styles.sideBtn,
+                dark && styles.sideBtnDark,
+                (count <= 0 || isDisabled) && styles.btnDisabled,
+              ]}
+              activeOpacity={0.7}
+            >
+              <Minus
+                color={(count <= 0 || isDisabled) ? (dark ? '#475569' : '#D1D5DB') : (dark ? '#CBD5E1' : '#475569')}
+                size={20} strokeWidth={2.5}
+              />
+            </TouchableOpacity>
+
+            {/* Main + button */}
+            <Animated.View style={{ transform: [{ scale: btnScale }] }}>
+              <TouchableOpacity
+                onPress={handleIncrement}
+                disabled={isComplete || isDisabled}
+                style={[
+                  styles.mainBtn,
+                  isComplete && styles.mainBtnComplete,
+                  isDisabled && styles.mainBtnDisabled,
+                ]}
+                activeOpacity={0.85}
+              >
+                {isComplete
+                  ? <CheckCircle color="#FFFFFF" size={28} strokeWidth={2.5} />
+                  : <Plus        color="#FFFFFF"      size={28} strokeWidth={2.5} />
+                }
+              </TouchableOpacity>
+            </Animated.View>
+
+            {/* Reset */}
+            <TouchableOpacity
+              onPress={handleReset}
+              disabled={isDisabled}
+              style={[
+                styles.sideBtn,
+                dark && styles.sideBtnDark,
+                isDisabled && styles.btnDisabled,
+              ]}
+              activeOpacity={0.7}
+            >
+              <RotateCcw
+                color={isDisabled ? (dark ? '#475569' : '#D1D5DB') : (dark ? '#CBD5E1' : '#475569')}
+                size={18} strokeWidth={2.5}
+              />
+            </TouchableOpacity>
+          </View>
+        </View>
       </View>
 
+      {/* ── Blessing banner (completion only) ── */}
       {blessing && isComplete && (
-        <View style={styles.blessingContainer}>
-          <Text style={[
-            styles.blessingArabic,
-            state.settings.darkMode && styles.blessingArabicDark
-          ]}>
+        <Animated.View style={[
+          styles.blessing,
+          {
+            opacity: blessingFade,
+            transform: [{ translateY: blessingSlide }],
+          }
+        ]}>
+          <View style={[styles.blessingDivider, dark && styles.blessingDividerDark]} />
+          <Text style={[styles.blessingArabic, dark && styles.blessingArabicDark]}>
             {blessing}
           </Text>
-          <Text style={[
-            styles.blessingTranslation,
-            state.settings.darkMode && styles.blessingTranslationDark
-          ]}>
-            May Allah bless you
+          <Text style={[styles.blessingTrans, dark && styles.blessingTransDark]}>
+            May Allah accept and bless you 🤲
           </Text>
-        </View>
+        </Animated.View>
       )}
     </View>
   );
 }
 
+// ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 20,
+    borderRadius: 24,
     marginHorizontal: 16,
-    marginVertical: 8,
+    marginVertical: 10,
+    borderWidth: 1.5,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.09,
+    shadowRadius: 18,
+    elevation: 6,
+    overflow: 'hidden',
   },
-  cardDark: {
-    backgroundColor: '#1F2937',
+  cardDisabled: { opacity: 0.5 },
+
+  // Progress strip
+  strip: {
+    height: 5,
+    backgroundColor: '#E2E8F0',
   },
-  cardCompletedLight: {
-    backgroundColor: '#059669',
-  },
-  cardCompleted: {
-    backgroundColor: '#059669',
-  },
-  cardDisabled: {
-    // opacity: 0.5, //default opacity
-    opacity: 0.8,
-  },
-  cardHeader: {
+  stripDark: { backgroundColor: '#334155' },
+  stripFill: { height: '100%' },
+
+  // Header
+  header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    paddingHorizontal: 18,
+    paddingTop: 16,
+    paddingBottom: 12,
+  },
+  titlePill: {
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 10,
   },
   title: {
-    fontSize: 18,
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#059669',
+    letterSpacing: 0.2,
+  },
+  titleDark: { color: '#10B981' },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  remainingText: {
+    fontSize: 12,
     fontWeight: '600',
-    color: '#1F2937',
+    color: '#94A3B8',
   },
-  titleDark: {
-    color: '#FFFFFF',
+  remainingTextDark: { color: '#64748B' },
+  remainingComplete: { color: '#059669' },
+  audioBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: '#F0FDF4',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: '#D1FAE5',
   },
-  titleDisabled: {
-    color: '#9CA3AF',
+  audioBtnDark: { backgroundColor: '#1E3A2F', borderColor: '#065F46' },
+
+  // Arabic block
+  arabicBlock: {
+    marginHorizontal: 16,
+    marginBottom: 20,
+    borderRadius: 16,
+    paddingVertical: 22,
+    paddingHorizontal: 18,
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+    alignItems: 'center',
   },
-  audioButton: {
-    padding: 8,
-    borderRadius: 8,
-    backgroundColor: '#F3F4F6',
-  },
-  audioButtonDark: {
-    backgroundColor: '#374151',
-  },
-  audioButtonDisabled: {
-    backgroundColor: '#F3F4F6',
-    opacity: 0.5,
-  },
+  arabicBlockDark: { backgroundColor: '#0F172A', borderColor: '#1E293B' },
+  arabicBlockCompleteLight: { borderColor: '#A7F3D0', backgroundColor: '#F0FDF4' },
+  arabicBlockCompleteDark:  { borderColor: '#065F46', backgroundColor: '#042F20' },
   arabic: {
-    fontSize: 24,
+    fontSize: 28,
     textAlign: 'center',
-    color: '#1F2937',
-    marginBottom: 12,
-    lineHeight: 36,
+    color: '#1E293B',
+    lineHeight: 46,
     fontFamily: 'Amiri_400Regular',
+    marginBottom: 14,
   },
-  arabicDark: {
-    color: '#FFFFFF',
+  arabicDark: { color: '#F1F5F9' },
+  dividerLine: {
+    width: 40,
+    height: 2,
+    borderRadius: 1,
+    backgroundColor: '#E2E8F0',
+    marginBottom: 12,
   },
   transliteration: {
-    fontSize: 16,
+    fontSize: 14,
     textAlign: 'center',
-    color: '#6B7280',
+    color: '#059669',
     fontStyle: 'italic',
+    fontWeight: '600',
     marginBottom: 8,
   },
-  transliterationDark: {
-    color: '#D1D5DB',
-  },
+  transliterationDark: { color: '#34D399' },
   translation: {
-    fontSize: 14,
+    fontSize: 13,
     textAlign: 'center',
-    color: '#4B5563',
-    marginBottom: 24,
+    color: '#64748B',
     lineHeight: 20,
+    paddingHorizontal: 8,
   },
-  translationDark: {
-    color: '#D1D5DB',
-  },
-  textDisabled: {
-    color: '#9CA3AF',
-  },
-  progressContainer: {
-    marginBottom: 20,
-  },
-  progressBar: {
-    height: 6,
-    backgroundColor: '#E5E7EB',
-    borderRadius: 3,
-    overflow: 'hidden',
-  },
-  progressBarDark: {
-    backgroundColor: '#374151',
-  },
-  progressFill: {
-    height: '100%',
-    backgroundColor: '#059669',
-    borderRadius: 3,
-  },
-  progressComplete: {
-    backgroundColor: '#EAB308',
-  },
-  counterContainer: {
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  countDisplay: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#F3F4F6',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 3,
-    borderColor: '#059669',
-  },
-  countComplete: {
-    backgroundColor: '#059669',
-  },
-  countText: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#059669',
-  },
-  countTextDark: {
-    color: '#FFFFFF',
-  },
-  countTextComplete: {
-    color: '#FFFFFF',
-  },
-  targetText: {
-    fontSize: 14,
-    color: '#6B7280',
-    marginTop: 8,
-  },
-  targetTextDark: {
-    color: '#D1D5DB',
-  },
-  buttonContainer: {
+  translationDark: { color: '#94A3B8' },
+  muted: { color: '#9CA3AF' },
+
+  // Counter row
+  counterRow: {
     flexDirection: 'row',
-    justifyContent: 'center',
     alignItems: 'center',
+    paddingHorizontal: 18,
+    paddingBottom: 20,
     gap: 16,
   },
-  button: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+
+  // Ring / circle counter
+  ringSection: { alignItems: 'center', gap: 6 },
+  ringOuter: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    borderWidth: 7,
+    padding: 6,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  decrementButton: {
-    backgroundColor: '#F9FAFB',
-    borderWidth: 2,
-    borderColor: '#E5E7EB',
-  },
-  decrementButtonDark: {
-    backgroundColor: '#374151',
-    borderColor: '#4B5563',
-  },
-  incrementButton: {
-    backgroundColor: '#059669',
-    shadowColor: '#059669',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    // elevation: 6,
-  },
-  resetButton: {
-    backgroundColor: '#F9FAFB',
-    borderWidth: 2,
-    borderColor: '#E5E7EB',
-  },
-  resetButtonDark: {
-    backgroundColor: '#374151',
-    borderColor: '#4B5563',
-  },
-  blessingContainer: {
-    marginTop: 16,
+  ringInner: {
+    flex: 1,
+    width: '100%',
+    borderRadius: 40,
+    justifyContent: 'center',
     alignItems: 'center',
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.2)',
   },
-  blessingArabic: {
-    fontSize: 16,
-    color: '#FFFFFF',
-    fontFamily: 'Amiri_400Regular',
-    marginBottom: 4,
+  countText: {
+    fontSize: 30,
+    fontWeight: '800',
+    color: '#059669',
+    letterSpacing: -1,
   },
-  blessingArabicDark: {
-    color: '#FFFFFF',
-  },
-  blessingTranslation: {
+  countTextDark: { color: '#10B981' },
+  ofTarget: {
     fontSize: 12,
-    color: 'rgba(255, 255, 255, 0.8)',
+    fontWeight: '600',
+    color: '#94A3B8',
+  },
+  ofTargetDark: { color: '#64748B' },
+
+  // Right controls
+  rightSection: { flex: 1, gap: 14 },
+  progressRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  progressTrack: {
+    flex: 1,
+    height: 7,
+    backgroundColor: '#E2E8F0',
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  progressTrackDark: { backgroundColor: '#334155' },
+  progressFill: { height: '100%', borderRadius: 4 },
+  pct: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#059669',
+    width: 36,
+    textAlign: 'right',
+  },
+  pctDark: { color: '#10B981' },
+  pctComplete: { color: '#F59E0B' },
+
+  // Buttons
+  buttons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  sideBtn: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#F8FAFC',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: '#E2E8F0',
+  },
+  sideBtnDark: { backgroundColor: '#1E293B', borderColor: '#334155' },
+  btnDisabled: { opacity: 0.35 },
+  mainBtn: {
+    width: 66,
+    height: 66,
+    borderRadius: 33,
+    backgroundColor: '#059669',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#059669',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.4,
+    shadowRadius: 14,
+    elevation: 10,
+  },
+  mainBtnComplete: {
+    backgroundColor: '#F59E0B',
+    shadowColor: '#F59E0B',
+  },
+  mainBtnDisabled: {
+    backgroundColor: '#9CA3AF',
+    shadowOpacity: 0,
+    elevation: 0,
+  },
+
+  // Blessing
+  blessing: {
+    paddingHorizontal: 20,
+    paddingBottom: 22,
+    alignItems: 'center',
+  },
+  blessingDivider: {
+    width: 56,
+    height: 3,
+    borderRadius: 2,
+    backgroundColor: '#D1FAE5',
+    marginBottom: 16,
+  },
+  blessingDividerDark: { backgroundColor: '#065F46' },
+  blessingArabic: {
+    fontSize: 18,
+    color: '#059669',
+    fontFamily: 'Amiri_400Regular',
+    marginBottom: 6,
+    textAlign: 'center',
+  },
+  blessingArabicDark: { color: '#34D399' },
+  blessingTrans: {
+    fontSize: 13,
+    color: '#64748B',
     fontStyle: 'italic',
+    textAlign: 'center',
   },
-  blessingTranslationDark: {
-    color: 'rgba(255, 255, 255, 0.8)',
-  },
+  blessingTransDark: { color: '#94A3B8' },
 });

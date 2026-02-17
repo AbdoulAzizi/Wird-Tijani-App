@@ -1,13 +1,20 @@
-import React, { useState, useCallback, useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, Switch, Alert } from 'react-native';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import {
+  View, Text, StyleSheet, ScrollView,
+  TouchableOpacity, Alert, Animated, Modal, Platform
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Star, RotateCcw, Info, X, Settings, CheckCircle } from 'lucide-react-native';
-import GradientHeader from '../../components/GradientHeader';
+import { SafeAreaView as SafeAreaViewRNSA } from 'react-native-safe-area-context';
+import {
+  Star, RotateCcw, Info, X, Settings, CheckCircle, Award, Flame, Target
+} from 'lucide-react-native';
 import DhikrCard from '../../components/DhikrCard';
 import { useApp, WAZIFA_TARGETS } from '../../contexts/AppContext';
 import ScreenBackground from '../../components/ScreenBackground';
 import WazifaInfoModal from '../../components/WazifaInfoModal';
+import { useHeaderActions } from '../../contexts/HeaderActionsContext';
 
+// ─── Data ─────────────────────────────────────────────────────────────────────
 const WAZIFA_DHIKR = {
   istighfar: {
     title: 'Istighfār',
@@ -37,210 +44,496 @@ const WAZIFA_DHIKR = {
 
 const DHIKR_KEYS = ['istighfar', 'salatFatih1', 'tahlil', 'jawhara'] as const;
 
+// ─── Stat Pill ────────────────────────────────────────────────────────────────
+function StatPill({
+  icon: Icon, value, label, color, dark,
+}: {
+  icon: any; value: string; label: string; color: string; dark: boolean;
+}) {
+  return (
+    <View style={[sPill.wrap, dark && sPill.wrapDark]}>
+      <View style={[sPill.iconWrap, { backgroundColor: color + '22' }]}>
+        <Icon color={color} size={13} strokeWidth={2.5} />
+      </View>
+      <View style={sPill.textWrap}>
+        <Text style={[sPill.value, { color }]}>{value}</Text>
+        <Text style={[sPill.label, dark && sPill.labelDark]}>{label}</Text>
+      </View>
+    </View>
+  );
+}
+
+const sPill = StyleSheet.create({
+  wrap: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    gap: 7,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  wrapDark: { backgroundColor: '#1E293B' },
+  iconWrap: {
+    width: 28, height: 28, borderRadius: 8,
+    justifyContent: 'center', alignItems: 'center',
+  },
+  textWrap: { flexDirection: 'column' },
+  value: { fontSize: 15, fontWeight: '800', letterSpacing: -0.3 },
+  label: { fontSize: 10, color: '#94A3B8', fontWeight: '600', marginTop: 1 },
+  labelDark: { color: '#64748B' },
+});
+
+// ─── Completion Banner ────────────────────────────────────────────────────────
+function CompletionBanner({ dark, onComplete }: { dark: boolean; onComplete: () => void }) {
+  return (
+    <TouchableOpacity
+      style={[cBanner.wrap, dark && cBanner.wrapDark]}
+      onPress={onComplete}
+      activeOpacity={0.85}
+    >
+      <View style={cBanner.left}>
+        <View style={cBanner.iconWrap}>
+          <Award color="#F59E0B" size={26} strokeWidth={2} />
+        </View>
+        <View>
+          <Text style={cBanner.title}>Wazīfa Complete! 🎉</Text>
+          <Text style={cBanner.subtitle}>Tap to record your completion</Text>
+        </View>
+      </View>
+      <CheckCircle color="#059669" size={24} strokeWidth={2.5} />
+    </TouchableOpacity>
+  );
+}
+
+const cBanner = StyleSheet.create({
+  wrap: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    backgroundColor: '#F0FDF4', borderRadius: 20, padding: 18,
+    marginHorizontal: 16, marginTop: 8,
+    borderWidth: 2, borderColor: '#A7F3D0',
+    shadowColor: '#059669', shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.15, shadowRadius: 12, elevation: 5,
+  },
+  wrapDark: { backgroundColor: '#052E16', borderColor: '#065F46' },
+  left: { flexDirection: 'row', alignItems: 'center', gap: 14, flex: 1 },
+  iconWrap: {
+    width: 48, height: 48, borderRadius: 24,
+    backgroundColor: '#FEF3C7', justifyContent: 'center', alignItems: 'center',
+  },
+  title: { fontSize: 17, fontWeight: '800', color: '#065F46', marginBottom: 3 },
+  subtitle: { fontSize: 13, color: '#059669', fontWeight: '500' },
+});
+
+// ─── Instructions ─────────────────────────────────────────────────────────────
+function Instructions({ dark }: { dark: boolean }) {
+  return (
+    <View style={[instr.wrap, dark && instr.wrapDark]}>
+      <View style={instr.header}>
+        <Text style={instr.emoji}>⭐</Text>
+        <Text style={[instr.title, dark && instr.titleDark]}>Wazīfa Recitation Guide</Text>
+      </View>
+      {[
+        { icon: '🕌', text: 'Once daily after Asr, or twice after Fajr and Asr' },
+        { icon: '👥', text: 'Best practiced in congregation' },
+        { icon: '🔢', text: 'Complete each dhikr sequentially' },
+        { icon: '⚙️', text: 'Customize final dhikr in settings (Jawhara 11x/12x or Ṣalāt al-Fātiḥ 20x)' },
+      ].map((item, i) => (
+        <View key={i} style={instr.row}>
+          <Text style={instr.rowIcon}>{item.icon}</Text>
+          <Text style={[instr.rowText, dark && instr.rowTextDark]}>{item.text}</Text>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+const instr = StyleSheet.create({
+  wrap: {
+    backgroundColor: '#FFFFFF', borderRadius: 20, padding: 20,
+    marginHorizontal: 16, marginTop: 16,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06, shadowRadius: 8, elevation: 3,
+    borderWidth: 1, borderColor: '#F1F5F9',
+  },
+  wrapDark: { backgroundColor: '#1E293B', borderColor: '#334155' },
+  header: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 14 },
+  emoji: { fontSize: 20 },
+  title: { fontSize: 16, fontWeight: '700', color: '#1E293B' },
+  titleDark: { color: '#F8FAFC' },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
+  rowIcon: { fontSize: 16 },
+  rowText: { fontSize: 14, color: '#64748B', flex: 1, lineHeight: 20 },
+  rowTextDark: { color: '#94A3B8' },
+});
+
+// ─── Settings Modal ───────────────────────────────────────────────────────────
+interface SettingsModalProps {
+  visible: boolean;
+  onClose: () => void;
+  dark: boolean;
+  tempUseJawhara: boolean;
+  setTempUseJawhara: (v: boolean) => void;
+  tempJawharaCount: number;
+  setTempJawharaCount: (v: number) => void;
+  onSave: () => void;
+}
+
+function WazifaSettingsModal({
+  visible, onClose, dark,
+  tempUseJawhara, setTempUseJawhara,
+  tempJawharaCount, setTempJawharaCount,
+  onSave,
+}: SettingsModalProps) {
+  return (
+    <Modal
+      visible={visible}
+      animationType="slide"
+      presentationStyle="pageSheet"
+      onRequestClose={onClose}
+    >
+      <SafeAreaView style={[sModal.container, dark && sModal.containerDark]}>
+        <View style={[sModal.header, dark && sModal.headerDark]}>
+          <Text style={[sModal.title, dark && sModal.titleDark]}>Wazīfa Settings</Text>
+          <TouchableOpacity onPress={onClose} activeOpacity={0.7} style={sModal.closeBtn}>
+            <X color={dark ? '#FFFFFF' : '#1F2937'} size={24} />
+          </TouchableOpacity>
+        </View>
+
+        <ScrollView style={sModal.scroll} contentContainerStyle={sModal.scrollContent}>
+          <View style={sModal.section}>
+            <Text style={[sModal.sectionTitle, dark && sModal.sectionTitleDark]}>
+              Final Dhikr Choice
+            </Text>
+            <Text style={[sModal.sectionDesc, dark && sModal.sectionDescDark]}>
+              Choose between Jawharat al-Kamāl or Ṣalāt al-Fātiḥ for the final dhikr
+            </Text>
+          </View>
+
+          {/* Jawhara Option */}
+          <TouchableOpacity
+            style={[sModal.option, dark && sModal.optionDark, tempUseJawhara && sModal.optionSelected]}
+            onPress={() => setTempUseJawhara(true)}
+            activeOpacity={0.7}
+          >
+            <View style={sModal.optionContent}>
+              <Text style={[sModal.optionTitle, dark && sModal.optionTitleDark]}>Jawharat al-Kamāl</Text>
+              <Text style={[sModal.optionSub, dark && sModal.optionSubDark]}>Default traditional choice</Text>
+            </View>
+            <View style={[sModal.radio, tempUseJawhara && sModal.radioSelected]}>
+              {tempUseJawhara && <View style={sModal.radioInner} />}
+            </View>
+          </TouchableOpacity>
+
+          {tempUseJawhara && (
+            <View style={[sModal.subOption, dark && sModal.subOptionDark]}>
+              <Text style={[sModal.subOptionTitle, dark && sModal.subOptionTitleDark]}>
+                Number of recitations:
+              </Text>
+              <View style={sModal.countRow}>
+                {[11, 12].map((count) => (
+                  <TouchableOpacity
+                    key={count}
+                    style={[
+                      sModal.countBtn,
+                      dark && sModal.countBtnDark,
+                      tempJawharaCount === count && sModal.countBtnSelected,
+                    ]}
+                    onPress={() => setTempJawharaCount(count)}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={[
+                      sModal.countBtnText,
+                      dark && sModal.countBtnTextDark,
+                      tempJawharaCount === count && sModal.countBtnTextSelected,
+                    ]}>
+                      {count}x
+                    </Text>
+                    {count === 12 && (
+                      <Text style={[sModal.defaultBadge, dark && sModal.defaultBadgeDark]}>
+                        Default
+                      </Text>
+                    )}
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          )}
+
+          {/* Salat al-Fatih Option */}
+          <TouchableOpacity
+            style={[sModal.option, dark && sModal.optionDark, !tempUseJawhara && sModal.optionSelected]}
+            onPress={() => setTempUseJawhara(false)}
+            activeOpacity={0.7}
+          >
+            <View style={sModal.optionContent}>
+              <Text style={[sModal.optionTitle, dark && sModal.optionTitleDark]}>Ṣalāt al-Fātiḥ (20x)</Text>
+              <Text style={[sModal.optionSub, dark && sModal.optionSubDark]}>Alternative blessed prayer</Text>
+            </View>
+            <View style={[sModal.radio, !tempUseJawhara && sModal.radioSelected]}>
+              {!tempUseJawhara && <View style={sModal.radioInner} />}
+            </View>
+          </TouchableOpacity>
+
+          <TouchableOpacity onPress={onSave} style={sModal.saveBtn} activeOpacity={0.8}>
+            <Text style={sModal.saveBtnText}>Save Settings</Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </SafeAreaView>
+    </Modal>
+  );
+}
+
+const sModal = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#F8FAFC' },
+  containerDark: { backgroundColor: '#0F172A' },
+  header: {
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    paddingHorizontal: 20, paddingVertical: 18,
+    borderBottomWidth: 1, borderBottomColor: '#E2E8F0',
+  },
+  headerDark: { borderBottomColor: '#334155' },
+  closeBtn: {
+    width: 36, height: 36, borderRadius: 18,
+    backgroundColor: '#F1F5F9', justifyContent: 'center', alignItems: 'center',
+  },
+  title: { fontSize: 20, fontWeight: '800', color: '#1E293B', letterSpacing: -0.3 },
+  titleDark: { color: '#F8FAFC' },
+  scroll: { flex: 1 },
+  scrollContent: { padding: 20, paddingBottom: 40 },
+  section: { marginBottom: 20 },
+  sectionTitle: { fontSize: 18, fontWeight: '700', color: '#1E293B', marginBottom: 6 },
+  sectionTitleDark: { color: '#F8FAFC' },
+  sectionDesc: { fontSize: 14, color: '#64748B', lineHeight: 20 },
+  sectionDescDark: { color: '#94A3B8' },
+  option: {
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    paddingVertical: 16, paddingHorizontal: 16,
+    backgroundColor: '#FFFFFF', borderRadius: 16, marginBottom: 12,
+    borderWidth: 2, borderColor: '#E2E8F0',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04, shadowRadius: 4, elevation: 2,
+  },
+  optionDark: { backgroundColor: '#1E293B', borderColor: '#334155' },
+  optionSelected: { borderColor: '#059669', backgroundColor: '#F0FDF4' },
+  optionContent: { flex: 1, marginRight: 12 },
+  optionTitle: { fontSize: 16, fontWeight: '700', color: '#1E293B', marginBottom: 3 },
+  optionTitleDark: { color: '#F8FAFC' },
+  optionSub: { fontSize: 13, color: '#64748B' },
+  optionSubDark: { color: '#94A3B8' },
+  radio: {
+    width: 24, height: 24, borderRadius: 12,
+    borderWidth: 2, borderColor: '#CBD5E1',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  radioSelected: { borderColor: '#059669' },
+  radioInner: { width: 12, height: 12, borderRadius: 6, backgroundColor: '#059669' },
+  subOption: {
+    backgroundColor: '#F1F5F9', borderRadius: 14, padding: 16,
+    marginBottom: 16, marginTop: -4,
+  },
+  subOptionDark: { backgroundColor: '#1E293B' },
+  subOptionTitle: { fontSize: 14, fontWeight: '600', color: '#1E293B', marginBottom: 12 },
+  subOptionTitleDark: { color: '#F8FAFC' },
+  countRow: { flexDirection: 'row', gap: 12 },
+  countBtn: {
+    flex: 1, paddingVertical: 12, paddingHorizontal: 16,
+    backgroundColor: '#FFFFFF', borderRadius: 12,
+    borderWidth: 2, borderColor: '#E2E8F0',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  countBtnDark: { backgroundColor: '#0F172A', borderColor: '#475569' },
+  countBtnSelected: { borderColor: '#059669', backgroundColor: '#F0FDF4' },
+  countBtnText: { fontSize: 16, fontWeight: '700', color: '#64748B' },
+  countBtnTextDark: { color: '#94A3B8' },
+  countBtnTextSelected: { color: '#059669' },
+  defaultBadge: { fontSize: 10, fontWeight: '700', color: '#059669', marginTop: 3, textTransform: 'uppercase' },
+  defaultBadgeDark: { color: '#10B981' },
+  saveBtn: {
+    backgroundColor: '#059669', borderRadius: 16,
+    paddingVertical: 16, alignItems: 'center', marginTop: 16,
+    shadowColor: '#059669', shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3, shadowRadius: 8, elevation: 4,
+  },
+  saveBtnText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
+});
+
+// ─── Main Screen ──────────────────────────────────────────────────────────────
 export default function WazifaScreen() {
   const { state, dispatch, isWazifaComplete, getWazifaProgress, getWazifaJawharaTarget } = useApp();
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [tempUseJawhara, setTempUseJawhara] = useState(state.wazifaSettings.useJawhara);
-  const [tempJawharaCount, setTempJawharaCount] = useState(state.wazifaSettings.jawharaCount || 12);
+  const [tempJawharaCount, setTempJawharaCount] = useState<number>(state.wazifaSettings.jawharaCount || 12);
+
+  const { setActions, clearActions } = useHeaderActions();
 
   const { darkMode, audioEnabled } = state.settings;
+  const dark = darkMode;
   const jawharaTarget = getWazifaJawharaTarget();
 
-  // Memoized calculations
   const targets = useMemo(() => [
     WAZIFA_TARGETS.istighfar,
     WAZIFA_TARGETS.salatFatih1,
     WAZIFA_TARGETS.tahlil,
-    jawharaTarget
+    jawharaTarget,
   ], [jawharaTarget]);
 
-  const completedCount = useMemo(() => {
-    return DHIKR_KEYS.filter((key, index) => state.wazifa[key] >= targets[index]).length;
-  }, [state.wazifa, targets]);
+  const completedCount = useMemo(
+    () => DHIKR_KEYS.filter((key, index) => state.wazifa[key] >= targets[index]).length,
+    [state.wazifa, targets],
+  );
 
   const progress = useMemo(() => getWazifaProgress(), [state.wazifa]);
+  const progressPct = Math.round(progress);
 
-  // Optimized step status calculation
   const getStepStatus = useCallback((stepIndex: number) => {
     const currentCount = state.wazifa[DHIKR_KEYS[stepIndex]];
     const currentTarget = targets[stepIndex];
-    
-    if (currentCount >= currentTarget) {
-      return 'completed';
-    }
-    
-    if (stepIndex === 0 || state.wazifa[DHIKR_KEYS[stepIndex - 1]] >= targets[stepIndex - 1]) {
-      return 'active';
-    }
-    
+    if (currentCount >= currentTarget) return 'completed';
+    if (stepIndex === 0 || state.wazifa[DHIKR_KEYS[stepIndex - 1]] >= targets[stepIndex - 1]) return 'active';
     return 'disabled';
   }, [state.wazifa, targets]);
 
-  // Get final dhikr content
   const finalDhikrContent = useMemo(() => {
     if (state.wazifaSettings.useJawhara) {
       const count = state.wazifaSettings.jawharaCount || 12;
-      return {
-        ...WAZIFA_DHIKR.jawhara,
-        title: `${WAZIFA_DHIKR.jawhara.title} (${count}x)`,
-        audioType: 'jawhara'
-      };
+      return { ...WAZIFA_DHIKR.jawhara, title: `${WAZIFA_DHIKR.jawhara.title} (${count}x)`, audioType: 'jawhara' };
     }
-    return {
-      ...WAZIFA_DHIKR.salatFatih,
-      title: `${WAZIFA_DHIKR.salatFatih.title} (20x)`,
-      audioType: 'salatFatih'
-    };
+    return { ...WAZIFA_DHIKR.salatFatih, title: `${WAZIFA_DHIKR.salatFatih.title} (20x)`, audioType: 'salatFatih' };
   }, [state.wazifaSettings.useJawhara, state.wazifaSettings.jawharaCount]);
 
-  // Handlers with useCallback
   const handleResetAll = useCallback(() => {
-    Alert.alert(
-      'Reset All',
-      'Are you sure you want to reset all wazīfa counts?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Reset', 
-          style: 'destructive',
-          onPress: () => dispatch({ type: 'RESET_ALL_WAZIFA' })
-        },
-      ]
-    );
+    Alert.alert('Reset All', 'Are you sure you want to reset all wazīfa counts?', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Reset', style: 'destructive', onPress: () => dispatch({ type: 'RESET_ALL_WAZIFA' }) },
+    ]);
   }, [dispatch]);
 
   const handleCompleteWazifa = useCallback(() => {
-    if (isWazifaComplete) {
-      dispatch({ type: 'COMPLETE_WAZIFA' });
-      Alert.alert(
-        'Wazīfa Complete! 🎉',
-        'May Allah accept your devotion.',
-        [{ text: 'Alhamdulillah' }]
-      );
-    }
+    if (!isWazifaComplete) return;
+    dispatch({ type: 'COMPLETE_WAZIFA' });
+    Alert.alert('Wazīfa Complete! 🎉', 'May Allah accept your devotion.', [{ text: 'Alhamdulillah' }]);
   }, [isWazifaComplete, dispatch]);
 
-  const handleIncrement = useCallback((dhikr: keyof typeof state.wazifa) => {
-    dispatch({ type: 'INCREMENT_WAZIFA', dhikr });
-  }, [dispatch]);
-
-  const handleDecrement = useCallback((dhikr: keyof typeof state.wazifa) => {
-    dispatch({ type: 'DECREMENT_WAZIFA', dhikr });
-  }, [dispatch]);
-
+  const handleIncrement = useCallback(
+    (dhikr: keyof typeof state.wazifa) => dispatch({ type: 'INCREMENT_WAZIFA', dhikr }),
+    [dispatch],
+  );
+  const handleDecrement = useCallback(
+    (dhikr: keyof typeof state.wazifa) => dispatch({ type: 'DECREMENT_WAZIFA', dhikr }),
+    [dispatch],
+  );
   const handleReset = useCallback((dhikr: keyof typeof state.wazifa, dhikrTitle: string) => {
-    Alert.alert(
-      'Reset Dhikr',
-      `Are you sure you want to reset ${dhikrTitle}?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Reset', 
-          style: 'destructive',
-          onPress: () => dispatch({ type: 'RESET_WAZIFA', dhikr })
-        },
-      ]
-    );
+    Alert.alert('Reset Dhikr', `Are you sure you want to reset ${dhikrTitle}?`, [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Reset', style: 'destructive', onPress: () => dispatch({ type: 'RESET_WAZIFA', dhikr }) },
+    ]);
   }, [dispatch]);
 
   const handleSaveSettings = useCallback(() => {
-    dispatch({ 
-      type: 'UPDATE_WAZIFA_SETTINGS', 
-      settings: { 
-        useJawhara: tempUseJawhara,
-        jawharaCount: tempJawharaCount
-      } 
-    });
+    dispatch({ type: 'UPDATE_WAZIFA_SETTINGS', settings: { useJawhara: tempUseJawhara, jawharaCount: tempJawharaCount as 11 | 12 } });
     setShowSettings(false);
-    Alert.alert(
-      'Settings Saved',
-      'Your wazīfa preferences have been updated.',
-      [{ text: 'OK' }]
-    );
+    Alert.alert('Settings Saved', 'Your wazīfa preferences have been updated.', [{ text: 'OK' }]);
   }, [tempUseJawhara, tempJawharaCount, dispatch]);
 
   const playAudio = useCallback((dhikrType: string) => {
-    if (audioEnabled) {
-      console.log(`Playing audio for ${dhikrType}`);
-    }
+    if (audioEnabled) console.log(`Playing audio for ${dhikrType}`);
   }, [audioEnabled]);
 
-  const toggleInfoModal = useCallback(() => setShowInfoModal(prev => !prev), []);
-  const toggleSettings = useCallback(() => {
+  const openSettings = useCallback(() => {
     setTempUseJawhara(state.wazifaSettings.useJawhara);
     setTempJawharaCount(state.wazifaSettings.jawharaCount || 12);
-    setShowSettings(prev => !prev);
+    setShowSettings(true);
   }, [state.wazifaSettings.useJawhara, state.wazifaSettings.jawharaCount]);
 
+  // ── Injection des actions dans le header ───────────────────────────────────
+  useEffect(() => {
+    setActions([
+      {
+        key: 'info',
+        label: 'Wazīfa Information',
+        icon: <Info color="#059669" size={16} strokeWidth={2} />,
+        onPress: () => setShowInfoModal(true),
+      },
+      {
+        key: 'settings',
+        label: 'Wazīfa Settings',
+        icon: <Settings color="#059669" size={16} strokeWidth={2} />,
+        onPress: openSettings,
+        dividerAfter: true,
+      },
+      {
+        key: 'reset',
+        label: 'Reset All Dhikr',
+        icon: <RotateCcw color="#EF4444" size={16} strokeWidth={2.5} />,
+        onPress: handleResetAll,
+        destructive: true,
+      },
+    ]);
+    return () => clearActions();
+  }, [setActions, clearActions, handleResetAll, openSettings]);
+
   return (
-    <View style={[styles.container, darkMode && styles.containerDark]}>
+    <View style={[styles.root, dark && styles.rootDark]}>
       <ScreenBackground>
-        {/* Progress Header */}
-        <View style={[styles.progressContainer, darkMode && styles.progressContainerDark]}>
-          <View style={styles.progressInfo}>
-            <CheckCircle 
-              color={completedCount === 4 ? '#10B981' : '#FFFFFF'} 
-              size={20} 
-              fill={completedCount === 4 ? '#10B981' : 'transparent'}
+
+        {/* ── Stats Bar ── */}
+        <View style={styles.statsRow}>
+          <StatPill
+            icon={Target}
+            value={`${completedCount}/4`}
+            label="Completed"
+            color="#059669"
+            dark={dark}
+          />
+          <StatPill
+            icon={Flame}
+            value={`${progressPct}%`}
+            label="Progress"
+            color="#D97706"
+            dark={dark}
+          />
+          <StatPill
+            icon={Star}
+            value={String(state.streak ?? 0)}
+            label="Day streak"
+            color="#7C3AED"
+            dark={dark}
+          />
+        </View>
+
+        {/* ── Overall progress bar ── */}
+        <View style={styles.progressWrap}>
+          <View style={[styles.progressTrack, dark && styles.progressTrackDark]}>
+            <Animated.View
+              style={[
+                styles.progressFill,
+                { width: `${progress}%` },
+                progress >= 100 && styles.progressComplete,
+              ]}
             />
-            <Text style={[styles.progressText, darkMode && styles.progressTextDark]}>
-              {completedCount} of 4 completed
+          </View>
+          <View style={styles.progressMeta}>
+            <Text style={[styles.progressLabel, dark && styles.progressLabelDark]}>
+              Overall Wazīfa progress
             </Text>
           </View>
-          
-          <View style={styles.headerButtons}>
-            <TouchableOpacity 
-              onPress={toggleInfoModal} 
-              style={styles.iconButton}
-              activeOpacity={0.7}
-              accessibilityLabel="Information"
-              accessibilityRole="button"
-            >
-              <Info color={darkMode ? '#D1D5DB' : '#FFFFFF'} size={18} />
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              onPress={toggleSettings} 
-              style={styles.iconButton}
-              activeOpacity={0.7}
-              accessibilityLabel="Settings"
-              accessibilityRole="button"
-            >
-              <Settings color={darkMode ? '#D1D5DB' : '#FFFFFF'} size={18} />
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              onPress={handleResetAll} 
-              style={styles.resetAllButton}
-              activeOpacity={0.7}
-              accessibilityLabel="Reset All"
-              accessibilityRole="button"
-            >
-              <RotateCcw color={darkMode ? '#D1D5DB' : '#FFFFFF'} size={16} />
-              <Text style={[styles.resetAllText, darkMode && styles.resetAllTextDark]}>
-                Reset
-              </Text>
-            </TouchableOpacity>
-          </View>
         </View>
 
-        {/* Overall Progress Bar */}
-        <View style={styles.overallProgressContainer}>
-          <View style={[styles.overallProgressBar, darkMode && styles.overallProgressBarDark]}>
-            <View style={[styles.overallProgressFill, { width: `${progress}%` }]} />
-          </View>
-          {/* <Text style={[styles.progressPercentage, darkMode && styles.progressPercentageDark]}>
-            {Math.round(progress)}%
-          </Text> */}
-        </View>
-
-        <ScrollView 
-          style={styles.scrollView} 
+        {/* ── Cards ── */}
+        <ScrollView
+          style={styles.scroll}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
         >
-          {/* Istighfar (30x) */}
+          {/* Istighfar 30x */}
           <DhikrCard
             title={`${WAZIFA_DHIKR.istighfar.title} (30x)`}
             arabic={WAZIFA_DHIKR.istighfar.arabic}
@@ -256,7 +549,7 @@ export default function WazifaScreen() {
             blessing=""
           />
 
-          {/* Salat al-Fatih (50x) */}
+          {/* Salat al-Fatih 50x */}
           <DhikrCard
             title={`${WAZIFA_DHIKR.salatFatih.title} (50x)`}
             arabic={WAZIFA_DHIKR.salatFatih.arabic}
@@ -272,7 +565,7 @@ export default function WazifaScreen() {
             blessing="سبحان ربك رب العزة عما يصفون . وسلام على المرسلين . والحمد لله رب العالمين"
           />
 
-          {/* Tahlil (100x) */}
+          {/* Tahlil 100x */}
           <DhikrCard
             title={`${WAZIFA_DHIKR.tahlil.title} (100x)`}
             arabic={WAZIFA_DHIKR.tahlil.arabic}
@@ -288,7 +581,7 @@ export default function WazifaScreen() {
             blessing="سيدنا محمد رسول الله عليه السلام"
           />
 
-          {/* Final Dhikr (Jawhara or Salat al-Fatih) */}
+          {/* Final Dhikr */}
           <DhikrCard
             title={finalDhikrContent.title}
             arabic={finalDhikrContent.arabic}
@@ -304,559 +597,80 @@ export default function WazifaScreen() {
             blessing="بارك الله فيك"
           />
 
-          {/* Instructions */}
-          <View style={[styles.instructionsContainer, darkMode && styles.instructionsContainerDark]}>
-            <Text style={[styles.instructionsTitle, darkMode && styles.instructionsTitleDark]}>
-              ⭐ Wazīfa Recitation Guide
-            </Text>
-            <View style={styles.instructionsList}>
-              <Text style={[styles.instruction, darkMode && styles.instructionDark]}>
-                • Once daily after Asr prayer, or twice after Fajr and Asr
-              </Text>
-              <Text style={[styles.instruction, darkMode && styles.instructionDark]}>
-                • In congregation when possible
-              </Text>
-              <Text style={[styles.instruction, darkMode && styles.instructionDark]}>
-                • Complete each dhikr sequentially
-              </Text>
-              <Text style={[styles.instruction, darkMode && styles.instructionDark]}>
-                • Customize final dhikr in settings (Jawhara 11x/12x or Ṣalāt al-Fātiḥ 20x)
-              </Text>
-            </View>
-          </View>
+          <Instructions dark={dark} />
 
-          {/* Complete Button */}
           {isWazifaComplete && (
-            <TouchableOpacity 
-              onPress={handleCompleteWazifa} 
-              style={[styles.completeButton, darkMode && styles.completeButtonDark]}
-              activeOpacity={0.8}
-            >
-              <CheckCircle color="#FFFFFF" size={20} />
-              <Text style={styles.completeButtonText}>Complete Wazīfa</Text>
-            </TouchableOpacity>
+            <CompletionBanner dark={dark} onComplete={handleCompleteWazifa} />
           )}
 
-          <View style={styles.bottomSpacing} />
+          <View style={styles.bottomSpace} />
         </ScrollView>
 
-        {/* Settings Modal */}
-        <Modal
-          visible={showSettings}
-          animationType="slide"
-          presentationStyle="pageSheet"
-          onRequestClose={toggleSettings}
-        >
-          <SafeAreaView style={[styles.modalContainer, darkMode && styles.modalContainerDark]} >
-            <View style={[styles.modalHeader, darkMode && styles.modalHeaderDark]}>
-              <Text style={[styles.modalTitle, darkMode && styles.modalTitleDark]}>
-                Wazīfa Settings
-              </Text>
-              <TouchableOpacity 
-                onPress={toggleSettings}
-                activeOpacity={0.7}
-                accessibilityLabel="Close"
-              >
-                <X color={darkMode ? '#FFFFFF' : '#1F2937'} size={24} />
-              </TouchableOpacity>
-            </View>
-
-            <ScrollView style={styles.settingsContent}>
-              <View style={styles.settingSection}>
-                <Text style={[styles.settingSectionTitle, darkMode && styles.settingSectionTitleDark]}>
-                  Final Dhikr Choice
-                </Text>
-                <Text style={[styles.settingSectionDescription, darkMode && styles.settingSectionDescriptionDark]}>
-                  Choose between Jawharat al-Kamāl or Ṣalāt al-Fātiḥ for the final dhikr
-                </Text>
-              </View>
-
-              {/* Jawhara Option */}
-              <TouchableOpacity 
-                style={[
-                  styles.optionItem, 
-                  darkMode && styles.optionItemDark,
-                  tempUseJawhara && styles.optionItemSelected
-                ]}
-                onPress={() => setTempUseJawhara(true)}
-                activeOpacity={0.7}
-              >
-                <View style={styles.optionContent}>
-                  <Text style={[styles.optionTitle, darkMode && styles.optionTitleDark]}>
-                    Jawharat al-Kamāl
-                  </Text>
-                  <Text style={[styles.optionSubtitle, darkMode && styles.optionSubtitleDark]}>
-                    Default traditional choice
-                  </Text>
-                </View>
-                <View style={[
-                  styles.radioButton,
-                  tempUseJawhara && styles.radioButtonSelected
-                ]}>
-                  {tempUseJawhara && <View style={styles.radioButtonInner} />}
-                </View>
-              </TouchableOpacity>
-
-              {/* Jawhara Count Selection (only shown if Jawhara is selected) */}
-              {tempUseJawhara && (
-                <View style={[styles.subOptionContainer, darkMode && styles.subOptionContainerDark]}>
-                  <Text style={[styles.subOptionTitle, darkMode && styles.subOptionTitleDark]}>
-                    Number of recitations:
-                  </Text>
-                  
-                  <View style={styles.countOptionsRow}>
-                    <TouchableOpacity 
-                      style={[
-                        styles.countOption,
-                        darkMode && styles.countOptionDark,
-                        tempJawharaCount === 11 && styles.countOptionSelected
-                      ]}
-                      onPress={() => setTempJawharaCount(11)}
-                      activeOpacity={0.7}
-                    >
-                      <Text style={[
-                        styles.countOptionText,
-                        darkMode && styles.countOptionTextDark,
-                        tempJawharaCount === 11 && styles.countOptionTextSelected
-                      ]}>
-                        11x
-                      </Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity 
-                      style={[
-                        styles.countOption,
-                        darkMode && styles.countOptionDark,
-                        tempJawharaCount === 12 && styles.countOptionSelected
-                      ]}
-                      onPress={() => setTempJawharaCount(12)}
-                      activeOpacity={0.7}
-                    >
-                      <Text style={[
-                        styles.countOptionText,
-                        darkMode && styles.countOptionTextDark,
-                        tempJawharaCount === 12 && styles.countOptionTextSelected
-                      ]}>
-                        12x
-                      </Text>
-                      <Text style={[styles.defaultBadge, darkMode && styles.defaultBadgeDark]}>
-                        Default
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              )}
-
-              {/* Salat al-Fatih Option */}
-              <TouchableOpacity 
-                style={[
-                  styles.optionItem, 
-                  darkMode && styles.optionItemDark,
-                  !tempUseJawhara && styles.optionItemSelected
-                ]}
-                onPress={() => setTempUseJawhara(false)}
-                activeOpacity={0.7}
-              >
-                <View style={styles.optionContent}>
-                  <Text style={[styles.optionTitle, darkMode && styles.optionTitleDark]}>
-                    Ṣalāt al-Fātiḥ (20x)
-                  </Text>
-                  <Text style={[styles.optionSubtitle, darkMode && styles.optionSubtitleDark]}>
-                    Alternative blessed prayer
-                  </Text>
-                </View>
-                <View style={[
-                  styles.radioButton,
-                  !tempUseJawhara && styles.radioButtonSelected
-                ]}>
-                  {!tempUseJawhara && <View style={styles.radioButtonInner} />}
-                </View>
-              </TouchableOpacity>
-
-              <TouchableOpacity 
-                onPress={handleSaveSettings} 
-                style={[styles.saveButton, darkMode && styles.saveButtonDark]}
-                activeOpacity={0.8}
-              >
-                <Text style={styles.saveButtonText}>Save Settings</Text>
-              </TouchableOpacity>
-            </ScrollView>
-          </SafeAreaView>
-        </Modal>
-
-        {/* Info Modal */}
-        <WazifaInfoModal 
-          visible={showInfoModal} 
-          onClose={toggleInfoModal} 
-          darkMode={darkMode}
-        />
       </ScreenBackground>
+
+      {/* Settings Modal */}
+      <WazifaSettingsModal
+        visible={showSettings}
+        onClose={() => setShowSettings(false)}
+        dark={dark}
+        tempUseJawhara={tempUseJawhara}
+        setTempUseJawhara={setTempUseJawhara}
+        tempJawharaCount={tempJawharaCount}
+        setTempJawharaCount={setTempJawharaCount}
+        onSave={handleSaveSettings}
+      />
+
+      {/* Info Modal */}
+      <WazifaInfoModal
+        visible={showInfoModal}
+        onClose={() => setShowInfoModal(false)}
+        darkMode={dark}
+      />
     </View>
   );
 }
 
+// ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F9FAFB',
-  },
-  containerDark: {
-    backgroundColor: '#111827',
-  },
-  progressContainer: {
+  root: { flex: 1, backgroundColor: '#F8FAFC' },
+  rootDark: { backgroundColor: '#0F172A' },
+
+  statsRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    backgroundColor: '#059669',
-    marginHorizontal: 16,
-    marginTop: 16,
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  progressContainerDark: {
-    backgroundColor: '#1F2937',
-    shadowOpacity: 0.3,
-  },
-  progressInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
     gap: 8,
-  },
-  progressText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#FFFFFF',
-  },
-  progressTextDark: {
-    color: '#FFFFFF',
-  },
-  headerButtons: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  iconButton: {
-    padding: 8,
-    borderRadius: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-  },
-  resetAllButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-  },
-  resetAllText: {
-    fontSize: 14,
-    color: '#FFFFFF',
-    fontWeight: '500',
-  },
-  resetAllTextDark: {
-    color: '#FFFFFF',
-  },
-  overallProgressContainer: {
     paddingHorizontal: 16,
-    marginBottom: 8,
-    marginTop: 12,
+    paddingTop: 10,
+    paddingBottom: 2,
   },
-  overallProgressBar: {
-    height: 10,
-    backgroundColor: '#E5E7EB',
-    borderRadius: 5,
+
+  progressWrap: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 4,
+  },
+  progressTrack: {
+    height: 8,
+    backgroundColor: '#E2E8F0',
+    borderRadius: 4,
     overflow: 'hidden',
+    marginBottom: 10,
   },
-  overallProgressBarDark: {
-    backgroundColor: '#374151',
-  },
-  overallProgressFill: {
+  progressTrackDark: { backgroundColor: '#334155' },
+  progressFill: {
     height: '100%',
-    backgroundColor: '#EAB308',
-    borderRadius: 5,
+    backgroundColor: '#D97706',
+    borderRadius: 4,
   },
-  progressPercentage: {
-    fontSize: 12,
-    color: '#6B7280',
-    textAlign: 'right',
-    marginTop: 4,
-    fontWeight: '600',
-  },
-  progressPercentageDark: {
-    color: '#9CA3AF',
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingTop: 8,
-  },
-  instructionsContainer: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
-    marginHorizontal: 16,
-    marginTop: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  instructionsContainerDark: {
-    backgroundColor: '#1F2937',
-  },
-  instructionsTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1F2937',
-    marginBottom: 12,
-  },
-  instructionsTitleDark: {
-    color: '#FFFFFF',
-  },
-  instructionsList: {
-    gap: 6,
-  },
-  instruction: {
-    fontSize: 14,
-    color: '#6B7280',
-    lineHeight: 20,
-  },
-  instructionDark: {
-    color: '#D1D5DB',
-  },
-  completeButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: '#059669',
-    borderRadius: 12,
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-    marginHorizontal: 16,
-    marginTop: 16,
-    shadowColor: '#059669',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  completeButtonDark: {
-    backgroundColor: '#10B981',
-  },
-  completeButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  bottomSpacing: {
-    height: 24,
-  },
-  modalContainer: {
-    flex: 1,
-    backgroundColor: '#F9FAFB',
-  },
-  modalContainerDark: {
-    backgroundColor: '#111827',
-  },
-  modalHeader: {
+  progressComplete: { backgroundColor: '#F59E0B' },
+  progressMeta: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
   },
-  modalHeaderDark: {
-    borderBottomColor: '#374151',
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1F2937',
-  },
-  modalTitleDark: {
-    color: '#FFFFFF',
-  },
-  settingsContent: {
-    flex: 1,
-    padding: 16,
-  },
-  settingSection: {
-    marginBottom: 24,
-  },
-  settingSectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1F2937',
-    marginBottom: 8,
-  },
-  settingSectionTitleDark: {
-    color: '#FFFFFF',
-  },
-  settingSectionDescription: {
-    fontSize: 14,
-    color: '#6B7280',
-    lineHeight: 20,
-  },
-  settingSectionDescriptionDark: {
-    color: '#D1D5DB',
-  },
-  optionItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 16,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    marginBottom: 12,
-    borderWidth: 2,
-    borderColor: '#E5E7EB',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  optionItemDark: {
-    backgroundColor: '#1F2937',
-    borderColor: '#374151',
-  },
-  optionItemSelected: {
-    borderColor: '#059669',
-    backgroundColor: '#ECFDF5',
-  },
-  optionContent: {
-    flex: 1,
-    marginRight: 12,
-  },
-  optionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1F2937',
-    marginBottom: 4,
-  },
-  optionTitleDark: {
-    color: '#FFFFFF',
-  },
-  optionSubtitle: {
-    fontSize: 14,
-    color: '#6B7280',
-  },
-  optionSubtitleDark: {
-    color: '#D1D5DB',
-  },
-  radioButton: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: '#D1D5DB',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  radioButtonSelected: {
-    borderColor: '#059669',
-  },
-  radioButtonInner: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: '#059669',
-  },
-  subOptionContainer: {
-    backgroundColor: '#F3F4F6',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-    marginTop: -4,
-  },
-  subOptionContainerDark: {
-    backgroundColor: '#374151',
-  },
-  subOptionTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#1F2937',
-    marginBottom: 12,
-  },
-  subOptionTitleDark: {
-    color: '#FFFFFF',
-  },
-  countOptionsRow: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  countOption: {
-    flex: 1,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 10,
-    borderWidth: 2,
-    borderColor: '#E5E7EB',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  countOptionDark: {
-    backgroundColor: '#1F2937',
-    borderColor: '#4B5563',
-  },
-  countOptionSelected: {
-    borderColor: '#059669',
-    backgroundColor: '#ECFDF5',
-  },
-  countOptionText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#6B7280',
-  },
-  countOptionTextDark: {
-    color: '#D1D5DB',
-  },
-  countOptionTextSelected: {
-    color: '#059669',
-  },
-  defaultBadge: {
-    fontSize: 10,
-    fontWeight: '600',
-    color: '#059669',
-    marginTop: 4,
-    textTransform: 'uppercase',
-  },
-  defaultBadgeDark: {
-    color: '#10B981',
-  },
-  saveButton: {
-    backgroundColor: '#059669',
-    borderRadius: 12,
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-    alignItems: 'center',
-    marginTop: 16,
-    shadowColor: '#059669',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  saveButtonDark: {
-    backgroundColor: '#10B981',
-  },
-  saveButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
-  },
+  progressLabel: { fontSize: 13, color: '#FFFFFF', fontWeight: '600' },
+  progressLabelDark: { color: '#64748B' },
+
+  scroll: { flex: 1 },
+  scrollContent: { paddingTop: 8 },
+  bottomSpace: { height: 32 },
 });
