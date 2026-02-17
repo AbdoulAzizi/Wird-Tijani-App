@@ -368,7 +368,7 @@ function InnerTabLayout() {
     { name: 'Wird',            route: '/wird',                  icon: Heart,        description: 'Daily prayers',         color: '#DC2626', useMinimalHeader: true  },
     { name: 'Wazifa',          route: '/wazifa',                icon: Star,         description: 'Special invocations',   color: '#D97706', useMinimalHeader: true  },
     { name: 'Hadra',           route: '/hadra',                 icon: Moon,         description: 'Spiritual sessions',    color: '#7C3AED', useMinimalHeader: true  },
-    { name: 'Names',           route: '/names',                 icon: Sparkles,     description: 'Divine names',          color: '#1E40AF', useMinimalHeader: true  },
+    { name: 'Asm\'a Al-Husn\'a',           route: '/names',                 icon: Sparkles,     description: 'Divine names',          color: '#1E40AF', useMinimalHeader: true  },
     { name: 'Library',         route: '/library',               icon: BookOpen,     description: 'Resources & texts',     color: '#059669', useMinimalHeader: true, dividerAfter: true },
     { name: 'Statistics',      route: '/stats',                 icon: BarChart3,    description: 'Your progress',         color: '#0891B2', useMinimalHeader: true  },
     { name: 'Notifications',   route: '/notifications',         icon: Bell,         description: 'Alerts & reminders',    color: '#059669', badge: unreadCount, useMinimalHeader: true },
@@ -463,6 +463,7 @@ function InnerTabLayout() {
       },
     })
   ).current;
+  
 
   const handleNavigation = useCallback((route: string) => {
     triggerHaptic('success');

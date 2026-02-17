@@ -7,7 +7,6 @@ import { Animated, View, StyleSheet, Image } from 'react-native';
 import { useFrameworkReady } from '@/hooks/useFrameworkReady';
 import { AppProvider } from '@/contexts/AppContext';
 import { NotificationProvider } from '@/contexts/NotificationContext';
-import {HeaderActionsProvider} from '@/contexts/HeaderActionsContext';
 import Toast from 'react-native-toast-message';
 
 SplashScreen.preventAutoHideAsync();
@@ -55,7 +54,6 @@ export default function RootLayout() {
   }
 
   return (
-    <HeaderActionsProvider>
     <NotificationProvider>
       <AppProvider>
         <Stack screenOptions={{ headerShown: false }}>
@@ -68,7 +66,6 @@ export default function RootLayout() {
         <Toast />
       </AppProvider>
     </NotificationProvider>
-    </HeaderActionsProvider>
   );
 }
 

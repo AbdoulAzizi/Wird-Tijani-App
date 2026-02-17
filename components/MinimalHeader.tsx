@@ -1,20 +1,22 @@
 import React, { memo, useCallback, useState, useRef, useEffect } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet, Platform, StatusBar,
-  Modal, Animated, Pressable, TouchableWithoutFeedback,
+  Modal, Animated, Pressable, TouchableWithoutFeedback, Dimensions,
 } from 'react-native';
 import { ArrowLeft, MoreVertical } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import type { HeaderAction } from '../contexts/HeaderActionsContext';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface MinimalHeaderProps {
   title: string;
   subtitle?: string;
   onBackPress: () => void;
-  onMorePress?: () => void;   // conservé pour usage externe optionnel
+  onMorePress?: () => void;
   showMore?: boolean;
-  menuActions?: HeaderAction[]; // ← NOUVELLE PROP: actions du dropdown
+  menuActions?: HeaderAction[];
   theme?: 'default' | 'dark' | 'light';
 }
 
@@ -25,6 +27,9 @@ const GRADIENTS: Record<string, readonly [string, string]> = {
 };
 
 // ─── Dropdown Menu ────────────────────────────────────────────────────────────
+const MENU_WIDTH   = Math.min(240, SCREEN_WIDTH - 32); // jamais + large que l'écran − 32px
+const MENU_MARGIN  = 12; // marge par rapport aux bords de l'écran
+
 interface DropdownMenuProps {
   visible: boolean;
   onClose: () => void;
@@ -33,99 +38,100 @@ interface DropdownMenuProps {
 }
 
 const DropdownMenu = memo(({ visible, onClose, actions, anchorPosition }: DropdownMenuProps) => {
-  const scaleAnim = useRef(new Animated.Value(0)).current;
+  const scaleAnim   = useRef(new Animated.Value(0)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
-  const isMounted = useRef(false);
+  const [rendered, setRendered] = useState(false);
 
   useEffect(() => {
     if (visible) {
-      isMounted.current = true;
+      setRendered(true);
       Animated.parallel([
         Animated.spring(scaleAnim, {
           toValue: 1,
           useNativeDriver: true,
           damping: 18,
-          stiffness: 220,
+          stiffness: 260,
         }),
         Animated.timing(opacityAnim, {
           toValue: 1,
-          duration: 150,
+          duration: 140,
           useNativeDriver: true,
         }),
       ]).start();
     } else {
       Animated.parallel([
-        Animated.timing(scaleAnim, {
-          toValue: 0,
-          duration: 120,
+        Animated.spring(scaleAnim, {
+          toValue: 0.85,
           useNativeDriver: true,
+          damping: 20,
+          stiffness: 300,
         }),
         Animated.timing(opacityAnim, {
           toValue: 0,
-          duration: 120,
+          duration: 110,
           useNativeDriver: true,
         }),
-      ]).start(() => {
-        isMounted.current = false;
-      });
+      ]).start(() => setRendered(false));
     }
   }, [visible]);
 
-  if (!visible && !isMounted.current) return null;
+  if (!visible && !rendered) return null;
+
+  // ── Le menu est ancré à droite avec right: MENU_MARGIN.
+  // On s'assure qu'il ne sort pas du bord gauche non plus.
+  const menuRight = Math.max(MENU_MARGIN, anchorPosition.right);
 
   return (
     <Modal
       transparent
-      visible={visible}
+      visible={visible || rendered}
       animationType="none"
       onRequestClose={onClose}
       statusBarTranslucent
     >
       <TouchableWithoutFeedback onPress={onClose}>
         <View style={dd.overlay}>
+          {/* Stop propagation pour que le tap sur le menu ne ferme pas */}
           <TouchableWithoutFeedback>
             <Animated.View
               style={[
                 dd.menu,
                 {
-                  top: anchorPosition.top,
-                  right: anchorPosition.right,
+                  top:     anchorPosition.top,
+                  right:   menuRight,
+                  width:   MENU_WIDTH,       // ← largeur fixe, pas minWidth
                   opacity: opacityAnim,
                   transform: [
+                    // Scale depuis le coin haut-droite :
+                    // translateX/Y avant le scale pour déplacer l'origine
+                    { translateX: MENU_WIDTH / 2 - 12 },
+                    { translateY: -8 },
                     { scale: scaleAnim },
-                    { translateX: 8 },
-                    { translateY: -4 },
+                    { translateX: -(MENU_WIDTH / 2 - 12) },
+                    { translateY: 8 },
                   ],
-                  transformOrigin: 'top right',
                 },
               ]}
             >
               {actions.map((action, index) => (
                 <React.Fragment key={action.key}>
                   <TouchableOpacity
-                    style={[
-                      dd.item,
-                      action.destructive && dd.itemDestructive,
-                    ]}
+                    style={[dd.item, action.destructive && dd.itemDestructive]}
                     onPress={() => {
                       onClose();
-                      // petit délai pour que l'animation de fermeture soit propre
-                      setTimeout(() => action.onPress(), 180);
+                      setTimeout(() => action.onPress(), 160);
                     }}
                     activeOpacity={0.7}
                   >
                     {action.icon && (
-                      <View style={[
-                        dd.iconWrap,
-                        action.destructive && dd.iconWrapDestructive,
-                      ]}>
+                      <View style={[dd.iconWrap, action.destructive && dd.iconWrapDestructive]}>
                         {action.icon}
                       </View>
                     )}
-                    <Text style={[
-                      dd.label,
-                      action.destructive && dd.labelDestructive,
-                    ]}>
+                    <Text
+                      style={[dd.label, action.destructive && dd.labelDestructive]}
+                      numberOfLines={2}      // ← retour à la ligne si texte long
+                    >
                       {action.label}
                     </Text>
                   </TouchableOpacity>
@@ -150,7 +156,7 @@ const dd = StyleSheet.create({
   },
   menu: {
     position: 'absolute',
-    minWidth: 200,
+    // width est défini inline avec MENU_WIDTH
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
     paddingVertical: 6,
@@ -161,16 +167,17 @@ const dd = StyleSheet.create({
     elevation: 20,
     borderWidth: 1,
     borderColor: 'rgba(0,0,0,0.06)',
+    // Pas de overflow: 'hidden' → permet aux ombres de s'afficher
   },
   item: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 12,
-    paddingHorizontal: 16,
-    gap: 12,
+    paddingHorizontal: 14,
+    gap: 10,
   },
   itemDestructive: {
-    backgroundColor: 'transparent',
+    // pas de background pour rester propre
   },
   iconWrap: {
     width: 32,
@@ -179,6 +186,7 @@ const dd = StyleSheet.create({
     backgroundColor: '#F0FDF4',
     justifyContent: 'center',
     alignItems: 'center',
+    flexShrink: 0,          // ← l'icône ne se compresse jamais
   },
   iconWrapDestructive: {
     backgroundColor: '#FFF5F5',
@@ -187,7 +195,8 @@ const dd = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
     color: '#1E293B',
-    flex: 1,
+    flexShrink: 1,          // ← le texte cède de la place si nécessaire
+    flexWrap: 'wrap',
   },
   labelDestructive: {
     color: '#EF4444',
@@ -200,7 +209,7 @@ const dd = StyleSheet.create({
   },
 });
 
-// ─── MinimalHeader ─────────────────────────────────────────────────────────────
+// ─── MinimalHeader ────────────────────────────────────────────────────────────
 const MinimalHeader = memo(({
   title,
   subtitle,
@@ -212,22 +221,22 @@ const MinimalHeader = memo(({
 }: MinimalHeaderProps) => {
   const gradient = (GRADIENTS[theme] ?? GRADIENTS.default) as [string, string];
   const [dropdownVisible, setDropdownVisible] = useState(false);
-  const [anchorPosition, setAnchorPosition] = useState({ top: 0, right: 16 });
+  const [anchorPosition, setAnchorPosition] = useState({ top: 0, right: MENU_MARGIN });
   const moreButtonRef = useRef<View>(null);
 
   const handleBack = useCallback(() => onBackPress(), [onBackPress]);
 
   const handleMorePress = useCallback(() => {
-    // Si on a des menuActions, on affiche le dropdown
     if (menuActions.length > 0) {
-      moreButtonRef.current?.measure((x, y, width, height, pageX, pageY) => {
-        const right = 16;
+      moreButtonRef.current?.measure((_x, _y, width, height, pageX, pageY) => {
+        // Calcul de la position right à partir du bord droit de l'écran
+        const rightEdge = SCREEN_WIDTH - pageX - width;
+        const right = Math.max(MENU_MARGIN, rightEdge);
         const top = pageY + height + 8;
         setAnchorPosition({ top, right });
         setDropdownVisible(true);
       });
     } else {
-      // Comportement externe original si pas d'actions
       onMorePress?.();
     }
   }, [menuActions, onMorePress]);
@@ -245,7 +254,7 @@ const MinimalHeader = memo(({
         end={{ x: 1, y: 0 }}
         style={ss.container}
       >
-        {/* Subtle deco circles */}
+        {/* Deco circles */}
         <View style={ss.deco} pointerEvents="none">
           <View style={ss.circle1} />
           <View style={ss.circle2} />
@@ -272,7 +281,7 @@ const MinimalHeader = memo(({
             ) : null}
           </View>
 
-          {/* More Button / spacer */}
+          {/* More / spacer */}
           {hasActions ? (
             <View ref={moreButtonRef} collapsable={false}>
               <TouchableOpacity
@@ -299,7 +308,7 @@ const MinimalHeader = memo(({
         />
       </LinearGradient>
 
-      {/* Dropdown portal */}
+      {/* Dropdown */}
       <DropdownMenu
         visible={dropdownVisible}
         onClose={closeDropdown}
