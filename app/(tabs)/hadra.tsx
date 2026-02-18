@@ -12,9 +12,9 @@ import ScreenBackground from '../../components/ScreenBackground';
 import HadraInfoModal from '../../components/HadraInfoModal';
 import HadraSettingsModal from '../../components/HadraSettingsModal';
 import StatsBar from '../../components/StatsBar';
+import { useAutoScroll } from '@/components/hooks/useAutoScroll';
 import { useRegisterHeaderActions } from '../../contexts/HeaderActionsContext';
 
-// ─── Data ─────────────────────────────────────────────────────────────────────
 const HADRA_DHIKR = {
   tahlil: {
     title: 'Tahlīl',
@@ -32,13 +32,11 @@ const HADRA_DHIKR = {
 
 const DHIKR_KEYS = ['tahlil', 'ismuLlah'] as const;
 
-// ─── Completion Banner ────────────────────────────────────────────────────────
 function CompletionBanner({ dark, onComplete }: { dark: boolean; onComplete: () => void }) {
   return (
     <TouchableOpacity
       style={[cBanner.wrap, dark && cBanner.wrapDark]}
-      onPress={onComplete}
-      activeOpacity={0.85}
+      onPress={onComplete} activeOpacity={0.85}
     >
       <View style={cBanner.left}>
         <View style={cBanner.iconWrap}>
@@ -58,8 +56,7 @@ const cBanner = StyleSheet.create({
   wrap: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     backgroundColor: '#F5F3FF', borderRadius: 20, padding: 18,
-    marginHorizontal: 16, marginTop: 8,
-    borderWidth: 2, borderColor: '#DDD6FE',
+    marginHorizontal: 16, marginTop: 8, borderWidth: 2, borderColor: '#DDD6FE',
     shadowColor: '#7C3AED', shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.15, shadowRadius: 12, elevation: 5,
   },
@@ -69,11 +66,10 @@ const cBanner = StyleSheet.create({
     width: 48, height: 48, borderRadius: 24,
     backgroundColor: '#EDE9FE', justifyContent: 'center', alignItems: 'center',
   },
-  title: { fontSize: 17, fontWeight: '800', color: '#4C1D95', marginBottom: 3 },
+  title:    { fontSize: 17, fontWeight: '800', color: '#4C1D95', marginBottom: 3 },
   subtitle: { fontSize: 13, color: '#7C3AED', fontWeight: '500' },
 });
 
-// ─── Instructions ─────────────────────────────────────────────────────────────
 function Instructions({ dark }: { dark: boolean }) {
   return (
     <View style={[instr.wrap, dark && instr.wrapDark]}>
@@ -99,10 +95,9 @@ function Instructions({ dark }: { dark: boolean }) {
 const instr = StyleSheet.create({
   wrap: {
     backgroundColor: '#FFFFFF', borderRadius: 20, padding: 20,
-    marginHorizontal: 16, marginTop: 16,
+    marginHorizontal: 16, marginTop: 16, borderWidth: 1, borderColor: '#F1F5F9',
     shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.06, shadowRadius: 8, elevation: 3,
-    borderWidth: 1, borderColor: '#F1F5F9',
   },
   wrapDark: { backgroundColor: '#1E293B', borderColor: '#334155' },
   header: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 14 },
@@ -115,7 +110,6 @@ const instr = StyleSheet.create({
   rowTextDark: { color: '#94A3B8' },
 });
 
-// ─── Main Screen ──────────────────────────────────────────────────────────────
 export default function HadraScreen() {
   const { state, dispatch, isHadraComplete, getHadraProgress } = useApp();
   const [showSettings,  setShowSettings]  = useState(false);
@@ -136,6 +130,13 @@ export default function HadraScreen() {
 
   const progress    = useMemo(() => getHadraProgress(), [state.hadra, state.hadraTargets]);
   const progressPct = Math.round(progress);
+
+  const completions = useMemo(() => [
+    state.hadra.tahlil   >= state.hadraTargets.tahlil,
+    state.hadra.ismuLlah >= state.hadraTargets.ismuLlah,
+  ], [state.hadra, state.hadraTargets]);
+
+  const { scrollRef, registerCard } = useAutoScroll(completions);
 
   const getStepStatus = useCallback((stepIndex: number) => {
     if (state.hadra[DHIKR_KEYS[stepIndex]] >= targets[stepIndex]) return 'completed';
@@ -182,153 +183,95 @@ export default function HadraScreen() {
 
   useRegisterHeaderActions('/hadra', [
     {
-      key: 'info',
-      label: 'Hadra Information',
+      key: 'info', label: 'Hadra Information',
       icon: <Info color="#7C3AED" size={16} strokeWidth={2} />,
       onPress: () => setShowInfoModal(true),
     },
     {
-      key: 'settings',
-      label: 'Hadra Settings',
+      key: 'settings', label: 'Hadra Settings',
       icon: <Settings color="#7C3AED" size={16} strokeWidth={2} />,
-      onPress: () => setShowSettings(true),
-      dividerAfter: true,
+      onPress: () => setShowSettings(true), dividerAfter: true,
     },
     {
-      key: 'reset',
-      label: 'Reset All Dhikr',
+      key: 'reset', label: 'Reset All Dhikr',
       icon: <RotateCcw color="#EF4444" size={16} strokeWidth={2.5} />,
-      onPress: handleResetAll,
-      destructive: true,
+      onPress: handleResetAll, destructive: true,
     },
   ]);
 
   return (
     <View style={[styles.root, dark && styles.rootDark]}>
       <ScreenBackground>
+        <StatsBar dark={dark} stats={[
+          { icon: <Target color="#7C3AED" size={13} strokeWidth={2.5} />, value: `${completedCount}/2`, label: 'Completed', color: '#7C3AED' },
+          { icon: <Flame  color="#F59E0B" size={13} strokeWidth={2.5} />, value: `${progressPct}%`,    label: 'Progress',  color: '#F59E0B' },
+          { icon: <Moon   color="#0891B2" size={13} strokeWidth={2.5} />, value: String(state.streak ?? 0), label: 'Day streak', color: '#0891B2' },
+        ]} />
 
-        {/* ── Stats Bar ── */}
-        <StatsBar
-          dark={dark}
-          stats={[
-            {
-              icon: <Target color="#7C3AED" size={13} strokeWidth={2.5} />,
-              value: `${completedCount}/2`,
-              label: 'Completed',
-              color: '#7C3AED',
-            },
-            {
-              icon: <Flame color="#F59E0B" size={13} strokeWidth={2.5} />,
-              value: `${progressPct}%`,
-              label: 'Progress',
-              color: '#F59E0B',
-            },
-            {
-              icon: <Moon color="#0891B2" size={13} strokeWidth={2.5} />,
-              value: String(state.streak ?? 0),
-              label: 'Day streak',
-              color: '#0891B2',
-            },
-          ]}
-        />
-
-        {/* ── Overall progress bar ── */}
         <View style={styles.progressWrap}>
           <View style={[styles.progressTrack, dark && styles.progressTrackDark]}>
-            <Animated.View
-              style={[
-                styles.progressFill,
-                { width: `${progress}%` },
-                progress >= 100 && styles.progressComplete,
-              ]}
-            />
+            <Animated.View style={[styles.progressFill, { width: `${progress}%` }, progress >= 100 && styles.progressComplete]} />
           </View>
-          <View style={styles.progressMeta}>
-            <Text style={[styles.progressLabel, dark && styles.progressLabelDark]}>
-              Overall Hadra progress
-            </Text>
-          </View>
+          <Text style={[styles.progressLabel, dark && styles.progressLabelDark]}>Overall Hadra progress</Text>
         </View>
 
-        {/* ── Cards ── */}
-        <ScrollView
-          style={styles.scroll}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContent}
-        >
-          <DhikrCard
-            title={`${HADRA_DHIKR.tahlil.title} (${state.hadraTargets.tahlil}x)`}
-            arabic={HADRA_DHIKR.tahlil.arabic}
-            transliteration={HADRA_DHIKR.tahlil.transliteration}
-            translation={HADRA_DHIKR.tahlil.translation}
-            count={state.hadra.tahlil}
-            target={state.hadraTargets.tahlil}
-            onIncrement={() => handleIncrement('tahlil')}
-            onDecrement={() => handleDecrement('tahlil')}
-            onReset={() => handleReset('tahlil', `Tahlīl (${state.hadraTargets.tahlil}x)`)}
-            onPlayAudio={() => playAudio('tahlil')}
-            status={getStepStatus(0)}
-            blessing="بارك الله فيك"
-          />
-          <DhikrCard
-            title={`${HADRA_DHIKR.ismuLlah.title} (${state.hadraTargets.ismuLlah}x)`}
-            arabic={HADRA_DHIKR.ismuLlah.arabic}
-            transliteration={HADRA_DHIKR.ismuLlah.transliteration}
-            translation={HADRA_DHIKR.ismuLlah.translation}
-            count={state.hadra.ismuLlah}
-            target={state.hadraTargets.ismuLlah}
-            onIncrement={() => handleIncrement('ismuLlah')}
-            onDecrement={() => handleDecrement('ismuLlah')}
-            onReset={() => handleReset('ismuLlah', `Ism Allāh (${state.hadraTargets.ismuLlah}x)`)}
-            onPlayAudio={() => playAudio('ismuLlah')}
-            status={getStepStatus(1)}
-            blessing="بارك الله فيك"
-          />
+        <ScrollView ref={scrollRef} style={styles.scroll} showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+
+          <View onLayout={registerCard(0)}>
+            <DhikrCard
+              title={`${HADRA_DHIKR.tahlil.title} (${state.hadraTargets.tahlil}x)`}
+              arabic={HADRA_DHIKR.tahlil.arabic}
+              transliteration={HADRA_DHIKR.tahlil.transliteration}
+              translation={HADRA_DHIKR.tahlil.translation}
+              count={state.hadra.tahlil} target={state.hadraTargets.tahlil}
+              onIncrement={() => handleIncrement('tahlil')}
+              onDecrement={() => handleDecrement('tahlil')}
+              onReset={() => handleReset('tahlil', `Tahlīl (${state.hadraTargets.tahlil}x)`)}
+              onPlayAudio={() => playAudio('tahlil')}
+              status={getStepStatus(0)} blessing="بارك الله فيك"
+            />
+          </View>
+
+          <View onLayout={registerCard(1)}>
+            <DhikrCard
+              title={`${HADRA_DHIKR.ismuLlah.title} (${state.hadraTargets.ismuLlah}x)`}
+              arabic={HADRA_DHIKR.ismuLlah.arabic}
+              transliteration={HADRA_DHIKR.ismuLlah.transliteration}
+              translation={HADRA_DHIKR.ismuLlah.translation}
+              count={state.hadra.ismuLlah} target={state.hadraTargets.ismuLlah}
+              onIncrement={() => handleIncrement('ismuLlah')}
+              onDecrement={() => handleDecrement('ismuLlah')}
+              onReset={() => handleReset('ismuLlah', `Ism Allāh (${state.hadraTargets.ismuLlah}x)`)}
+              onPlayAudio={() => playAudio('ismuLlah')}
+              status={getStepStatus(1)} blessing="بارك الله فيك"
+            />
+          </View>
 
           <Instructions dark={dark} />
-
-          {isHadraComplete && (
-            <CompletionBanner dark={dark} onComplete={handleCompleteHadra} />
-          )}
-
+          {isHadraComplete && <CompletionBanner dark={dark} onComplete={handleCompleteHadra} />}
           <View style={styles.bottomSpace} />
         </ScrollView>
-
       </ScreenBackground>
 
       <HadraSettingsModal
-        visible={showSettings}
-        onClose={() => setShowSettings(false)}
-        currentTargets={state.hadraTargets}
-        onSave={handleSaveSettings}
-        darkMode={dark}
+        visible={showSettings} onClose={() => setShowSettings(false)}
+        currentTargets={state.hadraTargets} onSave={handleSaveSettings} darkMode={dark}
       />
-      <HadraInfoModal
-        visible={showInfoModal}
-        onClose={() => setShowInfoModal(false)}
-        darkMode={dark}
-      />
+      <HadraInfoModal visible={showInfoModal} onClose={() => setShowInfoModal(false)} darkMode={dark} />
     </View>
   );
 }
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#F8FAFC' },
   rootDark: { backgroundColor: '#0F172A' },
-
-  progressWrap: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 4 },
-  progressTrack: {
-    height: 8, backgroundColor: '#E2E8F0',
-    borderRadius: 4, overflow: 'hidden', marginBottom: 10,
-  },
+  progressWrap: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 8 },
+  progressTrack: { height: 8, backgroundColor: '#E2E8F0', borderRadius: 4, overflow: 'hidden', marginBottom: 6 },
   progressTrackDark: { backgroundColor: '#334155' },
   progressFill: { height: '100%', backgroundColor: '#7C3AED', borderRadius: 4 },
   progressComplete: { backgroundColor: '#F59E0B' },
-  progressMeta: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   progressLabel: { fontSize: 13, color: '#FFFFFF', fontWeight: '600' },
   progressLabelDark: { color: '#64748B' },
-
   scroll: { flex: 1 },
   scrollContent: { paddingTop: 8 },
   bottomSpace: { height: 32 },
