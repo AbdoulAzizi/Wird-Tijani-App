@@ -15,7 +15,7 @@ import {
 import { router } from 'expo-router';
 import { asmaAlHusna, AsmaAlHusnaItem } from '../../data/asmaAlHusna';
 import { useApp } from '../../contexts/AppContext';
-import { useHeaderActions } from '../../contexts/HeaderActionsContext';
+import { useRegisterHeaderActions } from '../../contexts/HeaderActionsContext';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const { width } = Dimensions.get('window');
@@ -403,7 +403,7 @@ const nc = StyleSheet.create({
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 export default function NamesScreen() {
   const { state }          = useApp();
-  const { setActions, clearActions } = useHeaderActions();
+  // const { setActions, clearActions } = useHeaderActions();
 
   const [currentIndex,   setCurrentIndex]   = useState(0);
   const [language,       setLanguage]        = useState<Language>('english');
@@ -507,8 +507,7 @@ export default function NamesScreen() {
   }, [scrollTo]);
 
   // ─── Inject actions into MinimalHeader via Context ───────────────────────
-  useEffect(() => {
-    setActions([
+    useRegisterHeaderActions('/names', ([
       // Counter (display only - non-destructive, tap does nothing)
       {
         key: 'counter',
@@ -569,11 +568,7 @@ export default function NamesScreen() {
         onPress: handleResetAll,
         destructive: true,
       },
-    ]);
-
-    return () => clearActions();
-  }, [currentIndex, isDark, speed, isMuted, handleResetAll, setActions, clearActions]);
-
+    ]));
   // ─── Pan responder ───────────────────────────────────────────────────────
   const panResponder = useRef(
     PanResponder.create({

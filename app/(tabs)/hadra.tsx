@@ -11,7 +11,7 @@ import { useApp } from '../../contexts/AppContext';
 import ScreenBackground from '../../components/ScreenBackground';
 import HadraInfoModal from '../../components/HadraInfoModal';
 import HadraSettingsModal from '../../components/HadraSettingsModal';
-import { useHeaderActions } from '../../contexts/HeaderActionsContext';
+import { useRegisterHeaderActions } from '../../contexts/HeaderActionsContext';
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
 const HADRA_DHIKR = {
@@ -166,7 +166,7 @@ export default function HadraScreen() {
   const [showSettings, setShowSettings] = useState(false);
   const [showInfoModal, setShowInfoModal] = useState(false);
 
-  const { setActions, clearActions } = useHeaderActions();
+  // const { setActions, clearActions } = useHeaderActions();
 
   const { darkMode, audioEnabled } = state.settings;
   const dark = darkMode;
@@ -230,8 +230,7 @@ export default function HadraScreen() {
   }, [audioEnabled]);
 
   // ── Injection des actions dans le header ───────────────────────────────────
-  useEffect(() => {
-    setActions([
+    useRegisterHeaderActions('/hadra', ([
       {
         key: 'info',
         label: 'Hadra Information',
@@ -252,10 +251,7 @@ export default function HadraScreen() {
         onPress: handleResetAll,
         destructive: true,
       },
-    ]);
-    return () => clearActions();
-  }, [setActions, clearActions, handleResetAll]);
-
+    ]));
   return (
     <View style={[styles.root, dark && styles.rootDark]}>
       <ScreenBackground>

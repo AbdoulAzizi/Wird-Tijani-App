@@ -12,7 +12,7 @@ import DhikrCard from '../../components/DhikrCard';
 import { useApp, WAZIFA_TARGETS } from '../../contexts/AppContext';
 import ScreenBackground from '../../components/ScreenBackground';
 import WazifaInfoModal from '../../components/WazifaInfoModal';
-import { useHeaderActions } from '../../contexts/HeaderActionsContext';
+import { useRegisterHeaderActions } from '../../contexts/HeaderActionsContext';
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
 const WAZIFA_DHIKR = {
@@ -372,7 +372,7 @@ export default function WazifaScreen() {
   const [tempUseJawhara, setTempUseJawhara] = useState(state.wazifaSettings.useJawhara);
   const [tempJawharaCount, setTempJawharaCount] = useState<number>(state.wazifaSettings.jawharaCount || 12);
 
-  const { setActions, clearActions } = useHeaderActions();
+  // const { setActions, clearActions } = useHeaderActions();
 
   const { darkMode, audioEnabled } = state.settings;
   const dark = darkMode;
@@ -454,8 +454,8 @@ export default function WazifaScreen() {
   }, [state.wazifaSettings.useJawhara, state.wazifaSettings.jawharaCount]);
 
   // ── Injection des actions dans le header ───────────────────────────────────
-  useEffect(() => {
-    setActions([
+    useRegisterHeaderActions('/wazifa', [
+      
       {
         key: 'info',
         label: 'Wazīfa Information',
@@ -477,8 +477,6 @@ export default function WazifaScreen() {
         destructive: true,
       },
     ]);
-    return () => clearActions();
-  }, [setActions, clearActions, handleResetAll, openSettings]);
 
   return (
     <View style={[styles.root, dark && styles.rootDark]}>

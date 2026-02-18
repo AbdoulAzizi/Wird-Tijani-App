@@ -18,6 +18,7 @@ import { useNotifications } from '@/contexts/NotificationContext';
 import {
   HeaderActionsProvider,
   useHeaderActions,
+  useHeaderActionsForRoute,
 } from '@/contexts/HeaderActionsContext';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -361,7 +362,7 @@ function InnerTabLayout() {
   const { unreadCount, markAllAsRead } = useNotifications();
 
   // ← Récupère les actions injectées par le screen courant
-  const { actions: headerMenuActions } = useHeaderActions();
+  const headerMenuActions = useHeaderActionsForRoute(pathname);
 
   const menuItems: MenuItem[] = useMemo(() => [
     { name: 'Home',            route: '/',                      icon: Home,         description: 'Main dashboard',        color: '#059669', useMinimalHeader: false },

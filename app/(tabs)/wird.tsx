@@ -14,7 +14,7 @@ import { useApp, WIRD_TARGETS } from '../../contexts/AppContext';
 import ScreenBackground from '../../components/ScreenBackground';
 import WirdInfoModal from '../../components/WirdInfoModal';
 import WirdSettingsModal from '../../components/WirdSettingsModal';
-import { useHeaderActions } from '../../contexts/HeaderActionsContext';
+import { useRegisterHeaderActions } from '../../contexts/HeaderActionsContext';
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
 const DHIKR_DATA = {
@@ -177,8 +177,6 @@ export default function WirdScreen() {
   const [showInfoModal,     setShowInfoModal]     = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
 
-  const { setActions, clearActions } = useHeaderActions();
-
   const { darkMode, audioEnabled } = state.settings;
   const dark    = darkMode;
   const salawat = getCurrentSalawatFormula();
@@ -239,8 +237,7 @@ export default function WirdScreen() {
   }, [audioEnabled]);
 
   // ── Injection des actions dans le header via le contexte ───────────────────
-  useEffect(() => {
-    setActions([
+    useRegisterHeaderActions('/wird',[
       {
         key: 'info',
         label: 'Wird Information',
@@ -262,10 +259,6 @@ export default function WirdScreen() {
         destructive: true,
       },
     ]);
-
-    // Nettoyage quand on quitte l'écran
-    return () => clearActions();
-  }, [setActions, clearActions, handleResetAll]);
 
   return (
     <View style={[styles.root, dark && styles.rootDark]}>
