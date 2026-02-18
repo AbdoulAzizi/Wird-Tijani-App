@@ -17,6 +17,7 @@ import { Settings as SettingsIcon, Volume2, Bell, Info, Share2, Heart, Moon, Glo
 import GradientHeader from '../../components/GradientHeader';
 import { useApp } from '../../contexts/AppContext';
 import { useNotifications } from '../../contexts/NotificationContext';
+import { exportReport } from '../../utils/exportReport';
 import ScreenBackground from '../../components/ScreenBackground';
 import { useRouter } from 'expo-router';
 
@@ -44,9 +45,9 @@ export default function SettingsScreen() {
 
   // États pour les temps de rappel
   const [reminderTimes, setReminderTimes] = useState({
-    morning: new Date(2024, 0, 1, 5, 30),
-    evening: new Date(2024, 0, 1, 18, 45),
-    friday: new Date(2024, 0, 1, 15, 30)
+    morning: new Date(new Date().getFullYear(), 0, 1, 5, 30),
+    evening: new Date(new Date().getFullYear(), 0, 1, 18, 45),
+    friday: new Date(new Date().getFullYear(), 0, 1, 15, 30)
   });
 
   const toggleAudio = () => {
@@ -99,17 +100,146 @@ export default function SettingsScreen() {
     }
   };
 
-  const exportData = async () => {
-    try {
-      const dataToExport = JSON.stringify(state, null, 2);
-      await Share.share({
-        message: `Backup data from Wird & Wazīfa Tijāniyya:\n\n${dataToExport}`,
-        title: 'App Backup'
-      });
-    } catch (error) {
-      Alert.alert('Error', 'Failed to export data');
-    }
-  };
+  // const exportData = async () => {
+  //   try {
+  //     const dataToExport = JSON.stringify(state, null, 2);
+  //     await Share.share({
+  //       message: `Backup data from Wird & Wazīfa Tijāniyya:\n\n${dataToExport}`,
+  //       title: 'App Backup'
+  //     });
+  //   } catch (error) {
+  //     Alert.alert('Error', 'Failed to export data');
+  //   }
+  // };
+
+  // const exportData = async () => {
+  //   try {
+  //     const now = new Date();
+  //     const exportDate = now.toLocaleDateString('en-US', {
+  //       weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+  //     });
+  //     const exportTime = now.toLocaleTimeString('en-US', {
+  //       hour: '2-digit', minute: '2-digit'
+  //     });
+
+  //     // ── Helpers ──────────────────────────────────────────────
+  //     const bar = (count: number, target: number, width = 20) => {
+  //       const filled = Math.round((count / target) * width);
+  //       return '█'.repeat(filled) + '░'.repeat(width - filled);
+  //     };
+  //     const pct = (count: number, target: number) =>
+  //       `${Math.min(Math.round((count / target) * 100), 100)}%`;
+  //     const line = (char = '─', len = 44) => char.repeat(len);
+
+  //     // ── Wird section ─────────────────────────────────────────
+  //     const wirdLines = [
+  //       `  Istighfār      ${bar(state.wird.istighfar, 100)}  ${state.wird.istighfar}/100  (${pct(state.wird.istighfar, 100)})`,
+  //       `  Ṣalāt al-Fātiḥ ${bar(state.wird.salatFatih, 100)}  ${state.wird.salatFatih}/100  (${pct(state.wird.salatFatih, 100)})`,
+  //       `  Tahlīl         ${bar(state.wird.tahlil, 100)}  ${state.wird.tahlil}/100  (${pct(state.wird.tahlil, 100)})`,
+  //     ].join('\n');
+
+  //     // ── Wazīfa section ────────────────────────────────────────
+  //     const jawharaTarget = state.wazifaSettings.useJawhara
+  //       ? state.wazifaSettings.jawharaCount
+  //       : 20;
+  //     const jawharaLabel = state.wazifaSettings.useJawhara ? 'Jawhara' : 'Ṣalāt al-Fātiḥ';
+  //     const wazifaLines = [
+  //       `  Istighfār      ${bar(state.wazifa.istighfar, 30)}  ${state.wazifa.istighfar}/30   (${pct(state.wazifa.istighfar, 30)})`,
+  //       `  Ṣalāt al-Fātiḥ ${bar(state.wazifa.salatFatih1, 50)}  ${state.wazifa.salatFatih1}/50   (${pct(state.wazifa.salatFatih1, 50)})`,
+  //       `  Tahlīl         ${bar(state.wazifa.tahlil, 100)}  ${state.wazifa.tahlil}/100  (${pct(state.wazifa.tahlil, 100)})`,
+  //       `  ${jawharaLabel.padEnd(14)} ${bar(state.wazifa.jawhara, jawharaTarget)}  ${state.wazifa.jawhara}/${jawharaTarget}   (${pct(state.wazifa.jawhara, jawharaTarget)})`,
+  //     ].join('\n');
+
+  //     // ── Hadra section ─────────────────────────────────────────
+  //     const hadraLines = [
+  //       `  Tahlīl         ${bar(state.hadra.tahlil, state.hadraTargets.tahlil)}  ${state.hadra.tahlil}/${state.hadraTargets.tahlil}  (${pct(state.hadra.tahlil, state.hadraTargets.tahlil)})`,
+  //       `  Ism al-Llāh    ${bar(state.hadra.ismuLlah, state.hadraTargets.ismuLlah)}  ${state.hadra.ismuLlah}/${state.hadraTargets.ismuLlah}   (${pct(state.hadra.ismuLlah, state.hadraTargets.ismuLlah)})`,
+  //     ].join('\n');
+
+  //     // ── Stats ─────────────────────────────────────────────────
+  //     const totalWirds = state.completedWirds.length;
+  //     const totalWazifas = state.completedWazifas.length;
+  //     const totalHadras = state.completedHadras.length;
+  //     const lastWird = totalWirds > 0
+  //       ? new Date(state.completedWirds[totalWirds - 1]).toLocaleDateString('en-US', {
+  //           month: 'short', day: 'numeric', year: 'numeric'
+  //         })
+  //       : 'None yet';
+  //     const lastWazifa = totalWazifas > 0
+  //       ? new Date(state.completedWazifas[totalWazifas - 1]).toLocaleDateString('en-US', {
+  //           month: 'short', day: 'numeric', year: 'numeric'
+  //         })
+  //       : 'None yet';
+
+  //     // ── Settings summary ──────────────────────────────────────
+  //     const settingsLines = [
+  //       `  Dark Mode        : ${state.settings.darkMode ? 'On' : 'Off'}`,
+  //       `  Audio            : ${state.settings.audioEnabled ? 'On' : 'Off'}`,
+  //       `  Notifications    : ${state.settings.notificationsEnabled ? 'On' : 'Off'}`,
+  //       `  Language         : ${state.settings.language.toUpperCase()}`,
+  //       `  Morning Reminder : ${state.settings.reminderTimes.morning}`,
+  //       `  Evening Reminder : ${state.settings.reminderTimes.evening}`,
+  //       `  Friday Reminder  : ${state.settings.reminderTimes.friday}`,
+  //       `  Salawāt Formula  : ${state.wirdSettings.salawatFormula}`,
+  //       `  Wazīfa Formula   : ${state.wazifaSettings.useJawhara
+  //           ? `Jawhara (×${state.wazifaSettings.jawharaCount})`
+  //           : 'Ṣalāt al-Fātiḥ (×20)'}`,
+  //     ].join('\n');
+
+  //     // ── Assemble report ───────────────────────────────────────
+  //     const report = [
+  //       `╔${'═'.repeat(44)}╗`,
+  //       `║     WIRD & WAZĪFA TIJĀNIYYA — MY REPORT     ║`,
+  //       `╚${'═'.repeat(44)}╝`,
+  //       ``,
+  //       `  Exported on : ${exportDate}`,
+  //       `  At          : ${exportTime}`,
+  //       ``,
+  //       line(),
+  //       `  بِسْمِ اللّٰهِ الرَّحْمٰنِ الرَّحِيْمِ`,
+  //       line(),
+  //       ``,
+  //       `▌ TODAY'S WIRD`,
+  //       line('─', 44),
+  //       wirdLines,
+  //       ``,
+  //       `▌ TODAY'S WAZĪFA`,
+  //       line('─', 44),
+  //       wazifaLines,
+  //       ``,
+  //       `▌ HADRA SESSION`,
+  //       line('─', 44),
+  //       hadraLines,
+  //       ``,
+  //       line('═', 44),
+  //       `  ✦  OVERALL STATISTICS`,
+  //       line('═', 44),
+  //       `  Wirds completed    : ${totalWirds}`,
+  //       `  Last Wird          : ${lastWird}`,
+  //       `  Wazīfas completed  : ${totalWazifas}`,
+  //       `  Last Wazīfa        : ${lastWazifa}`,
+  //       `  Hadra sessions     : ${totalHadras}`,
+  //       `  Streak             : ${state.streak} day${state.streak !== 1 ? 's' : ''}`,
+  //       ``,
+  //       line('═', 44),
+  //       `  ⚙  APP SETTINGS`,
+  //       line('═', 44),
+  //       settingsLines,
+  //       ``,
+  //       line('─', 44),
+  //       `  May Allāh accept our efforts.`,
+  //       `  — Wird & Wazīfa Tijāniyya v1.0`,
+  //       line('─', 44),
+  //     ].join('\n');
+
+  //     await Share.share({
+  //       message: report,
+  //       title: 'Wird & Wazīfa Tijāniyya — My Report',
+  //     });
+  //   } catch (error) {
+  //     Alert.alert('Export Error', 'Failed to export your data. Please try again.');
+  //   }
+  // };
 
   const resetAllData = () => {
     Alert.alert(
@@ -364,7 +494,8 @@ export default function SettingsScreen() {
 
             <TouchableOpacity 
               style={[styles.settingItem, state.settings.darkMode && styles.settingItemDark]}
-              onPress={exportData}
+              // onPress={exportData}*
+              onPress={() => exportReport(state)}
             >
               <View style={styles.settingInfo}>
                 <Upload color={state.settings.darkMode ? '#FFFFFF' : '#6B7280'} size={20} />
@@ -627,7 +758,7 @@ export default function SettingsScreen() {
               style={styles.resetConfirmButton}
               onPress={() => {
                 setShowResetModal(false);
-                resetAllData();
+                // resetAllData();
               }}
             >
               <Text style={styles.resetConfirmText}>Reset All</Text>

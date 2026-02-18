@@ -409,7 +409,8 @@ export default function AboutScreen() {
             styles.copyrightText,
             state.settings.darkMode && styles.copyrightTextDark
           ]}>
-            © 2024 Wird & Wazīfa Tijāniyya
+            {/* © 2024 Wird & Wazīfa Tijāniyya */}
+            © {new Date().getFullYear()} Wird & Wazīfa Tijāniyya
           </Text>
           <Text style={[
             styles.copyrightSubtext,
