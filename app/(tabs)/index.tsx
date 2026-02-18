@@ -1,29 +1,26 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { 
-  Heart, 
-  Star, 
-  Users, 
-  MapPin, 
+import {
+  Heart,
+  Star,
+  Users,
   BookOpen,
-  Calendar,
-  Sunrise,
-  Moon,
   TrendingUp,
   Clock,
   Award,
   ChevronRight,
   Sparkles,
-  LucideIcon
+  Flame,
+  LucideIcon,
+  ArrowRight,
 } from 'lucide-react-native';
 import { useApp } from '../../contexts/AppContext';
-import { openHadraMap } from "../../utils/OpenHadraMap";
+import { openHadraMap } from '../../utils/OpenHadraMap';
 import QuickActionsBar from '../../components/QuickActionsBar';
 import PracticeCard from '../../components/PracticeCard';
 
-// Interface pour les cartes de pratique
+// ── Types ──────────────────────────────────────────────────────────────────
 interface PracticeCardData {
   id: string;
   title: string;
@@ -48,6 +45,7 @@ interface QuickAction {
 
 const { width } = Dimensions.get('window');
 
+// ── Data ───────────────────────────────────────────────────────────────────
 const practiceCards: PracticeCardData[] = [
   {
     id: 'wird',
@@ -132,7 +130,7 @@ const quickActions: QuickAction[] = [
     action: 'continue',
   },
   {
-    title: 'Today\'s Schedule',
+    title: "Today's Schedule",
     description: 'View prayer times & practices',
     icon: Clock,
     color: '#7C3AED',
@@ -161,170 +159,140 @@ const quickActions: QuickAction[] = [
   },
 ];
 
+// ── Compact Progress Bar ───────────────────────────────────────────────────
+const MiniBar = ({
+  label,
+  value,
+  color,
+  darkMode,
+}: {
+  label: string;
+  value: number;
+  color: string;
+  darkMode: boolean;
+}) => (
+  <View style={miniStyles.row}>
+    <Text style={[miniStyles.label, darkMode && miniStyles.labelDark]}>{label}</Text>
+    <View style={[miniStyles.track, darkMode && miniStyles.trackDark]}>
+      <View style={[miniStyles.fill, { width: `${value}%`, backgroundColor: color }]} />
+    </View>
+    <Text style={[miniStyles.pct, { color }]}>{value}%</Text>
+  </View>
+);
+
+const miniStyles = StyleSheet.create({
+  row:      { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 5 },
+  label:    { fontSize: 11, fontWeight: '600', color: '#64748B', width: 44 },
+  labelDark:{ color: '#94A3B8' },
+  track:    { flex: 1, height: 6, backgroundColor: '#F1F5F9', borderRadius: 3, overflow: 'hidden' },
+  trackDark:{ backgroundColor: '#334155' },
+  fill:     { height: '100%', borderRadius: 3 },
+  pct:      { fontSize: 11, fontWeight: '700', width: 32, textAlign: 'right' },
+});
+
+// ── Main Screen ────────────────────────────────────────────────────────────
 export default function HomeScreen() {
   const { state, getWirdProgress, getWazifaProgress } = useApp();
+  const dark = state.settings.darkMode;
 
   const handleCardPress = (route: string) => {
     switch (route) {
-      case '/wird':
-        router.push('/(tabs)/wird');
-        break;
-      case '/wazifa':
-        router.push('/(tabs)/wazifa');
-        break;
-      case '/names':
-        router.push('/(tabs)/names');
-        break;
-      case '/library':
-        router.push('/(tabs)/library');
-        break;
-      case '/hadra-jumua':
-        router.push('/(tabs)/hadra');
-        break;
-      case '/hadra-map':
-        openHadraMap();
-        break;
-      default:
-        console.log(`Navigate to ${route}`);
-        break;
+      case '/wird':      router.push('/(tabs)/wird');    break;
+      case '/wazifa':    router.push('/(tabs)/wazifa');  break;
+      case '/names':     router.push('/(tabs)/names');   break;
+      case '/library':   router.push('/(tabs)/library'); break;
+      case '/hadra-jumua': router.push('/(tabs)/hadra'); break;
+      case '/hadra-map': openHadraMap();                 break;
+      default: break;
     }
   };
 
   const handleQuickAction = (action: string) => {
     switch (action) {
-      case 'continue':
-        router.push('/(tabs)/wird');
-        break;
-      case 'schedule':
-        openHadraMap();
-        break;
-      case 'achievements':
-        router.push('/(tabs)/stats');
-        break;
-      case 'names':
-        router.push('/(tabs)/names');
-        break;
-      case 'library-screen':
-        router.push('/(tabs)/library');
-        break;
-      default:
-        console.log(`Navigate to ${action}`);
-        break;
+      case 'continue':      router.push('/(tabs)/wird');    break;
+      case 'schedule':      openHadraMap();                 break;
+      case 'achievements':  router.push('/(tabs)/stats');   break;
+      case 'names':         router.push('/(tabs)/names');   break;
+      case 'library-screen':router.push('/(tabs)/library'); break;
+      default: break;
     }
   };
 
-  // Get today's progress stats
-  const wirdProgress = getWirdProgress();
+  const wirdProgress   = getWirdProgress();
   const wazifaProgress = getWazifaProgress();
-  const totalProgress = Math.round((wirdProgress + wazifaProgress) / 2);
-  const streak = state.streak || 0;
+  const totalProgress  = Math.round((wirdProgress + wazifaProgress) / 2);
+  const streak         = state.streak || 0;
 
-  // Get progress for specific cards
   const getCardProgress = (cardId: string): number => {
-    switch (cardId) {
-      case 'wird':
-        return wirdProgress;
-      case 'wazifa':
-        return wazifaProgress;
-      default:
-        return 0;
-    }
+    if (cardId === 'wird')   return wirdProgress;
+    if (cardId === 'wazifa') return wazifaProgress;
+    return 0;
   };
 
   return (
-    <View style={[
-      styles.container,
-      state.settings.darkMode && styles.containerDark
-    ]}>
-      <ScrollView 
-        style={styles.scrollView} 
+    <View style={[styles.container, dark && styles.containerDark]}>
+      <ScrollView
+        style={styles.scrollView}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {/* Enhanced Progress Stats */}
-        <View style={styles.progressSection}>
-          <Text style={[
-            styles.sectionTitle,
-            state.settings.darkMode && styles.sectionTitleDark
-          ]}>
-            Today's Progress
-          </Text>
-          
-          <View style={styles.progressCard}>
-            <View style={[
-              styles.progressMainCard,
-              state.settings.darkMode && styles.progressMainCardDark
-            ]}>
-              <View style={styles.progressHeader}>
-                <View style={styles.progressIconContainer}>
-                  <TrendingUp color="#059669" size={24} strokeWidth={2} />
-                </View>
-                <View style={styles.progressInfo}>
-                  <Text style={[
-                    styles.progressValue,
-                    state.settings.darkMode && styles.progressValueDark
-                  ]}>
-                    {totalProgress}%
-                  </Text>
-                  <Text style={[
-                    styles.progressLabel,
-                    state.settings.darkMode && styles.progressLabelDark
-                  ]}>
-                    Daily Goal
-                  </Text>
-                </View>
-                <View style={styles.streakContainer}>
-                  <View style={styles.streakBadge}>
-                    <Text style={styles.streakValue}>
-                      {streak}
-                    </Text>
-                  </View>
-                  <Text style={[
-                    styles.streakLabel,
-                    state.settings.darkMode && styles.streakLabelDark
-                  ]}>
-                    day streak
-                  </Text>
-                </View>
+
+        {/* ── COMPACT PROGRESS CARD ─────────────────────────────── */}
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onPress={() => router.push('/(tabs)/stats')}
+          style={styles.progressWrapper}
+        >
+          <View style={[styles.progressCard, dark && styles.progressCardDark]}>
+            {/* Left: icon + total */}
+            <View style={styles.progressLeft}>
+              <View style={[styles.progressIconBg, { backgroundColor: totalProgress >= 100 ? '#D1FAE5' : dark ? '#1E3A2F' : '#F0FDF4' }]}>
+                <TrendingUp color="#059669" size={18} strokeWidth={2.5} />
               </View>
-              
-              <View style={styles.progressBarContainer}>
-                <View style={[
-                  styles.progressBar,
-                  state.settings.darkMode && styles.progressBarDark
-                ]}>
-                  <View 
-                    style={[
-                      styles.progressFill,
-                      { width: `${totalProgress}%` }
-                    ]} 
-                  />
-                </View>
+              <View>
+                <Text style={[styles.progressPct, dark && styles.progressPctDark]}>
+                  {totalProgress}%
+                </Text>
+                <Text style={[styles.progressLabel, dark && styles.progressLabelDark]}>
+                  Daily Goal
+                </Text>
               </View>
             </View>
-          </View>
-        </View>
 
-        {/* Quick Actions */}
+            {/* Center: mini bars */}
+            <View style={styles.progressCenter}>
+              <MiniBar label="Wird"   value={Math.round(wirdProgress)}   color="#059669" darkMode={dark} />
+              <MiniBar label="Wazifa" value={Math.round(wazifaProgress)} color="#D97706" darkMode={dark} />
+            </View>
+
+            {/* Right: streak + arrow */}
+            <View style={styles.progressRight}>
+              <View style={styles.streakPill}>
+                <Flame color="#D97706" size={13} />
+                <Text style={styles.streakNum}>{streak}</Text>
+              </View>
+              <Text style={[styles.streakDays, dark && styles.streakDaysDark]}>streak</Text>
+              <ArrowRight color={dark ? '#475569' : '#CBD5E1'} size={14} style={{ marginTop: 4 }} />
+            </View>
+          </View>
+        </TouchableOpacity>
+
+        {/* ── QUICK ACTIONS ──────────────────────────────────────── */}
         <View style={styles.quickActionsSection}>
           <QuickActionsBar
             quickActions={quickActions}
             handleQuickAction={handleQuickAction}
-            darkMode={state.settings.darkMode}
+            darkMode={dark}
           />
         </View>
 
-        {/* Practice Cards Grid */}
+        {/* ── PRACTICE CARDS ─────────────────────────────────────── */}
         <View style={styles.practiceSection}>
           <View style={styles.sectionHeader}>
-            <Text style={[
-              styles.sectionTitle,
-              state.settings.darkMode && styles.sectionTitleDark
-            ]}>
+            <Text style={[styles.sectionTitle, dark && styles.sectionTitleDark]}>
               Spiritual Practices
             </Text>
           </View>
-
           <View style={styles.cardsGrid}>
             {practiceCards.map((card) => (
               <PracticeCard
@@ -332,97 +300,59 @@ export default function HomeScreen() {
                 card={card}
                 progress={getCardProgress(card.id)}
                 onPress={handleCardPress}
-                darkMode={state.settings.darkMode}
+                darkMode={dark}
               />
             ))}
           </View>
         </View>
 
-        {/* Featured: 99 Names of Allah */}
+        {/* ── 99 NAMES FEATURED CARD ─────────────────────────────── */}
         <TouchableOpacity
-          style={[
-            styles.featuredCard,
-            state.settings.darkMode && styles.featuredCardDark
-          ]}
+          style={styles.featuredCard}
           onPress={() => router.push('/(tabs)/names')}
-          activeOpacity={0.8}
+          activeOpacity={0.85}
         >
-          <View style={styles.featuredCardGradient}>
-            <View style={styles.featuredContent}>
-              <View style={styles.featuredLeft}>
-                <View style={styles.featuredIconContainer}>
-                  <Sparkles color="#FFFFFF" size={32} strokeWidth={2} />
-                </View>
-                <View style={styles.featuredTextContainer}>
-                  <Text style={styles.featuredArabicTitle}>
-                    أسماء الله الحسنى
-                  </Text>
-                  <Text style={styles.featuredTitle}>
-                    The 99 Beautiful Names of Allah
-                  </Text>
-                  <Text style={styles.featuredSubtitle}>
-                    Meditate and reflect on Allah's divine attributes
-                  </Text>
-                </View>
-              </View>
-              <ChevronRight color="rgba(255, 255, 255, 0.8)" size={24} />
+          <View style={styles.featuredInner}>
+            <View style={styles.featuredIconWrap}>
+              <Sparkles color="#FFFFFF" size={28} strokeWidth={2} />
             </View>
+            <View style={styles.featuredText}>
+              <Text style={styles.featuredArabic}>أسماء الله الحسنى</Text>
+              <Text style={styles.featuredTitle}>The 99 Beautiful Names of Allah</Text>
+              <Text style={styles.featuredSub}>Meditate and reflect on Allah's divine attributes</Text>
+            </View>
+            <ChevronRight color="rgba(255,255,255,0.7)" size={20} />
           </View>
         </TouchableOpacity>
 
-        {/* Enhanced Library Card */}
+        {/* ── LIBRARY CARD ───────────────────────────────────────── */}
         <TouchableOpacity
-          style={[
-            styles.libraryCard,
-            state.settings.darkMode && styles.libraryCardDark
-          ]}
+          style={styles.libraryCard}
           onPress={() => router.push('/(tabs)/library')}
-          activeOpacity={0.8}
+          activeOpacity={0.85}
         >
-          <View style={styles.libraryContent}>
-            <View style={styles.libraryLeft}>
-              <View style={styles.libraryIconContainer}>
-                <BookOpen color="#FFFFFF" size={28} strokeWidth={2} />
-              </View>
-              <View style={styles.libraryTextContainer}>
-                <Text style={styles.libraryTitle}>
-                  Spiritual Library
-                </Text>
-                <Text style={styles.librarySubtitle}>
-                  Sacred formulas, biographies & wisdom
-                </Text>
-              </View>
+          <View style={styles.libraryInner}>
+            <View style={styles.libraryIconWrap}>
+              <BookOpen color="#FFFFFF" size={24} strokeWidth={2} />
             </View>
-            <ChevronRight color="rgba(255, 255, 255, 0.8)" size={20} />
+            <View style={styles.libraryText}>
+              <Text style={styles.libraryTitle}>Spiritual Library</Text>
+              <Text style={styles.librarySub}>Sacred formulas, biographies & wisdom</Text>
+            </View>
+            <ChevronRight color="rgba(255,255,255,0.7)" size={20} />
           </View>
         </TouchableOpacity>
 
-        {/* Inspirational Quote */}
-        <View style={[
-          styles.quoteContainer,
-          state.settings.darkMode && styles.quoteContainerDark
-        ]}>
-          <View style={styles.quoteIcon}>
-            <Text style={styles.quoteMark}>"</Text>
-          </View>
-          <Text style={[
-            styles.arabicQuote,
-            state.settings.darkMode && styles.arabicQuoteDark
-          ]}>
+        {/* ── QUOTE ──────────────────────────────────────────────── */}
+        <View style={[styles.quoteCard, dark && styles.quoteCardDark]}>
+          <Text style={styles.quoteOpenMark}>"</Text>
+          <Text style={[styles.arabicQuote, dark && styles.arabicQuoteDark]}>
             وَاذْكُرُوا اللَّهَ كَثِيرًا لَّعَلَّكُمْ تُفْلِحُونَ
           </Text>
-          <Text style={[
-            styles.quoteTranslation,
-            state.settings.darkMode && styles.quoteTranslationDark
-          ]}>
+          <Text style={[styles.quoteTranslation, dark && styles.quoteTranslationDark]}>
             "And remember Allah much that you may succeed"
           </Text>
-          <Text style={[
-            styles.quoteReference,
-            state.settings.darkMode && styles.quoteReferenceDark
-          ]}>
-            — Quran 62:10
-          </Text>
+          <Text style={styles.quoteRef}>— Quran 62:10</Text>
         </View>
 
         <View style={styles.bottomSpacing} />
@@ -431,317 +361,136 @@ export default function HomeScreen() {
   );
 }
 
+// ── Styles ─────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F8FAFC',
-  },
-  containerDark: {
-    backgroundColor: '#0F172A',
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingBottom: 20,
-  },
+  container:     { flex: 1, backgroundColor: '#F8FAFC' },
+  containerDark: { backgroundColor: '#0F172A' },
+  scrollView:    { flex: 1 },
+  scrollContent: { paddingBottom: 20 },
 
-  // Progress Section
-  progressSection: {
-    marginTop: 4,
-    paddingHorizontal: 16,
-  },
+  // ── Compact progress card
+  progressWrapper: { paddingHorizontal: 16, marginTop: 8 },
   progressCard: {
-    marginTop: 12,
-  },
-  progressMainCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    borderRadius: 24,
-    padding: 24,
+    borderRadius: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    gap: 12,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.1,
-    shadowRadius: 16,
-    elevation: 6,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.07,
+    shadowRadius: 10,
+    elevation: 4,
   },
-  progressMainCardDark: {
-    backgroundColor: '#1E293B',
-  },
-  progressHeader: {
+  progressCardDark: { backgroundColor: '#1E293B' },
+
+  progressLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 20,
+    gap: 10,
+    width: 96,
   },
-  progressIconContainer: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: '#F0FDF4',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
+  progressIconBg: {
+    width: 36, height: 36, borderRadius: 10,
+    justifyContent: 'center', alignItems: 'center',
   },
-  progressInfo: {
-    flex: 1,
+  progressPct: {
+    fontSize: 18, fontWeight: '800', color: '#1E293B', letterSpacing: -0.5,
   },
-  progressValue: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: '#1E293B',
-    letterSpacing: -0.5,
-  },
-  progressValueDark: {
-    color: '#F8FAFC',
-  },
-  progressLabel: {
-    fontSize: 14,
-    color: '#64748B',
-    marginTop: 2,
-    fontWeight: '600',
-  },
-  progressLabelDark: {
-    color: '#CBD5E1',
-  },
-  streakContainer: {
-    alignItems: 'center',
-  },
-  streakBadge: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#FEF3C7',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  streakValue: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: '#D97706',
-  },
-  streakLabel: {
-    fontSize: 11,
-    color: '#64748B',
-    fontWeight: '600',
-  },
-  streakLabelDark: {
-    color: '#CBD5E1',
-  },
-  progressBarContainer: {
-    marginTop: 8,
-  },
-  progressBar: {
-    height: 10,
-    backgroundColor: '#F1F5F9',
-    borderRadius: 5,
-    overflow: 'hidden',
-  },
-  progressBarDark: {
-    backgroundColor: '#334155',
-  },
-  progressFill: {
-    height: '100%',
-    backgroundColor: '#059669',
-    borderRadius: 5,
-  },
+  progressPctDark:  { color: '#F8FAFC' },
+  progressLabel:    { fontSize: 10, color: '#94A3B8', fontWeight: '600', marginTop: 1 },
+  progressLabelDark:{ color: '#64748B' },
 
-  // Quick Actions
-  quickActionsSection: {
-    marginTop: 24,
-  },
+  progressCenter: { flex: 1 },
 
-  // Practice Section
-  practiceSection: {
-    marginTop: 32,
-    paddingHorizontal: 16,
+  progressRight: { alignItems: 'center', gap: 2 },
+  streakPill: {
+    flexDirection: 'row', alignItems: 'center', gap: 3,
+    backgroundColor: '#FEF3C7', borderRadius: 20,
+    paddingHorizontal: 8, paddingVertical: 4,
   },
-  sectionTitle: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: '#1E293B',
-    letterSpacing: -0.5,
-  },
-  sectionTitleDark: {
-    color: '#F8FAFC',
-  },
-  sectionHeader: {
-    marginBottom: 20,
-  },
+  streakNum:  { fontSize: 13, fontWeight: '800', color: '#D97706' },
+  streakDays: { fontSize: 9, color: '#94A3B8', fontWeight: '600' },
+  streakDaysDark: { color: '#64748B' },
+
+  // ── Quick actions
+  quickActionsSection: { marginTop: 20 },
+
+  // ── Practice cards
+  practiceSection: { marginTop: 28, paddingHorizontal: 16 },
+  sectionHeader:   { marginBottom: 16 },
+  sectionTitle:    { fontSize: 20, fontWeight: '800', color: '#1E293B', letterSpacing: -0.5 },
+  sectionTitleDark:{ color: '#F8FAFC' },
   cardsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    gap: 16,
+    flexDirection: 'row', flexWrap: 'wrap',
+    justifyContent: 'space-between', gap: 16,
   },
 
-  // Featured Card for 99 Names
+  // ── 99 Names featured
   featuredCard: {
-    marginHorizontal: 16,
-    marginTop: 32,
-    borderRadius: 24,
-    overflow: 'hidden',
-    shadowColor: '#1e40af',
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.3,
-    shadowRadius: 20,
-    elevation: 8,
-  },
-  featuredCardDark: {
-    shadowColor: '#1e40af',
-  },
-  featuredCardGradient: {
+    marginHorizontal: 16, marginTop: 28,
+    borderRadius: 20, overflow: 'hidden',
     backgroundColor: '#1e40af',
-    padding: 24,
+    shadowColor: '#1e40af',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.28, shadowRadius: 18, elevation: 8,
   },
-  featuredContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+  featuredInner: {
+    flexDirection: 'row', alignItems: 'center',
+    padding: 20, gap: 14,
   },
-  featuredLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
+  featuredIconWrap: {
+    width: 52, height: 52, borderRadius: 26,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    justifyContent: 'center', alignItems: 'center',
+    flexShrink: 0,
   },
-  featuredIconContainer: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
-  },
-  featuredTextContainer: {
-    flex: 1,
-  },
-  featuredArabicTitle: {
-    fontSize: 16,
-    color: 'rgba(255, 255, 255, 0.9)',
-    marginBottom: 6,
-    textAlign: 'right',
-  },
-  featuredTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#FFFFFF',
-    marginBottom: 6,
-  },
-  featuredSubtitle: {
-    fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.8)',
-    lineHeight: 20,
-  },
+  featuredText:  { flex: 1 },
+  featuredArabic:{ fontSize: 14, color: 'rgba(255,255,255,0.85)', textAlign: 'right', marginBottom: 4 },
+  featuredTitle: { fontSize: 15, fontWeight: '700', color: '#FFFFFF', marginBottom: 3 },
+  featuredSub:   { fontSize: 12, color: 'rgba(255,255,255,0.75)', lineHeight: 17 },
 
-  // Library Card
+  // ── Library
   libraryCard: {
-    backgroundColor: '#059669',
-    marginHorizontal: 16,
-    marginTop: 24,
-    borderRadius: 24,
-    padding: 24,
+    marginHorizontal: 16, marginTop: 14,
+    borderRadius: 20, backgroundColor: '#059669',
     shadowColor: '#059669',
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 16,
-    elevation: 8,
+    shadowOpacity: 0.25, shadowRadius: 14, elevation: 6,
   },
-  libraryCardDark: {
-    backgroundColor: '#047857',
+  libraryInner: {
+    flexDirection: 'row', alignItems: 'center',
+    padding: 18, gap: 14,
   },
-  libraryContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+  libraryIconWrap: {
+    width: 46, height: 46, borderRadius: 23,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center', alignItems: 'center', flexShrink: 0,
   },
-  libraryLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  libraryIconContainer: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
-  },
-  libraryTextContainer: {
-    flex: 1,
-  },
-  libraryTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#FFFFFF',
-    marginBottom: 4,
-  },
-  librarySubtitle: {
-    fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.8)',
-    lineHeight: 20,
-  },
+  libraryText:  { flex: 1 },
+  libraryTitle: { fontSize: 15, fontWeight: '700', color: '#FFFFFF', marginBottom: 3 },
+  librarySub:   { fontSize: 12, color: 'rgba(255,255,255,0.78)', lineHeight: 17 },
 
-  // Quote
-  quoteContainer: {
+  // ── Quote
+  quoteCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 24,
-    padding: 28,
-    marginHorizontal: 16,
-    marginTop: 24,
+    borderRadius: 20, padding: 24,
+    marginHorizontal: 16, marginTop: 20,
     alignItems: 'center',
+    borderLeftWidth: 4, borderLeftColor: '#059669',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.1,
-    shadowRadius: 16,
-    elevation: 6,
-    borderLeftWidth: 4,
-    borderLeftColor: '#059669',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.07, shadowRadius: 10, elevation: 4,
   },
-  quoteContainerDark: {
-    backgroundColor: '#1E293B',
-  },
-  quoteIcon: {
-    marginBottom: 16,
-  },
-  quoteMark: {
-    fontSize: 48,
-    color: '#059669',
-    fontWeight: 'bold',
-    opacity: 0.3,
-  },
-  arabicQuote: {
-    fontSize: 18,
-    textAlign: 'center',
-    color: '#1E293B',
-    marginBottom: 16,
-    fontFamily: 'Amiri_400Regular',
-    lineHeight: 28,
-  },
-  arabicQuoteDark: {
-    color: '#F8FAFC',
-  },
-  quoteTranslation: {
-    fontSize: 14,
-    textAlign: 'center',
-    color: '#64748B',
-    fontStyle: 'italic',
-    marginBottom: 12,
-    lineHeight: 20,
-  },
-  quoteTranslationDark: {
-    color: '#CBD5E1',
-  },
-  quoteReference: {
-    fontSize: 12,
-    color: '#9CA3AF',
-    fontWeight: '600',
-  },
-  quoteReferenceDark: {
-    color: '#9CA3AF',
-  },
-  bottomSpacing: {
-    height: 32,
-  },
+  quoteCardDark:        { backgroundColor: '#1E293B' },
+  quoteOpenMark:        { fontSize: 40, color: '#059669', fontWeight: 'bold', opacity: 0.25, marginBottom: 6 },
+  arabicQuote:          { fontSize: 17, textAlign: 'center', color: '#1E293B', marginBottom: 12, lineHeight: 28 },
+  arabicQuoteDark:      { color: '#F8FAFC' },
+  quoteTranslation:     { fontSize: 13, textAlign: 'center', color: '#64748B', fontStyle: 'italic', marginBottom: 10, lineHeight: 19 },
+  quoteTranslationDark: { color: '#CBD5E1' },
+  quoteRef:             { fontSize: 11, color: '#9CA3AF', fontWeight: '600' },
+
+  bottomSpacing: { height: 32 },
 });
