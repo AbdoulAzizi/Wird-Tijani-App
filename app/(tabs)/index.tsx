@@ -205,7 +205,7 @@ export default function HomeScreen() {
         router.push('/(tabs)/names');
         break;
       case 'library-screen':
-        router.push('/(tabs)/library-screen');
+        router.push('/(tabs)/library');
         break;
       default:
         console.log(`Navigate to ${action}`);

@@ -1,10 +1,9 @@
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
-  TouchableOpacity, Alert, Animated, Modal, Platform
+  TouchableOpacity, Alert, Animated, Modal
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { SafeAreaView as SafeAreaViewRNSA } from 'react-native-safe-area-context';
 import {
   Star, RotateCcw, Info, X, Settings, CheckCircle, Award, Flame, Target
 } from 'lucide-react-native';
@@ -12,6 +11,7 @@ import DhikrCard from '../../components/DhikrCard';
 import { useApp, WAZIFA_TARGETS } from '../../contexts/AppContext';
 import ScreenBackground from '../../components/ScreenBackground';
 import WazifaInfoModal from '../../components/WazifaInfoModal';
+import StatsBar from '../../components/StatsBar';
 import { useRegisterHeaderActions } from '../../contexts/HeaderActionsContext';
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
@@ -43,52 +43,6 @@ const WAZIFA_DHIKR = {
 } as const;
 
 const DHIKR_KEYS = ['istighfar', 'salatFatih1', 'tahlil', 'jawhara'] as const;
-
-// ─── Stat Pill ────────────────────────────────────────────────────────────────
-function StatPill({
-  icon: Icon, value, label, color, dark,
-}: {
-  icon: any; value: string; label: string; color: string; dark: boolean;
-}) {
-  return (
-    <View style={[sPill.wrap, dark && sPill.wrapDark]}>
-      <View style={[sPill.iconWrap, { backgroundColor: color + '22' }]}>
-        <Icon color={color} size={13} strokeWidth={2.5} />
-      </View>
-      <View style={sPill.textWrap}>
-        <Text style={[sPill.value, { color }]}>{value}</Text>
-        <Text style={[sPill.label, dark && sPill.labelDark]}>{label}</Text>
-      </View>
-    </View>
-  );
-}
-
-const sPill = StyleSheet.create({
-  wrap: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    paddingVertical: 8,
-    paddingHorizontal: 10,
-    gap: 7,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  wrapDark: { backgroundColor: '#1E293B' },
-  iconWrap: {
-    width: 28, height: 28, borderRadius: 8,
-    justifyContent: 'center', alignItems: 'center',
-  },
-  textWrap: { flexDirection: 'column' },
-  value: { fontSize: 15, fontWeight: '800', letterSpacing: -0.3 },
-  label: { fontSize: 10, color: '#94A3B8', fontWeight: '600', marginTop: 1 },
-  labelDark: { color: '#64748B' },
-});
 
 // ─── Completion Banner ────────────────────────────────────────────────────────
 function CompletionBanner({ dark, onComplete }: { dark: boolean; onComplete: () => void }) {
@@ -175,13 +129,9 @@ const instr = StyleSheet.create({
 
 // ─── Settings Modal ───────────────────────────────────────────────────────────
 interface SettingsModalProps {
-  visible: boolean;
-  onClose: () => void;
-  dark: boolean;
-  tempUseJawhara: boolean;
-  setTempUseJawhara: (v: boolean) => void;
-  tempJawharaCount: number;
-  setTempJawharaCount: (v: number) => void;
+  visible: boolean; onClose: () => void; dark: boolean;
+  tempUseJawhara: boolean; setTempUseJawhara: (v: boolean) => void;
+  tempJawharaCount: number; setTempJawharaCount: (v: number) => void;
   onSave: () => void;
 }
 
@@ -192,12 +142,7 @@ function WazifaSettingsModal({
   onSave,
 }: SettingsModalProps) {
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      presentationStyle="pageSheet"
-      onRequestClose={onClose}
-    >
+    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
       <SafeAreaView style={[sModal.container, dark && sModal.containerDark]}>
         <View style={[sModal.header, dark && sModal.headerDark]}>
           <Text style={[sModal.title, dark && sModal.titleDark]}>Wazīfa Settings</Text>
@@ -205,26 +150,21 @@ function WazifaSettingsModal({
             <X color={dark ? '#FFFFFF' : '#1F2937'} size={24} />
           </TouchableOpacity>
         </View>
-
         <ScrollView style={sModal.scroll} contentContainerStyle={sModal.scrollContent}>
           <View style={sModal.section}>
-            <Text style={[sModal.sectionTitle, dark && sModal.sectionTitleDark]}>
-              Final Dhikr Choice
-            </Text>
-            <Text style={[sModal.sectionDesc, dark && sModal.sectionDescDark]}>
+            <Text style={[sModal.sectionTitle, dark && sModal.sectionTitleDark]}>Final Dhikr Choice</Text>
+            <Text style={[sModal.sectionDesc,  dark && sModal.sectionDescDark]}>
               Choose between Jawharat al-Kamāl or Ṣalāt al-Fātiḥ for the final dhikr
             </Text>
           </View>
 
-          {/* Jawhara Option */}
           <TouchableOpacity
             style={[sModal.option, dark && sModal.optionDark, tempUseJawhara && sModal.optionSelected]}
-            onPress={() => setTempUseJawhara(true)}
-            activeOpacity={0.7}
+            onPress={() => setTempUseJawhara(true)} activeOpacity={0.7}
           >
             <View style={sModal.optionContent}>
               <Text style={[sModal.optionTitle, dark && sModal.optionTitleDark]}>Jawharat al-Kamāl</Text>
-              <Text style={[sModal.optionSub, dark && sModal.optionSubDark]}>Default traditional choice</Text>
+              <Text style={[sModal.optionSub,   dark && sModal.optionSubDark]}>Default traditional choice</Text>
             </View>
             <View style={[sModal.radio, tempUseJawhara && sModal.radioSelected]}>
               {tempUseJawhara && <View style={sModal.radioInner} />}
@@ -240,25 +180,14 @@ function WazifaSettingsModal({
                 {[11, 12].map((count) => (
                   <TouchableOpacity
                     key={count}
-                    style={[
-                      sModal.countBtn,
-                      dark && sModal.countBtnDark,
-                      tempJawharaCount === count && sModal.countBtnSelected,
-                    ]}
-                    onPress={() => setTempJawharaCount(count)}
-                    activeOpacity={0.7}
+                    style={[sModal.countBtn, dark && sModal.countBtnDark, tempJawharaCount === count && sModal.countBtnSelected]}
+                    onPress={() => setTempJawharaCount(count)} activeOpacity={0.7}
                   >
-                    <Text style={[
-                      sModal.countBtnText,
-                      dark && sModal.countBtnTextDark,
-                      tempJawharaCount === count && sModal.countBtnTextSelected,
-                    ]}>
+                    <Text style={[sModal.countBtnText, dark && sModal.countBtnTextDark, tempJawharaCount === count && sModal.countBtnTextSelected]}>
                       {count}x
                     </Text>
                     {count === 12 && (
-                      <Text style={[sModal.defaultBadge, dark && sModal.defaultBadgeDark]}>
-                        Default
-                      </Text>
+                      <Text style={[sModal.defaultBadge, dark && sModal.defaultBadgeDark]}>Default</Text>
                     )}
                   </TouchableOpacity>
                 ))}
@@ -266,15 +195,13 @@ function WazifaSettingsModal({
             </View>
           )}
 
-          {/* Salat al-Fatih Option */}
           <TouchableOpacity
             style={[sModal.option, dark && sModal.optionDark, !tempUseJawhara && sModal.optionSelected]}
-            onPress={() => setTempUseJawhara(false)}
-            activeOpacity={0.7}
+            onPress={() => setTempUseJawhara(false)} activeOpacity={0.7}
           >
             <View style={sModal.optionContent}>
               <Text style={[sModal.optionTitle, dark && sModal.optionTitleDark]}>Ṣalāt al-Fātiḥ (20x)</Text>
-              <Text style={[sModal.optionSub, dark && sModal.optionSubDark]}>Alternative blessed prayer</Text>
+              <Text style={[sModal.optionSub,   dark && sModal.optionSubDark]}>Alternative blessed prayer</Text>
             </View>
             <View style={[sModal.radio, !tempUseJawhara && sModal.radioSelected]}>
               {!tempUseJawhara && <View style={sModal.radioInner} />}
@@ -367,12 +294,10 @@ const sModal = StyleSheet.create({
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 export default function WazifaScreen() {
   const { state, dispatch, isWazifaComplete, getWazifaProgress, getWazifaJawharaTarget } = useApp();
-  const [showInfoModal, setShowInfoModal] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
-  const [tempUseJawhara, setTempUseJawhara] = useState(state.wazifaSettings.useJawhara);
-  const [tempJawharaCount, setTempJawharaCount] = useState<number>(state.wazifaSettings.jawharaCount || 12);
-
-  // const { setActions, clearActions } = useHeaderActions();
+  const [showInfoModal,     setShowInfoModal]     = useState(false);
+  const [showSettings,      setShowSettings]      = useState(false);
+  const [tempUseJawhara,    setTempUseJawhara]    = useState(state.wazifaSettings.useJawhara);
+  const [tempJawharaCount,  setTempJawharaCount]  = useState<number>(state.wazifaSettings.jawharaCount || 12);
 
   const { darkMode, audioEnabled } = state.settings;
   const dark = darkMode;
@@ -390,13 +315,11 @@ export default function WazifaScreen() {
     [state.wazifa, targets],
   );
 
-  const progress = useMemo(() => getWazifaProgress(), [state.wazifa]);
+  const progress    = useMemo(() => getWazifaProgress(), [state.wazifa]);
   const progressPct = Math.round(progress);
 
   const getStepStatus = useCallback((stepIndex: number) => {
-    const currentCount = state.wazifa[DHIKR_KEYS[stepIndex]];
-    const currentTarget = targets[stepIndex];
-    if (currentCount >= currentTarget) return 'completed';
+    if (state.wazifa[DHIKR_KEYS[stepIndex]] >= targets[stepIndex]) return 'completed';
     if (stepIndex === 0 || state.wazifa[DHIKR_KEYS[stepIndex - 1]] >= targets[stepIndex - 1]) return 'active';
     return 'disabled';
   }, [state.wazifa, targets]);
@@ -453,59 +376,57 @@ export default function WazifaScreen() {
     setShowSettings(true);
   }, [state.wazifaSettings.useJawhara, state.wazifaSettings.jawharaCount]);
 
-  // ── Injection des actions dans le header ───────────────────────────────────
-    useRegisterHeaderActions('/wazifa', [
-      
-      {
-        key: 'info',
-        label: 'Wazīfa Information',
-        icon: <Info color="#059669" size={16} strokeWidth={2} />,
-        onPress: () => setShowInfoModal(true),
-      },
-      {
-        key: 'settings',
-        label: 'Wazīfa Settings',
-        icon: <Settings color="#059669" size={16} strokeWidth={2} />,
-        onPress: openSettings,
-        dividerAfter: true,
-      },
-      {
-        key: 'reset',
-        label: 'Reset All Dhikr',
-        icon: <RotateCcw color="#EF4444" size={16} strokeWidth={2.5} />,
-        onPress: handleResetAll,
-        destructive: true,
-      },
-    ]);
+  useRegisterHeaderActions('/wazifa', [
+    {
+      key: 'info',
+      label: 'Wazīfa Information',
+      icon: <Info color="#059669" size={16} strokeWidth={2} />,
+      onPress: () => setShowInfoModal(true),
+    },
+    {
+      key: 'settings',
+      label: 'Wazīfa Settings',
+      icon: <Settings color="#059669" size={16} strokeWidth={2} />,
+      onPress: openSettings,
+      dividerAfter: true,
+    },
+    {
+      key: 'reset',
+      label: 'Reset All Dhikr',
+      icon: <RotateCcw color="#EF4444" size={16} strokeWidth={2.5} />,
+      onPress: handleResetAll,
+      destructive: true,
+    },
+  ]);
 
   return (
     <View style={[styles.root, dark && styles.rootDark]}>
       <ScreenBackground>
 
         {/* ── Stats Bar ── */}
-        <View style={styles.statsRow}>
-          <StatPill
-            icon={Target}
-            value={`${completedCount}/4`}
-            label="Completed"
-            color="#059669"
-            dark={dark}
-          />
-          <StatPill
-            icon={Flame}
-            value={`${progressPct}%`}
-            label="Progress"
-            color="#D97706"
-            dark={dark}
-          />
-          <StatPill
-            icon={Star}
-            value={String(state.streak ?? 0)}
-            label="Day streak"
-            color="#7C3AED"
-            dark={dark}
-          />
-        </View>
+        <StatsBar
+          dark={dark}
+          stats={[
+            {
+              icon: <Target color="#059669" size={13} strokeWidth={2.5} />,
+              value: `${completedCount}/4`,
+              label: 'Completed',
+              color: '#059669',
+            },
+            {
+              icon: <Flame color="#D97706" size={13} strokeWidth={2.5} />,
+              value: `${progressPct}%`,
+              label: 'Progress',
+              color: '#D97706',
+            },
+            {
+              icon: <Star color="#7C3AED" size={13} strokeWidth={2.5} />,
+              value: String(state.streak ?? 0),
+              label: 'Day streak',
+              color: '#7C3AED',
+            },
+          ]}
+        />
 
         {/* ── Overall progress bar ── */}
         <View style={styles.progressWrap}>
@@ -531,7 +452,6 @@ export default function WazifaScreen() {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
         >
-          {/* Istighfar 30x */}
           <DhikrCard
             title={`${WAZIFA_DHIKR.istighfar.title} (30x)`}
             arabic={WAZIFA_DHIKR.istighfar.arabic}
@@ -546,8 +466,6 @@ export default function WazifaScreen() {
             status={getStepStatus(0)}
             blessing=""
           />
-
-          {/* Salat al-Fatih 50x */}
           <DhikrCard
             title={`${WAZIFA_DHIKR.salatFatih.title} (50x)`}
             arabic={WAZIFA_DHIKR.salatFatih.arabic}
@@ -562,8 +480,6 @@ export default function WazifaScreen() {
             status={getStepStatus(1)}
             blessing="سبحان ربك رب العزة عما يصفون . وسلام على المرسلين . والحمد لله رب العالمين"
           />
-
-          {/* Tahlil 100x */}
           <DhikrCard
             title={`${WAZIFA_DHIKR.tahlil.title} (100x)`}
             arabic={WAZIFA_DHIKR.tahlil.arabic}
@@ -578,8 +494,6 @@ export default function WazifaScreen() {
             status={getStepStatus(2)}
             blessing="سيدنا محمد رسول الله عليه السلام"
           />
-
-          {/* Final Dhikr */}
           <DhikrCard
             title={finalDhikrContent.title}
             arabic={finalDhikrContent.arabic}
@@ -606,7 +520,6 @@ export default function WazifaScreen() {
 
       </ScreenBackground>
 
-      {/* Settings Modal */}
       <WazifaSettingsModal
         visible={showSettings}
         onClose={() => setShowSettings(false)}
@@ -617,8 +530,6 @@ export default function WazifaScreen() {
         setTempJawharaCount={setTempJawharaCount}
         onSave={handleSaveSettings}
       />
-
-      {/* Info Modal */}
       <WazifaInfoModal
         visible={showInfoModal}
         onClose={() => setShowInfoModal(false)}
@@ -633,38 +544,15 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#F8FAFC' },
   rootDark: { backgroundColor: '#0F172A' },
 
-  statsRow: {
-    flexDirection: 'row',
-    gap: 8,
-    paddingHorizontal: 16,
-    paddingTop: 10,
-    paddingBottom: 2,
-  },
-
-  progressWrap: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 4,
-  },
+  progressWrap: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 4 },
   progressTrack: {
-    height: 8,
-    backgroundColor: '#E2E8F0',
-    borderRadius: 4,
-    overflow: 'hidden',
-    marginBottom: 10,
+    height: 8, backgroundColor: '#E2E8F0',
+    borderRadius: 4, overflow: 'hidden', marginBottom: 10,
   },
   progressTrackDark: { backgroundColor: '#334155' },
-  progressFill: {
-    height: '100%',
-    backgroundColor: '#D97706',
-    borderRadius: 4,
-  },
+  progressFill: { height: '100%', backgroundColor: '#D97706', borderRadius: 4 },
   progressComplete: { backgroundColor: '#F59E0B' },
-  progressMeta: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
+  progressMeta: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   progressLabel: { fontSize: 13, color: '#FFFFFF', fontWeight: '600' },
   progressLabelDark: { color: '#64748B' },
 

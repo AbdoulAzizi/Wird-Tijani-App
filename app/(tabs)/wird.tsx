@@ -5,8 +5,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
-  RotateCcw, Info, Settings, CheckCircle,
-  Award, Flame, Target
+  RotateCcw, Settings, Info, CheckCircle, Award, Flame, Target
 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import DhikrCard from '../../components/DhikrCard';
@@ -14,6 +13,7 @@ import { useApp, WIRD_TARGETS } from '../../contexts/AppContext';
 import ScreenBackground from '../../components/ScreenBackground';
 import WirdInfoModal from '../../components/WirdInfoModal';
 import WirdSettingsModal from '../../components/WirdSettingsModal';
+import StatsBar from '../../components/StatsBar';
 import { useRegisterHeaderActions } from '../../contexts/HeaderActionsContext';
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
@@ -39,55 +39,6 @@ const BLESSINGS  = [
   'سبحان ربك رب العزة عما يصفون . وسلام على المرسلين . والحمد لله رب العالمين',
   'سيدنا محمد رسول الله عليه السلام',
 ];
-
-// ─── Stat pill ────────────────────────────────────────────────────────────────
-function StatPill({
-  icon: Icon, value, label, color, dark,
-}: {
-  icon: any; value: string; label: string; color: string; dark: boolean;
-}) {
-  return (
-    <View style={[sPill.wrap, dark && sPill.wrapDark]}>
-      <View style={[sPill.iconWrap, { backgroundColor: color + '22' }]}>
-        <Icon color={color} size={13} strokeWidth={2.5} />
-      </View>
-      <View style={sPill.textWrap}>
-        <Text style={[sPill.value, { color }]}>{value}</Text>
-        <Text style={[sPill.label, dark && sPill.labelDark]}>{label}</Text>
-      </View>
-    </View>
-  );
-}
-
-const sPill = StyleSheet.create({
-  wrap: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    paddingVertical: 8,
-    paddingHorizontal: 10,
-    gap: 7,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  wrapDark: { backgroundColor: '#1E293B' },
-  iconWrap: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  textWrap: { flexDirection: 'column' },
-  value: { fontSize: 15, fontWeight: '800', letterSpacing: -0.3 },
-  label: { fontSize: 10, color: '#94A3B8', fontWeight: '600', marginTop: 1 },
-  labelDark: { color: '#64748B' },
-});
 
 // ─── Completion Banner ────────────────────────────────────────────────────────
 function CompletionBanner({ dark, onComplete }: { dark: boolean; onComplete: () => void }) {
@@ -236,58 +187,57 @@ export default function WirdScreen() {
     if (audioEnabled) console.log(`Playing audio for ${type}`);
   }, [audioEnabled]);
 
-  // ── Injection des actions dans le header via le contexte ───────────────────
-    useRegisterHeaderActions('/wird',[
-      {
-        key: 'info',
-        label: 'Wird Information',
-        icon: <Info color="#059669" size={16} strokeWidth={2} />,
-        onPress: () => setShowInfoModal(true),
-      },
-      {
-        key: 'settings',
-        label: 'Wird Settings',
-        icon: <Settings color="#059669" size={16} strokeWidth={2} />,
-        onPress: () => setShowSettingsModal(true),
-        dividerAfter: true,
-      },
-      {
-        key: 'reset',
-        label: 'Reset All Dhikr',
-        icon: <RotateCcw color="#EF4444" size={16} strokeWidth={2.5} />,
-        onPress: handleResetAll,
-        destructive: true,
-      },
-    ]);
+  useRegisterHeaderActions('/wird', [
+    {
+      key: 'info',
+      label: 'Wird Information',
+      icon: <Info color="#059669" size={16} strokeWidth={2} />,
+      onPress: () => setShowInfoModal(true),
+    },
+    {
+      key: 'settings',
+      label: 'Wird Settings',
+      icon: <Settings color="#059669" size={16} strokeWidth={2} />,
+      onPress: () => setShowSettingsModal(true),
+      dividerAfter: true,
+    },
+    {
+      key: 'reset',
+      label: 'Reset All Dhikr',
+      icon: <RotateCcw color="#EF4444" size={16} strokeWidth={2.5} />,
+      onPress: handleResetAll,
+      destructive: true,
+    },
+  ]);
 
   return (
     <View style={[styles.root, dark && styles.rootDark]}>
       <ScreenBackground>
 
         {/* ── Stats Bar ── */}
-        <View style={styles.statsRow}>
-          <StatPill
-            icon={Target}
-            value={`${completedCount}/3`}
-            label="Completed"
-            color="#059669"
-            dark={dark}
-          />
-          <StatPill
-            icon={Flame}
-            value={`${progressPct}%`}
-            label="Progress"
-            color="#F59E0B"
-            dark={dark}
-          />
-          <StatPill
-            icon={Award}
-            value={String(state.streak ?? 0)}
-            label="Day streak"
-            color="#7C3AED"
-            dark={dark}
-          />
-        </View>
+        <StatsBar
+          dark={dark}
+          stats={[
+            {
+              icon: <Target color="#059669" size={13} strokeWidth={2.5} />,
+              value: `${completedCount}/3`,
+              label: 'Completed',
+              color: '#059669',
+            },
+            {
+              icon: <Flame color="#F59E0B" size={13} strokeWidth={2.5} />,
+              value: `${progressPct}%`,
+              label: 'Progress',
+              color: '#F59E0B',
+            },
+            {
+              icon: <Award color="#7C3AED" size={13} strokeWidth={2.5} />,
+              value: String(state.streak ?? 0),
+              label: 'Day streak',
+              color: '#7C3AED',
+            },
+          ]}
+        />
 
         {/* ── Overall progress bar ── */}
         <View style={styles.progressWrap}>
@@ -304,7 +254,6 @@ export default function WirdScreen() {
             <Text style={[styles.progressLabel, dark && styles.progressLabelDark]}>
               Overall Wird progress
             </Text>
-            {/* ↓ progressActions retirés ici — déplacés dans le More menu du header */}
           </View>
         </View>
 
@@ -314,7 +263,6 @@ export default function WirdScreen() {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
         >
-          {/* Istighfar */}
           <DhikrCard
             title={DHIKR_DATA.istighfar.title}
             arabic={DHIKR_DATA.istighfar.arabic}
@@ -329,8 +277,6 @@ export default function WirdScreen() {
             status={getStepStatus(0)}
             blessing={BLESSINGS[0]}
           />
-
-          {/* Salat al-Fatih */}
           <DhikrCard
             title={salawat.title}
             arabic={salawat.arabic}
@@ -345,8 +291,6 @@ export default function WirdScreen() {
             status={getStepStatus(1)}
             blessing={BLESSINGS[1]}
           />
-
-          {/* Tahlil */}
           <DhikrCard
             title={DHIKR_DATA.tahlil.title}
             arabic={DHIKR_DATA.tahlil.arabic}
@@ -392,44 +336,22 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#F8FAFC' },
   rootDark: { backgroundColor: '#0F172A' },
 
-  // Stats row
-  statsRow: {
-    flexDirection: 'row',
-    gap: 8,
-    paddingHorizontal: 16,
-    paddingTop: 10,
-    paddingBottom: 2,
-  },
-
-  // Progress bar section
   progressWrap: {
     paddingHorizontal: 16,
     paddingTop: 12,
     paddingBottom: 4,
   },
   progressTrack: {
-    height: 8,
-    backgroundColor: '#E2E8F0',
-    borderRadius: 4,
-    overflow: 'hidden',
-    marginBottom: 10,
+    height: 8, backgroundColor: '#E2E8F0',
+    borderRadius: 4, overflow: 'hidden', marginBottom: 10,
   },
   progressTrackDark: { backgroundColor: '#334155' },
-  progressFill: {
-    height: '100%',
-    backgroundColor: '#059669',
-    borderRadius: 4,
-  },
+  progressFill: { height: '100%', backgroundColor: '#059669', borderRadius: 4 },
   progressComplete: { backgroundColor: '#F59E0B' },
-  progressMeta: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
+  progressMeta: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   progressLabel: { fontSize: 13, color: '#FFFFFF', fontWeight: '600' },
   progressLabelDark: { color: '#64748B' },
 
-  // Scroll
   scroll: { flex: 1 },
   scrollContent: { paddingTop: 8 },
   bottomSpace: { height: 32 },

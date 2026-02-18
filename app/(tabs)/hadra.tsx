@@ -1,7 +1,7 @@
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
-  TouchableOpacity, Alert, Animated, Platform
+  TouchableOpacity, Alert, Animated
 } from 'react-native';
 import {
   RotateCcw, Settings, Info, CheckCircle, Award, Flame, Moon, Target
@@ -11,6 +11,7 @@ import { useApp } from '../../contexts/AppContext';
 import ScreenBackground from '../../components/ScreenBackground';
 import HadraInfoModal from '../../components/HadraInfoModal';
 import HadraSettingsModal from '../../components/HadraSettingsModal';
+import StatsBar from '../../components/StatsBar';
 import { useRegisterHeaderActions } from '../../contexts/HeaderActionsContext';
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
@@ -30,52 +31,6 @@ const HADRA_DHIKR = {
 } as const;
 
 const DHIKR_KEYS = ['tahlil', 'ismuLlah'] as const;
-
-// ─── Stat Pill ────────────────────────────────────────────────────────────────
-function StatPill({
-  icon: Icon, value, label, color, dark,
-}: {
-  icon: any; value: string; label: string; color: string; dark: boolean;
-}) {
-  return (
-    <View style={[sPill.wrap, dark && sPill.wrapDark]}>
-      <View style={[sPill.iconWrap, { backgroundColor: color + '22' }]}>
-        <Icon color={color} size={13} strokeWidth={2.5} />
-      </View>
-      <View style={sPill.textWrap}>
-        <Text style={[sPill.value, { color }]}>{value}</Text>
-        <Text style={[sPill.label, dark && sPill.labelDark]}>{label}</Text>
-      </View>
-    </View>
-  );
-}
-
-const sPill = StyleSheet.create({
-  wrap: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    paddingVertical: 8,
-    paddingHorizontal: 10,
-    gap: 7,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  wrapDark: { backgroundColor: '#1E293B' },
-  iconWrap: {
-    width: 28, height: 28, borderRadius: 8,
-    justifyContent: 'center', alignItems: 'center',
-  },
-  textWrap: { flexDirection: 'column' },
-  value: { fontSize: 15, fontWeight: '800', letterSpacing: -0.3 },
-  label: { fontSize: 10, color: '#94A3B8', fontWeight: '600', marginTop: 1 },
-  labelDark: { color: '#64748B' },
-});
 
 // ─── Completion Banner ────────────────────────────────────────────────────────
 function CompletionBanner({ dark, onComplete }: { dark: boolean; onComplete: () => void }) {
@@ -163,10 +118,8 @@ const instr = StyleSheet.create({
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 export default function HadraScreen() {
   const { state, dispatch, isHadraComplete, getHadraProgress } = useApp();
-  const [showSettings, setShowSettings] = useState(false);
+  const [showSettings,  setShowSettings]  = useState(false);
   const [showInfoModal, setShowInfoModal] = useState(false);
-
-  // const { setActions, clearActions } = useHeaderActions();
 
   const { darkMode, audioEnabled } = state.settings;
   const dark = darkMode;
@@ -181,13 +134,11 @@ export default function HadraScreen() {
     [state.hadra, targets],
   );
 
-  const progress = useMemo(() => getHadraProgress(), [state.hadra, state.hadraTargets]);
+  const progress    = useMemo(() => getHadraProgress(), [state.hadra, state.hadraTargets]);
   const progressPct = Math.round(progress);
 
   const getStepStatus = useCallback((stepIndex: number) => {
-    const currentCount = state.hadra[DHIKR_KEYS[stepIndex]];
-    const currentTarget = targets[stepIndex];
-    if (currentCount >= currentTarget) return 'completed';
+    if (state.hadra[DHIKR_KEYS[stepIndex]] >= targets[stepIndex]) return 'completed';
     if (stepIndex === 0 || state.hadra[DHIKR_KEYS[stepIndex - 1]] >= targets[stepIndex - 1]) return 'active';
     return 'disabled';
   }, [state.hadra, targets]);
@@ -229,57 +180,57 @@ export default function HadraScreen() {
     if (audioEnabled) console.log(`Playing audio for ${dhikrType}`);
   }, [audioEnabled]);
 
-  // ── Injection des actions dans le header ───────────────────────────────────
-    useRegisterHeaderActions('/hadra', ([
-      {
-        key: 'info',
-        label: 'Hadra Information',
-        icon: <Info color="#7C3AED" size={16} strokeWidth={2} />,
-        onPress: () => setShowInfoModal(true),
-      },
-      {
-        key: 'settings',
-        label: 'Hadra Settings',
-        icon: <Settings color="#7C3AED" size={16} strokeWidth={2} />,
-        onPress: () => setShowSettings(true),
-        dividerAfter: true,
-      },
-      {
-        key: 'reset',
-        label: 'Reset All Dhikr',
-        icon: <RotateCcw color="#EF4444" size={16} strokeWidth={2.5} />,
-        onPress: handleResetAll,
-        destructive: true,
-      },
-    ]));
+  useRegisterHeaderActions('/hadra', [
+    {
+      key: 'info',
+      label: 'Hadra Information',
+      icon: <Info color="#7C3AED" size={16} strokeWidth={2} />,
+      onPress: () => setShowInfoModal(true),
+    },
+    {
+      key: 'settings',
+      label: 'Hadra Settings',
+      icon: <Settings color="#7C3AED" size={16} strokeWidth={2} />,
+      onPress: () => setShowSettings(true),
+      dividerAfter: true,
+    },
+    {
+      key: 'reset',
+      label: 'Reset All Dhikr',
+      icon: <RotateCcw color="#EF4444" size={16} strokeWidth={2.5} />,
+      onPress: handleResetAll,
+      destructive: true,
+    },
+  ]);
+
   return (
     <View style={[styles.root, dark && styles.rootDark]}>
       <ScreenBackground>
 
         {/* ── Stats Bar ── */}
-        <View style={styles.statsRow}>
-          <StatPill
-            icon={Target}
-            value={`${completedCount}/2`}
-            label="Completed"
-            color="#7C3AED"
-            dark={dark}
-          />
-          <StatPill
-            icon={Flame}
-            value={`${progressPct}%`}
-            label="Progress"
-            color="#F59E0B"
-            dark={dark}
-          />
-          <StatPill
-            icon={Moon}
-            value={String(state.streak ?? 0)}
-            label="Day streak"
-            color="#0891B2"
-            dark={dark}
-          />
-        </View>
+        <StatsBar
+          dark={dark}
+          stats={[
+            {
+              icon: <Target color="#7C3AED" size={13} strokeWidth={2.5} />,
+              value: `${completedCount}/2`,
+              label: 'Completed',
+              color: '#7C3AED',
+            },
+            {
+              icon: <Flame color="#F59E0B" size={13} strokeWidth={2.5} />,
+              value: `${progressPct}%`,
+              label: 'Progress',
+              color: '#F59E0B',
+            },
+            {
+              icon: <Moon color="#0891B2" size={13} strokeWidth={2.5} />,
+              value: String(state.streak ?? 0),
+              label: 'Day streak',
+              color: '#0891B2',
+            },
+          ]}
+        />
 
         {/* ── Overall progress bar ── */}
         <View style={styles.progressWrap}>
@@ -305,7 +256,6 @@ export default function HadraScreen() {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
         >
-          {/* Tahlil */}
           <DhikrCard
             title={`${HADRA_DHIKR.tahlil.title} (${state.hadraTargets.tahlil}x)`}
             arabic={HADRA_DHIKR.tahlil.arabic}
@@ -320,8 +270,6 @@ export default function HadraScreen() {
             status={getStepStatus(0)}
             blessing="بارك الله فيك"
           />
-
-          {/* Ism Allah */}
           <DhikrCard
             title={`${HADRA_DHIKR.ismuLlah.title} (${state.hadraTargets.ismuLlah}x)`}
             arabic={HADRA_DHIKR.ismuLlah.arabic}
@@ -348,7 +296,6 @@ export default function HadraScreen() {
 
       </ScreenBackground>
 
-      {/* Settings Modal */}
       <HadraSettingsModal
         visible={showSettings}
         onClose={() => setShowSettings(false)}
@@ -356,8 +303,6 @@ export default function HadraScreen() {
         onSave={handleSaveSettings}
         darkMode={dark}
       />
-
-      {/* Info Modal */}
       <HadraInfoModal
         visible={showInfoModal}
         onClose={() => setShowInfoModal(false)}
@@ -372,38 +317,15 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#F8FAFC' },
   rootDark: { backgroundColor: '#0F172A' },
 
-  statsRow: {
-    flexDirection: 'row',
-    gap: 8,
-    paddingHorizontal: 16,
-    paddingTop: 10,
-    paddingBottom: 2,
-  },
-
-  progressWrap: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 4,
-  },
+  progressWrap: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 4 },
   progressTrack: {
-    height: 8,
-    backgroundColor: '#E2E8F0',
-    borderRadius: 4,
-    overflow: 'hidden',
-    marginBottom: 10,
+    height: 8, backgroundColor: '#E2E8F0',
+    borderRadius: 4, overflow: 'hidden', marginBottom: 10,
   },
   progressTrackDark: { backgroundColor: '#334155' },
-  progressFill: {
-    height: '100%',
-    backgroundColor: '#7C3AED',
-    borderRadius: 4,
-  },
+  progressFill: { height: '100%', backgroundColor: '#7C3AED', borderRadius: 4 },
   progressComplete: { backgroundColor: '#F59E0B' },
-  progressMeta: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
+  progressMeta: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   progressLabel: { fontSize: 13, color: '#FFFFFF', fontWeight: '600' },
   progressLabelDark: { color: '#64748B' },
 
