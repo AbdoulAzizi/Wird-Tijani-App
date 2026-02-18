@@ -105,7 +105,7 @@ export const asmaAlHusna: AsmaAlHusnaItem[] = [
   {
     id: 6,
     arabic: "السَّلاَم",
-    transliteration: "As-Salam",
+    transliteration: "As-Salaam",
     english: "The Source of Peace",
     french: "La Source de Paix",
     verse: {
