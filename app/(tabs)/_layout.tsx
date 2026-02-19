@@ -1,8 +1,8 @@
 import { Tabs, useRouter, usePathname } from 'expo-router';
 import {
   Heart, BookOpen, ChartBar as BarChart3, Settings as SettingsIcon,
-  Star, Moon, Home, Info, Menu, X, ChevronRight, Sparkles, Bell,
-  Users, MapPin, Grid3X3
+  Star, Moon, Home, Info, X, ChevronRight, Sparkles, Bell,
+  Grid3X3, Timer
 } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
@@ -15,24 +15,24 @@ import SpiritualHeader from '@/components/SpiritualHeader';
 import MinimalHeader from '@/components/MinimalHeader';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useNotifications } from '@/contexts/NotificationContext';
+import { useAppVersion } from '@/hooks/useAppVersion';
 import {
   HeaderActionsProvider,
-  useHeaderActions,
   useHeaderActionsForRoute,
 } from '@/contexts/HeaderActionsContext';
 
-// ─── Types ───────────────────────────────────────────────────────────────────
+// ─── Types ────────────────────────────────────────────────────────────────────
 interface MenuItem {
   name: string;
   route: string;
   icon: any;
   description: string;
   badge?: number;
+  isNew?: boolean;           // ← badge "New"
   dividerAfter?: boolean;
   useMinimalHeader?: boolean;
   color?: string;
 }
-
 interface TabIconProps {
   IconComponent: any;
   color: string;
@@ -40,59 +40,35 @@ interface TabIconProps {
   name?: string;
 }
 
-// ─── Constantes ──────────────────────────────────────────────────────────────
-const DRAWER_WIDTH = 300;
-const SWIPE_THRESHOLD = 150;
-const SWIPE_AREA_WIDTH = 30;
-const { height: SCREEN_HEIGHT } = Dimensions.get('window');
-const BOTTOM_SHEET_HEIGHT = SCREEN_HEIGHT * 0.72;
-const MAIN_PAGES = ['/', '/wird', '/wazifa', '/hadra'];
+// ─── Constants ────────────────────────────────────────────────────────────────
+const DRAWER_WIDTH      = 300;
+const SWIPE_THRESHOLD   = 150;
+const SWIPE_AREA_WIDTH  = 30;
+const { width: SW, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const BOTTOM_SHEET_H    = SCREEN_HEIGHT * 0.72;
+const MAIN_PAGES        = ['/', '/wird', '/wazifa', '/hadra'];
 
-// ─── Bottom Sheet Component ───────────────────────────────────────────────────
+// ─── Bottom Sheet ─────────────────────────────────────────────────────────────
 function BottomMenuSheet({
-  visible,
-  onClose,
-  menuItems,
-  onNavigate,
-  pathname,
+  visible, onClose, menuItems, onNavigate, pathname,
 }: {
-  visible: boolean;
-  onClose: () => void;
-  menuItems: MenuItem[];
-  onNavigate: (route: string) => void;
-  pathname: string;
+  visible: boolean; onClose: () => void;
+  menuItems: MenuItem[]; onNavigate: (r: string) => void; pathname: string;
 }) {
-  const slideAnim = useRef(new Animated.Value(BOTTOM_SHEET_HEIGHT)).current;
-  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(BOTTOM_SHEET_H)).current;
+  const fadeAnim  = useRef(new Animated.Value(0)).current;
+  const { appName, fullVersion } = useAppVersion();
 
   useEffect(() => {
     if (visible) {
       Animated.parallel([
-        Animated.spring(slideAnim, {
-          toValue: 0,
-          useNativeDriver: true,
-          damping: 20,
-          stiffness: 160,
-        }),
-        Animated.timing(fadeAnim, {
-          toValue: 1,
-          duration: 250,
-          useNativeDriver: true,
-        }),
+        Animated.spring(slideAnim, { toValue: 0,              useNativeDriver: true, damping: 22, stiffness: 160 }),
+        Animated.timing(fadeAnim,  { toValue: 1, duration: 220, useNativeDriver: true }),
       ]).start();
     } else {
       Animated.parallel([
-        Animated.spring(slideAnim, {
-          toValue: BOTTOM_SHEET_HEIGHT,
-          useNativeDriver: true,
-          damping: 24,
-          stiffness: 180,
-        }),
-        Animated.timing(fadeAnim, {
-          toValue: 0,
-          duration: 200,
-          useNativeDriver: true,
-        }),
+        Animated.spring(slideAnim, { toValue: BOTTOM_SHEET_H, useNativeDriver: true, damping: 26, stiffness: 180 }),
+        Animated.timing(fadeAnim,  { toValue: 0, duration: 180, useNativeDriver: true }),
       ]).start();
     }
   }, [visible]);
@@ -100,341 +76,226 @@ function BottomMenuSheet({
   if (!visible) return null;
 
   const groups = [
-    {
-      label: 'Daily Practices',
-      items: menuItems.filter(i => ['/', '/wird', '/wazifa', '/hadra'].includes(i.route)),
-    },
-    {
-      label: 'Discover',
-      items: menuItems.filter(i => ['/names', '/library'].includes(i.route)),
-    },
-    {
-      label: 'Tools',
-      items: menuItems.filter(i =>
-        ['/stats', '/notifications', '/notification-settings', '/settings', '/about'].includes(i.route)
-      ),
-    },
+    { label: 'Daily Practices', emoji: '🕌', items: menuItems.filter(i => ['/', '/wird', '/wazifa', '/hadra'].includes(i.route)) },
+    { label: 'Discover',        emoji: '✨', items: menuItems.filter(i => ['/names', '/library', '/dhikr-counter'].includes(i.route)) },
+    { label: 'Tools',           emoji: '⚙️', items: menuItems.filter(i => ['/stats', '/notifications', '/notification-settings', '/settings', '/about'].includes(i.route)) },
   ];
 
   return (
-    <View style={bsStyles.overlay} pointerEvents="box-none">
-      {/* Backdrop */}
-      <Animated.View style={[bsStyles.backdrop, { opacity: fadeAnim }]}>
+    <View style={bs.overlay} pointerEvents="box-none">
+      <Animated.View style={[bs.backdrop, { opacity: fadeAnim }]}>
         <Pressable style={{ flex: 1 }} onPress={onClose} />
       </Animated.View>
 
-      {/* Sheet */}
-      <Animated.View
-        style={[
-          bsStyles.sheet,
-          { transform: [{ translateY: slideAnim }] },
-        ]}
-      >
-        {/* Handle bar */}
-        <View style={bsStyles.handleContainer}>
-          <View style={bsStyles.handle} />
+      <Animated.View style={[bs.sheet, { transform: [{ translateY: slideAnim }] }]}>
+        {/* Handle */}
+        <View style={bs.handleWrap}>
+          <View style={bs.handle} />
         </View>
 
         {/* Header */}
-        <View style={bsStyles.header}>
+        <View style={bs.header}>
           <View>
-            <Text style={bsStyles.headerTitle}>Navigation</Text>
-            <Text style={bsStyles.headerSubtitle}>Where would you like to go?</Text>
+            <Text style={bs.headerTitle}>Navigation</Text>
+            <Text style={bs.headerSub}>Where would you like to go?</Text>
           </View>
-          <TouchableOpacity onPress={onClose} style={bsStyles.closeBtn} activeOpacity={0.7}>
-            <X color="#6B7280" size={22} strokeWidth={2.5} />
+          <TouchableOpacity onPress={onClose} style={bs.closeBtn} activeOpacity={0.7}>
+            <X color="#64748B" size={20} strokeWidth={2.5} />
           </TouchableOpacity>
         </View>
 
-        {/* Menu groups */}
         <ScrollView
-          style={bsStyles.scroll}
+          style={{ flex: 1 }}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={bsStyles.scrollContent}
+          contentContainerStyle={bs.scrollContent}
           bounces={false}
         >
           {groups.map((group) => (
-            <View key={group.label} style={bsStyles.group}>
-              <Text style={bsStyles.groupLabel}>{group.label}</Text>
-              <View style={bsStyles.groupGrid}>
+            <View key={group.label} style={bs.group}>
+              <View style={bs.groupLabelRow}>
+                <Text style={bs.groupEmoji}>{group.emoji}</Text>
+                <Text style={bs.groupLabel}>{group.label}</Text>
+              </View>
+              <View style={bs.grid}>
                 {group.items.map((item) => {
-                  const IconComponent = item.icon;
+                  const Icon     = item.icon;
                   const isActive = pathname === item.route;
-                  const bgColor = item.color || '#059669';
+                  const color    = item.color || '#059669';
                   return (
                     <TouchableOpacity
                       key={item.route}
-                      style={[bsStyles.card, isActive && bsStyles.cardActive]}
+                      style={[bs.card, isActive && bs.cardActive, isActive && { borderColor: color }]}
                       onPress={() => onNavigate(item.route)}
-                      activeOpacity={0.75}
+                      activeOpacity={0.72}
                     >
-                      <View style={[bsStyles.cardIcon, { backgroundColor: isActive ? bgColor : bgColor + '18' }]}>
-                        <IconComponent
-                          color={isActive ? '#FFFFFF' : bgColor}
-                          size={22}
-                          strokeWidth={2}
-                        />
+                      <View style={[bs.cardIcon, { backgroundColor: isActive ? color : color + '15' }]}>
+                        <Icon color={isActive ? '#FFFFFF' : color} size={20} strokeWidth={2} />
                       </View>
-                      <Text style={[bsStyles.cardTitle, isActive && bsStyles.cardTitleActive]} numberOfLines={1}>
+                      <Text style={[bs.cardTitle, isActive && { color }]} numberOfLines={1}>
                         {item.name}
                       </Text>
-                      <Text style={bsStyles.cardDesc} numberOfLines={1}>
-                        {item.description}
-                      </Text>
-                      {item.badge !== undefined && item.badge > 0 && (
-                        <View style={bsStyles.cardBadge}>
-                          <Text style={bsStyles.cardBadgeText}>
-                            {item.badge > 9 ? '9+' : item.badge}
-                          </Text>
+                      <Text style={bs.cardDesc} numberOfLines={1}>{item.description}</Text>
+
+                      {/* Numeric badge (notifications count) — takes priority */}
+                      {!!item.badge && item.badge > 0 ? (
+                        <View style={bs.badgePill}>
+                          <Text style={bs.badgeTxt}>{item.badge > 9 ? '9+' : item.badge}</Text>
                         </View>
-                      )}
+                      ) : item.isNew ? (
+                        <View style={bs.newPill}>
+                          <Text style={bs.newTxt}>NEW</Text>
+                        </View>
+                      ) : null}
                     </TouchableOpacity>
                   );
                 })}
               </View>
             </View>
           ))}
-
-          {/* Version */}
-          <Text style={bsStyles.version}>Wird & Wazīfa Tijāniyya — v1.0.0</Text>
+          <Text style={bs.version}>{appName} · v{fullVersion}</Text>
         </ScrollView>
       </Animated.View>
     </View>
   );
 }
 
-// ─── Bottom Sheet Styles ──────────────────────────────────────────────────────
-const bsStyles = StyleSheet.create({
-  overlay: {
-    position: 'absolute',
-    top: 0, left: 0, right: 0, bottom: 0,
-    zIndex: 2000,
-    justifyContent: 'flex-end',
-  },
-  backdrop: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.45)',
-  },
+const bs = StyleSheet.create({
+  overlay:   { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 2000, justifyContent: 'flex-end' },
+  backdrop:  { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.40)' },
   sheet: {
     backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    height: BOTTOM_SHEET_HEIGHT,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -8 },
-    shadowOpacity: 0.18,
-    shadowRadius: 20,
-    elevation: 30,
+    borderTopLeftRadius: 32, borderTopRightRadius: 32,
+    height: BOTTOM_SHEET_H,
+    shadowColor: '#000', shadowOffset: { width: 0, height: -6 },
+    shadowOpacity: 0.14, shadowRadius: 18, elevation: 30,
   },
-  handleContainer: {
-    alignItems: 'center',
-    paddingTop: 14,
-    paddingBottom: 4,
-  },
-  handle: {
-    width: 40,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: '#D1D5DB',
-  },
+  handleWrap: { alignItems: 'center', paddingTop: 12, paddingBottom: 2 },
+  handle:     { width: 36, height: 4, borderRadius: 2, backgroundColor: '#E2E8F0' },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 24,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    paddingHorizontal: 22, paddingVertical: 14,
+    borderBottomWidth: 1, borderBottomColor: '#F1F5F9',
   },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: '#1E293B',
-    letterSpacing: -0.3,
-  },
-  headerSubtitle: {
-    fontSize: 13,
-    color: '#94A3B8',
-    marginTop: 2,
-    fontWeight: '500',
-  },
+  headerTitle: { fontSize: 19, fontWeight: '800', color: '#1E293B', letterSpacing: -0.3 },
+  headerSub:   { fontSize: 12, color: '#94A3B8', marginTop: 2, fontWeight: '500' },
   closeBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#F1F5F9',
-    justifyContent: 'center',
-    alignItems: 'center',
+    width: 34, height: 34, borderRadius: 17,
+    backgroundColor: '#F1F5F9', justifyContent: 'center', alignItems: 'center',
   },
-  scroll: { flex: 1 },
-  scrollContent: {
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 32,
-  },
-  group: {
-    marginBottom: 24,
-  },
-  groupLabel: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#94A3B8',
-    textTransform: 'uppercase',
-    letterSpacing: 1.2,
-    marginBottom: 12,
-    marginLeft: 4,
-  },
-  groupGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-  },
+  scrollContent: { paddingHorizontal: 18, paddingTop: 14, paddingBottom: 30 },
+  group:     { marginBottom: 22 },
+  groupLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 10, marginLeft: 2 },
+  groupEmoji:    { fontSize: 13 },
+  groupLabel: { fontSize: 11, fontWeight: '700', color: '#94A3B8', textTransform: 'uppercase', letterSpacing: 1.2 },
+  grid:       { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   card: {
-    width: '47%',
-    backgroundColor: '#F8FAFC',
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1.5,
-    borderColor: '#F1F5F9',
+    width: '47.5%', backgroundColor: '#F8FAFC',
+    borderRadius: 16, padding: 14,
+    borderWidth: 1.5, borderColor: 'transparent',
     position: 'relative',
   },
-  cardActive: {
-    backgroundColor: '#F0FDF4',
-    borderColor: '#059669',
+  cardActive:  { backgroundColor: '#F0FDF4' },
+  cardIcon: { width: 42, height: 42, borderRadius: 13, justifyContent: 'center', alignItems: 'center', marginBottom: 9 },
+  cardTitle:   { fontSize: 13, fontWeight: '700', color: '#1E293B', marginBottom: 2 },
+  cardDesc:    { fontSize: 10.5, color: '#94A3B8', fontWeight: '500' },
+  // numeric badge
+  badgePill: {
+    position: 'absolute', top: 9, right: 9,
+    backgroundColor: '#EF4444', borderRadius: 7,
+    minWidth: 16, height: 16, paddingHorizontal: 3,
+    justifyContent: 'center', alignItems: 'center',
   },
-  cardIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 10,
+  badgeTxt: { color: '#FFFFFF', fontSize: 9, fontWeight: '800' },
+  // "New" badge — bottom sheet card
+  newPill: {
+    position: 'absolute', top: 9, right: 9,
+    backgroundColor: '#059669', borderRadius: 6,
+    paddingHorizontal: 5, paddingVertical: 2,
+    justifyContent: 'center', alignItems: 'center',
   },
-  cardTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#1E293B',
-    marginBottom: 3,
-  },
-  cardTitleActive: {
-    color: '#059669',
-  },
-  cardDesc: {
-    fontSize: 11,
-    color: '#94A3B8',
-    fontWeight: '500',
-  },
-  cardBadge: {
-    position: 'absolute',
-    top: 10,
-    right: 10,
-    backgroundColor: '#EF4444',
-    borderRadius: 8,
-    minWidth: 18,
-    height: 18,
-    paddingHorizontal: 4,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  cardBadgeText: {
-    color: '#FFFFFF',
-    fontSize: 10,
-    fontWeight: '700',
-  },
-  version: {
-    textAlign: 'center',
-    fontSize: 12,
-    color: '#CBD5E1',
-    fontWeight: '500',
-    marginTop: 4,
-  },
+  newTxt: { color: '#FFFFFF', fontSize: 8, fontWeight: '800', letterSpacing: 0.6 },
+  version: { textAlign: 'center', fontSize: 11, color: '#CBD5E1', fontWeight: '500', marginTop: 6 },
 });
 
-// ─── Inner Layout (accède au HeaderActionsContext) ────────────────────────────
+// ─── Inner Layout ─────────────────────────────────────────────────────────────
 function InnerTabLayout() {
-  const [drawerVisible, setDrawerVisible] = useState(false);
+  const [drawerVisible,      setDrawerVisible]      = useState(false);
   const [bottomSheetVisible, setBottomSheetVisible] = useState(false);
   const slideAnim = useRef(new Animated.Value(-DRAWER_WIDTH)).current;
-  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const fadeAnim  = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(1)).current;
-  const router = useRouter();
-  const pathname = usePathname();
+  const router    = useRouter();
+  const pathname  = usePathname();
   const { unreadCount, markAllAsRead } = useNotifications();
-
-  // ← Récupère les actions injectées par le screen courant
   const headerMenuActions = useHeaderActionsForRoute(pathname);
 
   const menuItems: MenuItem[] = useMemo(() => [
-    { name: 'Home',            route: '/',                      icon: Home,         description: 'Main dashboard',        color: '#059669', useMinimalHeader: false },
-    { name: 'Wird',            route: '/wird',                  icon: Heart,        description: 'Daily prayers',         color: '#DC2626', useMinimalHeader: true  },
-    { name: 'Wazifa',          route: '/wazifa',                icon: Star,         description: 'Special invocations',   color: '#D97706', useMinimalHeader: true  },
-    { name: 'Haḍratu-Jumūʿa',  route: '/hadra',                 icon: Moon,         description: 'Spiritual sessions',    color: '#7C3AED', useMinimalHeader: true  },
-    { name: 'Asm\'a Al-Husn\'a',route: '/names',                 icon: Sparkles,     description: 'Divine names',          color: '#1E40AF', useMinimalHeader: true  },
-    { name: 'Library',         route: '/library',               icon: BookOpen,     description: 'Resources & texts',     color: '#059669', useMinimalHeader: true, dividerAfter: true },
-    { name: 'Statistics',      route: '/stats',                 icon: BarChart3,    description: 'Your progress',         color: '#0891B2', useMinimalHeader: true  },
-    { name: 'Notifications',   route: '/notifications',         icon: Bell,         description: 'Alerts & reminders',    color: '#059669', badge: unreadCount, useMinimalHeader: true },
-    { name: 'Notif. Settings', route: '/notification-settings', icon: Bell,         description: 'Manage notifications',  color: '#64748B', useMinimalHeader: true  },
-    { name: 'Settings',        route: '/settings',              icon: SettingsIcon, description: 'Configuration',         color: '#475569', useMinimalHeader: true  },
-    { name: 'About',           route: '/about',                 icon: Info,         description: 'App information',       color: '#7C3AED', useMinimalHeader: true  },
+    { name: 'Home',             route: '/',                icon: Home,         description: 'Main dashboard',       color: '#059669', useMinimalHeader: false },
+    { name: 'Wird',             route: '/wird',            icon: Heart,        description: 'Daily prayers',        color: '#DC2626', useMinimalHeader: true  },
+    { name: 'Wazifa',           route: '/wazifa',          icon: Star,         description: 'Special invocations',  color: '#D97706', useMinimalHeader: true  },
+    { name: 'Haḍratu-Jumūʿa',   route: '/hadra',           icon: Moon,         description: 'Spiritual sessions',   color: '#7C3AED', useMinimalHeader: true  },
+    { name: "Asm'a Al-Husn'a",  route: '/names',           icon: Sparkles,     description: 'Divine names',         color: '#1E40AF', useMinimalHeader: true,  isNew: true },
+    { name: 'Dhikr Counter',    route: '/dhikr-counter',   icon: Timer,        description: 'Free dhikr counter',   color: '#0891B2', useMinimalHeader: true,  isNew: true },
+    { name: 'Library',          route: '/library',         icon: BookOpen,     description: 'Resources & texts',    color: '#059669', useMinimalHeader: true,  dividerAfter: true },
+    { name: 'Statistics',       route: '/stats',           icon: BarChart3,    description: 'Your progress',        color: '#0891B2', useMinimalHeader: true  },
+    { name: 'Notifications',    route: '/notifications',   icon: Bell,         description: 'Alerts & reminders',   color: '#059669', badge: unreadCount,      useMinimalHeader: true, isNew: true },
+    { name: 'Notif. Settings',  route: '/notification-settings', icon: Bell,   description: 'Manage notifications', color: '#64748B', useMinimalHeader: true  },
+    { name: 'Settings',         route: '/settings',        icon: SettingsIcon, description: 'Configuration',        color: '#475569', useMinimalHeader: true  },
+    { name: 'About',            route: '/about',           icon: Info,         description: 'App information',      color: '#7C3AED', useMinimalHeader: true  },
   ], [unreadCount]);
 
   const shouldUseMinimalHeader = useMemo(() => !MAIN_PAGES.includes(pathname), [pathname]);
 
   const currentPageInfo = useMemo(() => {
-    const currentItem = menuItems.find(item => item.route === pathname);
+    const item = menuItems.find(i => i.route === pathname);
     return {
-      name: currentItem?.name || 'Home',
-      useMinimal: currentItem?.useMinimalHeader ?? shouldUseMinimalHeader,
-      icon: currentItem?.icon,
-      description: currentItem?.description,
+      name:        item?.name        || 'Home',
+      useMinimal:  item?.useMinimalHeader ?? shouldUseMinimalHeader,
+      icon:        item?.icon,
+      description: item?.description,
     };
   }, [pathname, menuItems, shouldUseMinimalHeader]);
 
-  const triggerHaptic = useCallback((type: 'light' | 'medium' | 'success' = 'light') => {
-    if (Platform.OS === 'ios') {
-      switch (type) {
-        case 'light':   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);             break;
-        case 'medium':  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);            break;
-        case 'success': Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success); break;
-      }
-    }
+  const haptic = useCallback((t: 'light' | 'medium' | 'success' = 'light') => {
+    if (Platform.OS !== 'ios') return;
+    if (t === 'success') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    else Haptics.impactAsync(t === 'medium' ? Haptics.ImpactFeedbackStyle.Medium : Haptics.ImpactFeedbackStyle.Light);
   }, []);
 
-  const openDrawer  = useCallback(() => { setDrawerVisible(true);  triggerHaptic('light'); }, [triggerHaptic]);
-  const closeDrawer = useCallback(() => { setDrawerVisible(false); triggerHaptic('light'); }, [triggerHaptic]);
+  const openDrawer  = useCallback(() => { setDrawerVisible(true);  haptic('light');  }, [haptic]);
+  const closeDrawer = useCallback(() => { setDrawerVisible(false); haptic('light');  }, [haptic]);
+  const openBS      = useCallback(() => { haptic('medium'); setBottomSheetVisible(true);  }, [haptic]);
+  const closeBS     = useCallback(() => { haptic('light');  setBottomSheetVisible(false); }, [haptic]);
 
-  const openBottomSheet  = useCallback(() => { triggerHaptic('medium'); setBottomSheetVisible(true);  }, [triggerHaptic]);
-  const closeBottomSheet = useCallback(() => { triggerHaptic('light');  setBottomSheetVisible(false); }, [triggerHaptic]);
-
-  const handleBackPress = useCallback(() => {
-    triggerHaptic('light');
+  const handleBack = useCallback(() => {
+    haptic('light');
     router.canGoBack() ? router.back() : router.push('/');
-  }, [router, triggerHaptic]);
+  }, [router, haptic]);
 
   const handleNotifications = useCallback(() => {
-    triggerHaptic('medium');
+    haptic('medium');
     router.push('/notifications' as any);
     setTimeout(() => markAllAsRead(), 500);
-  }, [router, markAllAsRead, triggerHaptic]);
+  }, [router, markAllAsRead, haptic]);
 
-  const handleBottomSheetNavigate = useCallback((route: string) => {
-    triggerHaptic('success');
+  const handleBSNavigate = useCallback((route: string) => {
+    haptic('success');
     setBottomSheetVisible(false);
-    setTimeout(() => router.push(route as any), 280);
-  }, [router, triggerHaptic]);
+    setTimeout(() => router.push(route as any), 260);
+  }, [router, haptic]);
 
   // Side drawer animation
   useEffect(() => {
     if (drawerVisible) {
       Animated.parallel([
         Animated.spring(slideAnim, { toValue: 0,             useNativeDriver: true, damping: 20, stiffness: 180 }),
-        Animated.timing(fadeAnim,  { toValue: 1, duration: 300, useNativeDriver: true }),
-        Animated.spring(scaleAnim, { toValue: 0.95,          useNativeDriver: true, damping: 15 }),
+        Animated.timing(fadeAnim,  { toValue: 1, duration: 280, useNativeDriver: true }),
+        Animated.spring(scaleAnim, { toValue: 0.96,          useNativeDriver: true, damping: 15 }),
       ]).start();
     } else {
       Animated.parallel([
         Animated.spring(slideAnim, { toValue: -DRAWER_WIDTH, useNativeDriver: true, damping: 22, stiffness: 200 }),
-        Animated.timing(fadeAnim,  { toValue: 0, duration: 250, useNativeDriver: true }),
+        Animated.timing(fadeAnim,  { toValue: 0, duration: 220, useNativeDriver: true }),
         Animated.spring(scaleAnim, { toValue: 1,             useNativeDriver: true, damping: 15 }),
       ]).start();
     }
@@ -442,20 +303,17 @@ function InnerTabLayout() {
 
   const panResponder = useRef(
     PanResponder.create({
-      onMoveShouldSetPanResponder: (evt, gs) => gs.dx > 10 && Math.abs(gs.dy) < 80,
-      onPanResponderGrant: () => {
-        if (Platform.OS === 'ios') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      },
-      onPanResponderMove: (evt, gs) => {
+      onMoveShouldSetPanResponder: (_, gs) => gs.dx > 10 && Math.abs(gs.dy) < 80,
+      onPanResponderGrant: () => { if (Platform.OS === 'ios') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); },
+      onPanResponderMove: (_, gs) => {
         if (gs.dx > 0 && gs.dx < DRAWER_WIDTH) {
           slideAnim.setValue(-DRAWER_WIDTH + gs.dx);
           fadeAnim.setValue(gs.dx / DRAWER_WIDTH);
         }
       },
-      onPanResponderRelease: (evt, gs) => {
-        if (gs.dx > SWIPE_THRESHOLD || gs.vx > 0.5) {
-          openDrawer();
-        } else {
+      onPanResponderRelease: (_, gs) => {
+        if (gs.dx > SWIPE_THRESHOLD || gs.vx > 0.5) openDrawer();
+        else {
           Animated.parallel([
             Animated.spring(slideAnim, { toValue: -DRAWER_WIDTH, useNativeDriver: true, damping: 20, stiffness: 200 }),
             Animated.timing(fadeAnim,  { toValue: 0, duration: 200, useNativeDriver: true }),
@@ -464,104 +322,91 @@ function InnerTabLayout() {
       },
     })
   ).current;
-  
 
   const handleNavigation = useCallback((route: string) => {
-    triggerHaptic('success');
+    haptic('success');
     closeDrawer();
-    requestAnimationFrame(() => setTimeout(() => router.push(route as any), 250));
-  }, [router, closeDrawer, triggerHaptic]);
+    requestAnimationFrame(() => setTimeout(() => router.push(route as any), 240));
+  }, [router, closeDrawer, haptic]);
 
-  const isCurrentRoute = useCallback((route: string) => pathname === route, [pathname]);
+  const isActive = useCallback((r: string) => pathname === r, [pathname]);
 
-  const SideMenuItem = useCallback(({ item }: { item: MenuItem; index: number }) => {
-    const IconComponent = item.icon;
-    const isActive = isCurrentRoute(item.route);
+  // ── Side Menu Item ──────────────────────────────────────────────────────────
+  const SideMenuItem = useCallback(({ item }: { item: MenuItem }) => {
+    const Icon   = item.icon;
+    const active = isActive(item.route);
+    const color  = item.color || '#059669';
     return (
       <>
         <TouchableOpacity
-          style={[styles.menuItem, isActive && styles.menuItemActive]}
+          style={[s.menuItem, active && s.menuItemActive]}
           onPress={() => handleNavigation(item.route)}
           activeOpacity={0.7}
-          accessibilityRole="button"
-          accessibilityLabel={`Navigate to ${item.name}`}
-          accessibilityState={{ selected: isActive }}
         >
-          <View style={[styles.iconContainer, isActive && styles.iconContainerActive]}>
-            <IconComponent color={isActive ? '#FFFFFF' : '#059669'} size={22} strokeWidth={2.5} />
+          <View style={[s.menuIcon, { backgroundColor: active ? color : color + '15' }]}>
+            <Icon color={active ? '#FFFFFF' : color} size={20} strokeWidth={2.2} />
           </View>
-          <View style={styles.menuItemTextContainer}>
-            <View style={styles.menuItemTitleRow}>
-              <Text style={[styles.menuItemText, isActive && styles.menuItemTextActive]}>{item.name}</Text>
-              {item.badge !== undefined && item.badge > 0 && (
-                <View style={styles.badge}>
-                  <Text style={styles.badgeText}>{item.badge > 99 ? '99+' : item.badge}</Text>
+          <View style={{ flex: 1 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
+              <Text style={[s.menuLabel, active && { color }]}>{item.name}</Text>
+
+              {/* Numeric badge — takes priority over New */}
+              {!!item.badge && item.badge > 0 ? (
+                <View style={s.menuBadge}>
+                  <Text style={s.menuBadgeText}>{item.badge > 99 ? '99+' : item.badge}</Text>
                 </View>
-              )}
+              ) : item.isNew ? (
+                <View style={s.menuNewBadge}>
+                  <Text style={s.menuNewBadgeText}>NEW</Text>
+                </View>
+              ) : null}
             </View>
-            <Text style={styles.menuItemDescription}>{item.description}</Text>
+            <Text style={s.menuDesc}>{item.description}</Text>
           </View>
-          <ChevronRight color={isActive ? '#059669' : '#9CA3AF'} size={20} strokeWidth={2} />
+          <ChevronRight color={active ? color : '#CBD5E1'} size={16} strokeWidth={2.5} />
         </TouchableOpacity>
-        {item.dividerAfter && <View style={styles.menuDivider} />}
+        {item.dividerAfter && <View style={s.divider} />}
       </>
     );
-  }, [handleNavigation, isCurrentRoute]);
+  }, [handleNavigation, isActive]);
 
+  // ── Tab Icon ────────────────────────────────────────────────────────────────
   const TabIcon = useCallback(({ IconComponent, color, focused, name }: TabIconProps) => (
-    <Animated.View style={[
-      styles.tabIconContainer,
-      { transform: [{ scale: focused ? 1.15 : 1 }] }
-    ]}>
-      {name === 'home' ? (
-        <Ionicons name="home" color={color} size={24} />
-      ) : (
-        <IconComponent color={color} size={24} strokeWidth={focused ? 2.5 : 2} />
-      )}
-      {focused && <View style={styles.activeIndicator} />}
-    </Animated.View>
+    <View style={s.tabIconWrap}>
+      {name === 'home'
+        ? <Ionicons name="home" color={color} size={23} />
+        : <IconComponent color={color} size={23} strokeWidth={focused ? 2.5 : 2} />
+      }
+      {focused && <View style={[s.dot, { backgroundColor: color }]} />}
+    </View>
   ), []);
 
-  const BurgerTabButton = useCallback(() => (
-    <TouchableOpacity
-      style={styles.burgerTabButton}
-      onPress={openBottomSheet}
-      activeOpacity={0.75}
-      accessibilityRole="button"
-      accessibilityLabel="Open navigation menu"
-    >
-      <View style={[
-        styles.burgerIconWrapper,
-        bottomSheetVisible && styles.burgerIconWrapperActive
-      ]}>
+  // ── Burger button ───────────────────────────────────────────────────────────
+  const BurgerBtn = useCallback(() => (
+    <TouchableOpacity style={s.burgerBtn} onPress={openBS} activeOpacity={0.75}>
+      <View style={[s.burgerCircle, bottomSheetVisible && s.burgerCircleActive]}>
         {bottomSheetVisible
-          ? <X color="#FFFFFF" size={22} strokeWidth={2.5} />
-          : <Grid3X3 color="#059669" size={22} strokeWidth={2} />
+          ? <X color="#FFFFFF" size={20} strokeWidth={2.5} />
+          : <Grid3X3 color="#059669" size={20} strokeWidth={2} />
         }
         {unreadCount > 0 && (
-          <View style={styles.burgerBadge}>
-            <Text style={styles.burgerBadgeText}>
-              {unreadCount > 9 ? '9+' : unreadCount}
-            </Text>
+          <View style={s.burgerBadge}>
+            <Text style={s.burgerBadgeTxt}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
           </View>
         )}
       </View>
-      <Text style={[styles.burgerLabel, bottomSheetVisible && styles.burgerLabelActive]}>
-        Menu
-      </Text>
+      <Text style={[s.burgerLabel, bottomSheetVisible && { color: '#059669' }]}>Menu</Text>
     </TouchableOpacity>
-  ), [openBottomSheet, bottomSheetVisible, unreadCount]);
+  ), [openBS, bottomSheetVisible, unreadCount]);
 
   return (
-    <SafeAreaView style={styles.container} edges={['bottom']}>
-      {/* ── Header intelligent ── */}
+    <SafeAreaView style={s.root} edges={['bottom']}>
       {currentPageInfo.useMinimal ? (
         <MinimalHeader
           title={currentPageInfo.name}
           subtitle={currentPageInfo.description}
-          onBackPress={handleBackPress}
+          onBackPress={handleBack}
           showMore={true}
-          // ← On passe les actions du screen courant au dropdown du header
           menuActions={headerMenuActions}
           theme="default"
         />
@@ -577,112 +422,90 @@ function InnerTabLayout() {
         />
       )}
 
-      {/* Zone swipe latérale */}
+      {/* Swipe zone */}
       {!drawerVisible && !currentPageInfo.useMinimal && (
-        <View style={styles.swipeArea} {...panResponder.panHandlers} />
+        <View style={s.swipeZone} {...panResponder.panHandlers} />
       )}
 
-      {/* Side Drawer */}
+      {/* ── Side Drawer ──────────────────────────────────────────────────────── */}
       {drawerVisible && (
-        <View style={styles.drawerOverlay}>
-          <Pressable style={styles.backdrop} onPress={closeDrawer} accessibilityRole="button" accessibilityLabel="Close menu">
-            <Animated.View style={[styles.backdropFade, { opacity: fadeAnim }]} />
+        <View style={s.drawerOverlay}>
+          <Pressable style={{ flex: 1 }} onPress={closeDrawer}>
+            <Animated.View style={[s.drawerBackdrop, { opacity: fadeAnim }]} />
           </Pressable>
-          <Animated.View style={[styles.drawerContainer, { transform: [{ translateX: slideAnim }] }]}>
-            <View style={styles.drawerHeader}>
+
+          <Animated.View style={[s.drawer, { transform: [{ translateX: slideAnim }] }]}>
+            {/* Drawer header */}
+            <View style={s.drawerHeader}>
               <View>
-                <Text style={styles.drawerTitle}>Menu</Text>
-                <Text style={styles.drawerSubtitle}>Navigation</Text>
+                <Text style={s.drawerTitle}>Menu</Text>
+                <Text style={s.drawerSub}>Navigation</Text>
               </View>
-              <TouchableOpacity onPress={closeDrawer} style={styles.closeButton} activeOpacity={0.7}>
-                <X color="#FFFFFF" size={24} strokeWidth={2.5} />
+              <TouchableOpacity onPress={closeDrawer} style={s.drawerClose} activeOpacity={0.7}>
+                <X color="#FFFFFF" size={22} strokeWidth={2.5} />
               </TouchableOpacity>
             </View>
-            <ScrollView style={styles.menuList} showsVerticalScrollIndicator={false} contentContainerStyle={styles.menuListContent}>
-              {menuItems.map((item, index) => <SideMenuItem key={item.route} item={item} index={index} />)}
+
+            {/* Items */}
+            <ScrollView
+              style={{ flex: 1 }}
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={{ paddingTop: 8, paddingBottom: 16 }}
+            >
+              {menuItems.map(item => <SideMenuItem key={item.route} item={item} />)}
             </ScrollView>
-            <View style={styles.drawerFooter}>
-              <View style={styles.footerDivider} />
-              <Text style={styles.footerText}>Version 1.0.0</Text>
-              <Text style={styles.footerTextSmall}>© 2025 Spiritual App</Text>
+
+            {/* Footer */}
+            <View style={s.drawerFooter}>
+              <View style={s.footerLine} />
+              <Text style={s.footerText}>Version 1.0.0</Text>
+              <Text style={s.footerSub}>© 2025 Spiritual App</Text>
             </View>
           </Animated.View>
         </View>
       )}
 
-      {/* Bottom Sheet Navigation */}
+      {/* ── Bottom Sheet ─────────────────────────────────────────────────────── */}
       <BottomMenuSheet
         visible={bottomSheetVisible}
-        onClose={closeBottomSheet}
+        onClose={closeBS}
         menuItems={menuItems}
-        onNavigate={handleBottomSheetNavigate}
+        onNavigate={handleBSNavigate}
         pathname={pathname}
       />
 
-      {/* Tab Bar */}
+      {/* ── Tabs ─────────────────────────────────────────────────────────────── */}
       <Tabs
         screenOptions={{
           headerShown: false,
-          tabBarActiveTintColor: '#059669',
-          tabBarInactiveTintColor: '#9CA3AF',
-          tabBarStyle: styles.tabBar,
-          tabBarLabelStyle: styles.tabBarLabel,
-          tabBarItemStyle: styles.tabBarItem,
+          tabBarActiveTintColor:   '#059669',
+          tabBarInactiveTintColor: '#94A3B8',
+          tabBarStyle:      s.tabBar,
+          tabBarLabelStyle: s.tabLabel,
+          tabBarItemStyle:  s.tabItem,
           tabBarHideOnKeyboard: true,
         }}
-        screenListeners={{
-          tabPress: () => triggerHaptic('light'),
-        }}
+        screenListeners={{ tabPress: () => haptic('light') }}
       >
-        <Tabs.Screen
-          name="index"
-          options={{
-            title: 'Home',
-            tabBarIcon: ({ color, focused }) => (
-              <TabIcon IconComponent={Home} color={color} focused={focused} name="home" />
-            ),
-          }}
-        />
-        <Tabs.Screen
-          name="wird"
-          options={{
-            title: 'Wird',
-            tabBarIcon: ({ color, focused }) => (
-              <TabIcon IconComponent={Heart} color={color} focused={focused} />
-            ),
-          }}
-        />
-        <Tabs.Screen
-          name="wazifa"
-          options={{
-            title: 'Wazifa',
-            tabBarIcon: ({ color, focused }) => (
-              <TabIcon IconComponent={Star} color={color} focused={focused} />
-            ),
-          }}
-        />
-        <Tabs.Screen
-          name="hadra"
-          options={{
-            title: 'Menu',
-            tabBarButton: () => <BurgerTabButton />,
-          }}
-        />
-        <Tabs.Screen name="names"                options={{ href: null }} />
-        <Tabs.Screen name="stats"                options={{ href: null }} />
-        <Tabs.Screen name="settings"             options={{ href: null }} />
-        <Tabs.Screen name="about"                options={{ href: null }} />
-        <Tabs.Screen name="library"              options={{ href: null }} />
-        <Tabs.Screen name="library-screen"       options={{ href: null }} />
-        <Tabs.Screen name="notifications"        options={{ href: null }} />
-        <Tabs.Screen name="notification-settings" options={{ href: null }} />
-        <Tabs.Screen name="notification-test"    options={{ href: null }} />
+        <Tabs.Screen name="index"  options={{ title: 'Home',   tabBarIcon: ({ color, focused }) => <TabIcon IconComponent={Home}  color={color} focused={focused} name="home" /> }} />
+        <Tabs.Screen name="wird"   options={{ title: 'Wird',   tabBarIcon: ({ color, focused }) => <TabIcon IconComponent={Heart} color={color} focused={focused} /> }} />
+        <Tabs.Screen name="wazifa" options={{ title: 'Wazifa', tabBarIcon: ({ color, focused }) => <TabIcon IconComponent={Star}  color={color} focused={focused} /> }} />
+        <Tabs.Screen name="hadra"  options={{ title: 'Menu',   tabBarButton: () => <BurgerBtn /> }} />
+
+        {/* Hidden routes */}
+        {[
+          'names', 'dhikr-counter', 'stats', 'settings', 'about',
+          'library', 'library-screen', 'notifications',
+          'notification-settings', 'notification-test',
+        ].map(name => (
+          <Tabs.Screen key={name} name={name} options={{ href: null }} />
+        ))}
       </Tabs>
     </SafeAreaView>
   );
 }
 
-// ─── Layout principal — wrappé dans le Provider ────────────────────────────────
+// ─── Root export ──────────────────────────────────────────────────────────────
 export default function TabLayout() {
   return (
     <HeaderActionsProvider>
@@ -692,213 +515,101 @@ export default function TabLayout() {
 }
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  swipeArea: {
-    position: 'absolute',
-    left: 0, top: 0, bottom: 0,
-    width: SWIPE_AREA_WIDTH,
-    zIndex: 999,
-  },
+const s = StyleSheet.create({
+  root:      { flex: 1, backgroundColor: '#F8FAFC' },
+  tabBarShadow: { shadowColor: '#000', shadowOffset: { width: 0, height: -3 }, shadowOpacity: 0.09, shadowRadius: 10 },
+  swipeZone: { position: 'absolute', left: 0, top: 0, bottom: 0, width: SWIPE_AREA_WIDTH, zIndex: 999 },
 
-  // ── Burger Tab Button ──
-  burgerTabButton: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 6,
-  },
-  burgerIconWrapper: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
-    backgroundColor: '#F0FDF4',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#D1FAE5',
-    position: 'relative',
-  },
-  burgerIconWrapperActive: {
-    backgroundColor: '#059669',
-    borderColor: '#047857',
-  },
-  burgerBadge: {
-    position: 'absolute',
-    top: -3,
-    right: -3,
-    backgroundColor: '#EF4444',
-    borderRadius: 8,
-    minWidth: 16,
-    height: 16,
-    paddingHorizontal: 3,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1.5,
-    borderColor: '#FFFFFF',
-  },
-  burgerBadgeText: {
-    color: '#FFFFFF',
-    fontSize: 9,
-    fontWeight: '800',
-  },
-  burgerLabel: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#9CA3AF',
-    marginTop: 3,
-    letterSpacing: 0.3,
-  },
-  burgerLabelActive: {
-    color: '#059669',
-  },
+  // Tab icon
+  tabIconWrap: { justifyContent: 'center', alignItems: 'center', paddingTop: 2, position: 'relative' },
+  dot: { position: 'absolute', bottom: -7, width: 4, height: 4, borderRadius: 2 },
 
-  // ── Side Drawer ──
-  drawerOverlay: {
-    position: 'absolute',
-    top: 0, left: 0, right: 0, bottom: 0,
-    zIndex: 1000,
-  },
-  backdrop: { flex: 1 },
-  backdropFade: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  },
-  drawerContainer: {
-    position: 'absolute',
-    left: 0, top: 0, bottom: 0,
-    width: '85%',
-    maxWidth: 340,
-    backgroundColor: '#FFFFFF',
-    shadowColor: '#000',
-    shadowOffset: { width: 4, height: 0 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 16,
-    borderTopRightRadius: 24,
-    borderBottomRightRadius: 24,
-  },
-  drawerHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 24,
-    paddingTop: Platform.OS === 'ios' ? 60 : 48,
-    backgroundColor: '#059669',
-    borderTopRightRadius: 24,
-  },
-  drawerTitle: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: '#FFFFFF',
-    letterSpacing: 0.5,
-  },
-  drawerSubtitle: {
-    fontSize: 14,
-    color: '#D1FAE5',
-    marginTop: 2,
-    fontWeight: '500',
-  },
-  closeButton: {
-    padding: 8,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-  },
-  menuList: { flex: 1 },
-  menuListContent: { paddingTop: 8, paddingBottom: 16 },
-  menuItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-    marginHorizontal: 12,
-    marginVertical: 4,
-    borderRadius: 12,
-  },
-  menuItemActive: { backgroundColor: '#F0FDF4' },
-  iconContainer: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: '#F0FDF4',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 14,
-  },
-  iconContainerActive: { backgroundColor: '#059669' },
-  menuItemTextContainer: { flex: 1 },
-  menuItemTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  menuItemText: { fontSize: 16, fontWeight: '600', color: '#1F2937' },
-  menuItemTextActive: { color: '#059669', fontWeight: '700' },
-  menuItemDescription: { fontSize: 12, color: '#6B7280', marginTop: 2 },
-  badge: {
-    backgroundColor: '#EF4444',
-    borderRadius: 10,
-    minWidth: 20,
-    height: 20,
-    paddingHorizontal: 6,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  badgeText: { color: '#FFFFFF', fontSize: 11, fontWeight: '700' },
-  menuDivider: {
-    height: 1,
-    backgroundColor: '#E5E7EB',
-    marginVertical: 8,
-    marginHorizontal: 24,
-  },
-  drawerFooter: {
-    padding: 20,
-    borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
-    alignItems: 'center',
-    borderBottomRightRadius: 24,
-  },
-  footerDivider: {
-    width: 40, height: 3,
-    backgroundColor: '#E5E7EB',
-    borderRadius: 2,
-    marginBottom: 12,
-  },
-  footerText: { fontSize: 13, color: '#6B7280', fontWeight: '600' },
-  footerTextSmall: { fontSize: 11, color: '#9CA3AF', marginTop: 4 },
-
-  // ── Tab Bar ──
+  // Tab bar
   tabBar: {
     backgroundColor: '#FFFFFF',
     borderTopWidth: 0,
     paddingBottom: Platform.OS === 'ios' ? 8 : 8,
     paddingTop: 8,
-    height: Platform.OS === 'ios' ? 85 : 70,
-    elevation: 20,
+    height: Platform.OS === 'ios' ? 84 : 68,
+    elevation: 18,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 8,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    shadowOffset: { width: 0, height: -3 },
+    shadowOpacity: 0.09,
+    shadowRadius: 10,
+    borderTopLeftRadius: 22, borderTopRightRadius: 22,
   },
-  tabBarLabel: {
-    fontSize: 11,
-    fontWeight: '700',
-    marginTop: 4,
-    letterSpacing: 0.3,
-  },
-  tabBarItem: { paddingVertical: 6 },
-  tabIconContainer: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingTop: 2,
+  tabLabel: { fontSize: 11, fontWeight: '700', marginTop: 3, letterSpacing: 0.2 },
+  tabItem:  { paddingVertical: 4 },
+
+  // Burger
+  burgerBtn:    { flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 4 },
+  burgerCircle: {
+    width: 44, height: 44, borderRadius: 22,
+    backgroundColor: '#F0FDF4',
+    justifyContent: 'center', alignItems: 'center',
+    borderWidth: 1.5, borderColor: '#D1FAE5',
     position: 'relative',
   },
-  activeIndicator: {
-    position: 'absolute',
-    bottom: -8,
-    width: 4, height: 4,
-    borderRadius: 2,
-    backgroundColor: '#059669',
+  burgerCircleActive: { backgroundColor: '#059669', borderColor: '#047857' },
+  burgerBadge: {
+    position: 'absolute', top: -2, right: -2,
+    backgroundColor: '#EF4444', borderRadius: 7,
+    minWidth: 15, height: 15, paddingHorizontal: 2,
+    justifyContent: 'center', alignItems: 'center',
+    borderWidth: 1.5, borderColor: '#FFFFFF',
   },
+  burgerBadgeTxt: { color: '#FFFFFF', fontSize: 8, fontWeight: '800' },
+  burgerLabel:    { fontSize: 11, fontWeight: '700', color: '#94A3B8', marginTop: 3, letterSpacing: 0.2 },
+
+  // Side drawer
+  drawerOverlay:  { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1000 },
+  drawerBackdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.48)' },
+  drawer: {
+    position: 'absolute', left: 0, top: 0, bottom: 0,
+    width: '85%', maxWidth: 340,
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000', shadowOffset: { width: 4, height: 0 },
+    shadowOpacity: 0.22, shadowRadius: 12, elevation: 18,
+    borderTopRightRadius: 28, borderBottomRightRadius: 28,
+  },
+  drawerHeader: {
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    padding: 22, paddingTop: Platform.OS === 'ios' ? 60 : 46,
+    backgroundColor: '#059669',
+    borderTopRightRadius: 28,
+  },
+  drawerTitle: { fontSize: 26, fontWeight: '800', color: '#FFFFFF', letterSpacing: -0.3 },
+  drawerSub:   { fontSize: 13, color: '#D1FAE5', marginTop: 2, fontWeight: '500' },
+  drawerClose: { padding: 8, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.18)' },
+  drawerFooter:{ padding: 18, borderTopWidth: 1, borderTopColor: '#F1F5F9', alignItems: 'center', borderBottomRightRadius: 28 },
+  footerLine:  { width: 36, height: 3, backgroundColor: '#E2E8F0', borderRadius: 2, marginBottom: 10 },
+  footerText:  { fontSize: 12, color: '#94A3B8', fontWeight: '600' },
+  footerSub:   { fontSize: 10, color: '#CBD5E1', marginTop: 3 },
+
+  // Menu items
+  menuItem: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    paddingVertical: 12, paddingHorizontal: 16,
+    marginHorizontal: 10, marginVertical: 2,
+    borderRadius: 14,
+  },
+  menuItemActive: { backgroundColor: '#F0FDF4' },
+  menuIcon: { width: 40, height: 40, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
+  menuLabel:     { fontSize: 15, fontWeight: '600', color: '#1E293B' },
+  menuDesc:      { fontSize: 11, color: '#94A3B8', marginTop: 1 },
+  // numeric badge — side drawer
+  menuBadge: {
+    backgroundColor: '#EF4444', borderRadius: 9,
+    minWidth: 18, height: 18, paddingHorizontal: 5,
+    justifyContent: 'center', alignItems: 'center',
+  },
+  menuBadgeText: { color: '#FFFFFF', fontSize: 10, fontWeight: '700' },
+  // "New" badge — side drawer
+  menuNewBadge: {
+    backgroundColor: '#059669', borderRadius: 6,
+    paddingHorizontal: 6, paddingVertical: 2,
+    justifyContent: 'center', alignItems: 'center',
+  },
+  menuNewBadgeText: { color: '#FFFFFF', fontSize: 9, fontWeight: '800', letterSpacing: 0.6 },
+  divider: { height: 1, backgroundColor: '#F1F5F9', marginVertical: 6, marginHorizontal: 20 },
 });

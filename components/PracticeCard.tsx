@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, Dimensions } from 'react-native';
-import { Clock, ChevronRight, LucideIcon } from 'lucide-react-native';
+import { Clock, LucideIcon } from 'lucide-react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -22,6 +22,7 @@ interface PracticeCardData {
   route: string;
   time: string;
   priority: string;
+  isNew?: boolean;           // ← badge "New"
 }
 
 interface PracticeCardProps {
@@ -85,14 +86,25 @@ export default function PracticeCard({ card, progress = 0, onPress, darkMode }: 
       {/* Coloured top accent strip */}
       <View style={[styles.accentStrip, { backgroundColor: card.color }]} />
 
-      {/* Header row: icon + priority badge */}
+      {/* Header row: icon + badges */}
       <View style={styles.header}>
         {renderIcon()}
-        {card.priority === 'high' && (
-          <View style={styles.priorityBadge}>
-            <View style={[styles.priorityDot, { backgroundColor: card.color }]} />
-          </View>
-        )}
+
+        <View style={styles.badgesRow}>
+          {/* Priority dot */}
+          {card.priority === 'high' && (
+            <View style={styles.priorityBadge}>
+              <View style={[styles.priorityDot, { backgroundColor: card.color }]} />
+            </View>
+          )}
+
+          {/* "New" badge */}
+          {card.isNew && (
+            <View style={[styles.newBadge, { backgroundColor: card.color }]}>
+              <Text style={styles.newBadgeText}>NEW</Text>
+            </View>
+          )}
+        </View>
       </View>
 
       {/* Arabic title */}
@@ -187,6 +199,13 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
+
+  // Badges row (top-right)
+  badgesRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
   priorityBadge: {
     width: 20,
     height: 20,
@@ -199,6 +218,20 @@ const styles = StyleSheet.create({
     width: 7,
     height: 7,
     borderRadius: 4,
+  },
+  // "New" badge — card corner
+  newBadge: {
+    borderRadius: 6,
+    paddingHorizontal: 5,
+    paddingVertical: 2,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  newBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 8,
+    fontWeight: '800',
+    letterSpacing: 0.6,
   },
 
   // Text

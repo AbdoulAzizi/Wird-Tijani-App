@@ -33,6 +33,7 @@ interface PracticeCardData {
   route: string;
   time: string;
   priority: string;
+  isNew?: boolean;           // ← badge "New"
 }
 
 interface QuickAction {
@@ -106,6 +107,20 @@ const practiceCards: PracticeCardData[] = [
     route: '/names',
     time: 'Meditation & Reflection',
     priority: 'high',
+    isNew: true,
+  },
+  {
+    id: 'dhikr-counter',
+    title: 'Dhikr Counter',
+    arabicTitle: 'عداد الذكر',
+    description: 'Free personal dhikr counter',
+    icon: Clock,
+    color: '#0891B2',
+    lightColor: '#E0F2FE',
+    route: '/dhikr-counter',
+    time: 'Anytime',
+    priority: 'medium',
+    isNew: true,
   },
   {
     id: 'library',
@@ -197,23 +212,24 @@ export default function HomeScreen() {
 
   const handleCardPress = (route: string) => {
     switch (route) {
-      case '/wird':      router.push('/(tabs)/wird');    break;
-      case '/wazifa':    router.push('/(tabs)/wazifa');  break;
-      case '/names':     router.push('/(tabs)/names');   break;
-      case '/library':   router.push('/(tabs)/library'); break;
-      case '/hadra-jumua': router.push('/(tabs)/hadra'); break;
-      case '/hadra-map': openHadraMap();                 break;
+      case '/wird':          router.push('/(tabs)/wird');          break;
+      case '/wazifa':        router.push('/(tabs)/wazifa');        break;
+      case '/names':         router.push('/(tabs)/names');         break;
+      case '/library':       router.push('/(tabs)/library');       break;
+      case '/dhikr-counter': router.push('/(tabs)/dhikr-counter'); break;
+      case '/hadra-jumua':   router.push('/(tabs)/hadra');         break;
+      case '/hadra-map':     openHadraMap();                       break;
       default: break;
     }
   };
 
   const handleQuickAction = (action: string) => {
     switch (action) {
-      case 'continue':      router.push('/(tabs)/wird');    break;
-      case 'schedule':      openHadraMap();                 break;
-      case 'achievements':  router.push('/(tabs)/stats');   break;
-      case 'names':         router.push('/(tabs)/names');   break;
-      case 'library-screen':router.push('/(tabs)/library'); break;
+      case 'continue':       router.push('/(tabs)/wird');    break;
+      case 'schedule':       openHadraMap();                 break;
+      case 'achievements':   router.push('/(tabs)/stats');   break;
+      case 'names':          router.push('/(tabs)/names');   break;
+      case 'library-screen': router.push('/(tabs)/library'); break;
       default: break;
     }
   };

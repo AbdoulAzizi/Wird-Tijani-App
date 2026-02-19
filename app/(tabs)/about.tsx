@@ -21,6 +21,7 @@ import {
 } from 'lucide-react-native';
 import GradientHeader from '../../components/GradientHeader';
 import { useApp } from '../../contexts/AppContext';
+import { useAppVersion } from '@/hooks/useAppVersion';
 import ScreenBackground from '../../components/ScreenBackground';
 
 const features = [
@@ -97,6 +98,7 @@ const developers = [
 
 export default function AboutScreen() {
   const { state } = useApp();
+  const { appName, appVersion, fullVersion } = useAppVersion();
 
   const handleEmailPress = () => {
     Linking.openURL('mailto:support@tijaniapp.com');
@@ -145,7 +147,7 @@ export default function AboutScreen() {
             Wird & Wazīfa Tijāniyya
           </Text>
           <View style={styles.versionBadge}>
-            <Text style={styles.versionText}>Version 1.0.0</Text>
+            <Text style={styles.versionText}>Version {appVersion}</Text>
           </View>
           <Text style={[
             styles.description,
@@ -410,13 +412,13 @@ export default function AboutScreen() {
             state.settings.darkMode && styles.copyrightTextDark
           ]}>
             {/* © 2024 Wird & Wazīfa Tijāniyya */}
-            © {new Date().getFullYear()} Wird & Wazīfa Tijāniyya
+            © {new Date().getFullYear()} {appName}
           </Text>
           <Text style={[
             styles.copyrightSubtext,
             state.settings.darkMode && styles.copyrightSubtextDark
           ]}>
-            Made with ❤️ for the Tijāni community
+            Made with ❤️ for the Muslim community
           </Text>
         </View>
 
