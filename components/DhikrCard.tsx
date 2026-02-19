@@ -191,7 +191,7 @@ export default function DhikrCard({
         dark ? styles.arabicBlockDark : null,
         isComplete && (dark ? styles.arabicBlockCompleteDark : styles.arabicBlockCompleteLight),
       ]}>
-        <Text style={[styles.arabic, dark && styles.arabicDark, isDisabled && styles.muted]} numberOfLines={4}>
+        <Text style={[styles.arabic, dark && styles.arabicDark, isDisabled && styles.muted]} numberOfLines={12}>
           {arabic}
         </Text>
         <View style={styles.dividerLine} />

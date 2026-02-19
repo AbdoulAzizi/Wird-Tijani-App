@@ -265,8 +265,8 @@ export default function WirdScreen() {
             />
           </View>
 
-          <Instructions dark={dark} />
           {isWirdComplete && <CompletionBanner dark={dark} onComplete={handleCompleteWird} />}
+          <Instructions dark={dark} />
           <View style={styles.bottomSpace} />
         </ScrollView>
       </ScreenBackground>

@@ -443,8 +443,8 @@ export default function WazifaScreen() {
             />
           </View>
 
-          <Instructions dark={dark} />
           {isWazifaComplete && <CompletionBanner dark={dark} onComplete={handleCompleteWazifa} />}
+          <Instructions dark={dark} />
           <View style={styles.bottomSpace} />
         </ScrollView>
       </ScreenBackground>

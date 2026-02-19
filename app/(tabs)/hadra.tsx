@@ -246,9 +246,9 @@ export default function HadraScreen() {
               status={getStepStatus(1)} blessing="بارك الله فيك"
             />
           </View>
-
-          <Instructions dark={dark} />
+          
           {isHadraComplete && <CompletionBanner dark={dark} onComplete={handleCompleteHadra} />}
+          <Instructions dark={dark} />
           <View style={styles.bottomSpace} />
         </ScrollView>
       </ScreenBackground>
