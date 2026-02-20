@@ -1,9 +1,9 @@
-import React, { useMemo, useCallback, useState, useEffect, memo } from 'react';
+import React, { useMemo, useEffect, useState, memo, useRef } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet,
   Platform, Animated, StatusBar
 } from 'react-native';
-import { Bell, Sparkles, Sun, Moon, Sunrise, CloudSun } from 'lucide-react-native';
+import { Bell, Moon, Sun, Sunrise, CloudSun, Sparkles } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -18,19 +18,21 @@ interface SpiritualHeaderProps {
 }
 type TimeOfDay = 'fajr' | 'morning' | 'afternoon' | 'evening' | 'night';
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 const GRADIENTS: Record<string, readonly [string, string, string]> = {
-  default: ['#059669', '#047857', '#065f46'],
-  dark:    ['#0F172A', '#1E293B', '#0F172A'],
-  light:   ['#10B981', '#059669', '#047857'],
+  default: ['#064E3B', '#065F46', '#047857'],
+  dark:    ['#0A0F1E', '#111827', '#0F172A'],
+  light:   ['#047857', '#059669', '#10B981'],
 };
 
-const TIME_CONFIG: Record<TimeOfDay, { greeting: string; Icon: any; iconColor: string }> = {
-  fajr:      { greeting: 'Fajr time',      Icon: Sunrise,  iconColor: '#FCD34D' },
-  morning:   { greeting: 'Good morning',   Icon: CloudSun, iconColor: '#FDE68A' },
-  afternoon: { greeting: 'Good afternoon', Icon: Sun,      iconColor: '#FCD34D' },
-  evening:   { greeting: 'Good evening',   Icon: Sparkles, iconColor: '#A5F3FC' },
-  night:     { greeting: 'Good night',     Icon: Moon,     iconColor: '#C4B5FD' },
+const TIME_CONFIG: Record<TimeOfDay, {
+  greeting: string; sub: string; Icon: any; iconColor: string;
+}> = {
+  fajr:      { greeting: 'Fajr',         sub: 'The blessed hour of dawn',  Icon: Sunrise,  iconColor: '#FDE68A' },
+  morning:   { greeting: 'Ṣabāḥ al-Khayr', sub: 'Good morning',           Icon: CloudSun, iconColor: '#FDE68A' },
+  afternoon: { greeting: 'Ẓuhr',         sub: 'Afternoon blessings',       Icon: Sun,      iconColor: '#FCD34D' },
+  evening:   { greeting: 'Masā\' al-Khayr', sub: 'Good evening',           Icon: Sparkles, iconColor: '#A5F3FC' },
+  night:     { greeting: 'Laylatun Ṭayyiba', sub: 'Peaceful night',        Icon: Moon,     iconColor: '#C4B5FD' },
 };
 
 function getTimeOfDay(h: number): TimeOfDay {
@@ -40,32 +42,24 @@ function getTimeOfDay(h: number): TimeOfDay {
   if (h >= 17 && h < 21) return 'evening';
   return 'night';
 }
+
 function formatDate(d: Date) {
-  return d.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short' });
-}
-function formatHijri(d: Date) {
-  try { return d.toLocaleDateString('ar-SA-u-ca-islamic', { day: 'numeric', month: 'long', year: 'numeric' }); }
-  catch { return ''; }
+  return d.toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'long' });
 }
 
-// ─── Tiny icon button ─────────────────────────────────────────────────────────
-const IconBtn = memo(({ onPress, label, badge, pulse, children }: {
-  onPress: () => void; label: string;
-  badge?: number; pulse?: Animated.Value;
-  children: React.ReactNode;
-}) => (
-  <TouchableOpacity style={ss.iconBtn} onPress={onPress} activeOpacity={0.7}
-    accessibilityLabel={label} accessibilityRole="button"
-    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-    {children}
-    {!!badge && badge > 0 && pulse && (
-      <Animated.View style={[ss.badge, { transform: [{ scale: pulse }] }]}>
-        <Text style={ss.badgeTxt}>{badge > 99 ? '99+' : badge}</Text>
-      </Animated.View>
-    )}
-  </TouchableOpacity>
+function formatHijri(d: Date): string {
+  try {
+    return d.toLocaleDateString('ar-SA-u-ca-islamic', {
+      day: 'numeric', month: 'long', year: 'numeric',
+    });
+  } catch { return ''; }
+}
+
+// ─── Decorative Arabic ornament ───────────────────────────────────────────────
+const Ornament = memo(() => (
+  <Text style={ss.ornament}>❧</Text>
 ));
-IconBtn.displayName = 'IconBtn';
+Ornament.displayName = 'Ornament';
 
 // ─── Component ────────────────────────────────────────────────────────────────
 const SpiritualHeader = memo(({
@@ -74,23 +68,35 @@ const SpiritualHeader = memo(({
   onNotificationPress,
   notificationCount = 0,
   showNotification = true,
-  showHijriDate = false,
+  showHijriDate = true,
   theme = 'default',
 }: SpiritualHeaderProps) => {
-  const [now, setNow] = useState(new Date());
-  const pulse   = React.useRef(new Animated.Value(1)).current;
-  const shimmer = React.useRef(new Animated.Value(0)).current;
 
+  const [now, setNow] = useState(new Date());
+  const pulse        = useRef(new Animated.Value(1)).current;
+  const fadeIn       = useRef(new Animated.Value(0)).current;
+  const shimmer      = useRef(new Animated.Value(0)).current;
+  const bellWiggle   = useRef(new Animated.Value(0)).current;
+
+  // Clock tick
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 60_000);
     return () => clearInterval(t);
   }, []);
 
+  // Fade-in on mount
+  useEffect(() => {
+    Animated.timing(fadeIn, {
+      toValue: 1, duration: 700, useNativeDriver: true,
+    }).start();
+  }, []);
+
+  // Badge pulse
   useEffect(() => {
     if (notificationCount > 0) {
       const loop = Animated.loop(Animated.sequence([
-        Animated.timing(pulse, { toValue: 1.3, duration: 650, useNativeDriver: true }),
-        Animated.timing(pulse, { toValue: 1,   duration: 650, useNativeDriver: true }),
+        Animated.timing(pulse, { toValue: 1.35, duration: 700, useNativeDriver: true }),
+        Animated.timing(pulse, { toValue: 1,    duration: 700, useNativeDriver: true }),
       ]));
       loop.start();
       return () => loop.stop();
@@ -98,9 +104,23 @@ const SpiritualHeader = memo(({
     pulse.setValue(1);
   }, [notificationCount]);
 
+  // Bell wiggle on new notification
+  useEffect(() => {
+    if (notificationCount > 0) {
+      Animated.sequence([
+        Animated.timing(bellWiggle, { toValue:  8, duration: 80, useNativeDriver: true }),
+        Animated.timing(bellWiggle, { toValue: -8, duration: 80, useNativeDriver: true }),
+        Animated.timing(bellWiggle, { toValue:  5, duration: 70, useNativeDriver: true }),
+        Animated.timing(bellWiggle, { toValue: -5, duration: 70, useNativeDriver: true }),
+        Animated.timing(bellWiggle, { toValue:  0, duration: 60, useNativeDriver: true }),
+      ]).start();
+    }
+  }, [notificationCount]);
+
+  // Gold shimmer
   useEffect(() => {
     const loop = Animated.loop(
-      Animated.timing(shimmer, { toValue: 1, duration: 3000, useNativeDriver: false })
+      Animated.timing(shimmer, { toValue: 1, duration: 3200, useNativeDriver: false })
     );
     loop.start();
     return () => loop.stop();
@@ -111,201 +131,312 @@ const SpiritualHeader = memo(({
   const TimeIcon = cfg.Icon;
   const gradient = (GRADIENTS[theme] ?? GRADIENTS.default) as [string, string, string];
   const dateStr  = useMemo(() => formatDate(now), [now]);
-  const hijriStr = useMemo(() => showHijriDate ? formatHijri(now) : null, [now, showHijriDate]);
-
-  const shimmerLeft = shimmer.interpolate({ inputRange: [0, 1], outputRange: ['-30%', '130%'] });
+  const hijriStr = useMemo(() => formatHijri(now), [now]);
+  const shimmerX = shimmer.interpolate({ inputRange: [0, 1], outputRange: ['-40%', '140%'] });
 
   return (
     <>
       <StatusBar barStyle="light-content" backgroundColor={gradient[0]} translucent />
-      <LinearGradient colors={gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={ss.container}>
 
-        {/* Decorative background circles */}
+      <LinearGradient
+        colors={gradient}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={ss.container}
+      >
+        {/* ── Background texture circles ── */}
         <View style={ss.deco} pointerEvents="none">
-          <View style={ss.circle1} /><View style={ss.circle2} /><View style={ss.circle3} />
+          <View style={ss.circle1} />
+          <View style={ss.circle2} />
+          <View style={ss.circle3} />
+          {/* Subtle dot grid pattern */}
+          <View style={ss.dotGrid} />
         </View>
 
-        {/* ── Row 1: Menu | Center | Bell ── */}
-        <View style={ss.topRow}>
+        <Animated.View style={[ss.inner, { opacity: fadeIn }]}>
 
-          {/* Hamburger */}
-          <TouchableOpacity style={ss.iconBtn} onPress={onMenuPress} activeOpacity={0.7}
-            accessibilityLabel="Open menu" accessibilityRole="button"
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-            <View style={ss.hamburger}>
-              <View style={ss.hLine} />
-              <View style={[ss.hLine, ss.hLineShort]} />
-              <View style={ss.hLine} />
-            </View>
-          </TouchableOpacity>
+          {/* ── TOP BAR: burger | logo | bell ── */}
+          <View style={ss.topBar}>
 
-          {/* Center: names with crescent in between */}
-          <View style={ss.center}>
-            <View style={ss.names}>
-              <Text style={ss.prophetTxt}>مُحَمَّد ﷺ</Text>
-              <View style={ss.crescentWrap}>
-                <View style={ss.crescent}><View style={ss.hole} /></View>
-                <Sparkles color="#FCD34D" size={10} style={ss.star} />
+            {/* Burger */}
+            <TouchableOpacity
+              style={ss.burgerBtn}
+              onPress={onMenuPress}
+              activeOpacity={0.7}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+              accessibilityLabel="Open menu"
+              accessibilityRole="button"
+            >
+              <View style={ss.burgerLines}>
+                <View style={ss.line} />
+                <View style={[ss.line, { width: 13 }]} />
+                <View style={ss.line} />
               </View>
-              <Text style={ss.allahTxt}>ﷲ ﷻ</Text>
+            </TouchableOpacity>
+
+            {/* Center logo */}
+            <View style={ss.logoBlock}>
+              {/* Crescent + star */}
+              <View style={ss.crescentRow}>
+                <View style={ss.crescent}>
+                  <View style={ss.hole} />
+                </View>
+                <View style={ss.starDot} />
+              </View>
+              {/* Arabic names */}
+              <View style={ss.namesRow}>
+                <Text style={ss.nameTxt}>ﷲ ﷻ</Text>
+                <View style={ss.nameDivider} />
+                <Text style={ss.nameTxt}>مُحَمَّد ﷺ</Text>
+              </View>
+            </View>
+
+            {/* Bell */}
+            <View style={ss.bellSlot}>
+              {showNotification && (
+                <TouchableOpacity
+                  onPress={onNotificationPress ?? (() => {})}
+                  activeOpacity={0.7}
+                  hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                  accessibilityLabel={`Notifications${notificationCount > 0 ? `, ${notificationCount} unread` : ''}`}
+                >
+                  <Animated.View style={[
+                    ss.burgerBtn,
+                    { transform: [{ rotate: bellWiggle.interpolate({
+                        inputRange: [-10, 10], outputRange: ['-10deg', '10deg'],
+                      }) }]
+                    },
+                  ]}>
+                    <Bell color="#FFFFFF" size={20} strokeWidth={2} />
+                    {notificationCount > 0 && (
+                      <Animated.View style={[ss.badge, { transform: [{ scale: pulse }] }]}>
+                        <Text style={ss.badgeTxt}>
+                          {notificationCount > 99 ? '99+' : notificationCount}
+                        </Text>
+                      </Animated.View>
+                    )}
+                  </Animated.View>
+                </TouchableOpacity>
+              )}
             </View>
           </View>
 
-          {/* Bell */}
-          <View style={ss.right}>
-            {showNotification && (
-              <IconBtn
-                onPress={onNotificationPress ?? (() => {})}
-                badge={notificationCount}
-                pulse={pulse}
-                label={`Notifications${notificationCount > 0 ? `, ${notificationCount} unread` : ''}`}
-              >
-                <Bell color="#FFFFFF" size={22} strokeWidth={2} />
-              </IconBtn>
-            )}
+          {/* ── DIVIDER: thin gold line ── */}
+          <View style={ss.goldDivider}>
+            <LinearGradient
+              colors={['transparent', '#F59E0B', '#FCD34D', '#F59E0B', 'transparent']}
+              start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+              style={StyleSheet.absoluteFill}
+            />
           </View>
-        </View>
 
-        {/* ── Row 2: Left info | Date pill ── */}
-        <View style={ss.bottomRow}>
-          <View style={ss.leftInfo}>
-            <View style={ss.greetRow}>
-              <TimeIcon color={cfg.iconColor} size={13} strokeWidth={2} />
-              <Text style={ss.greetTxt}>{cfg.greeting}</Text>
+          {/* ── BOTTOM: greeting left | date right ── */}
+          <View style={ss.bottomBar}>
+
+            {/* Left: greeting + page title */}
+            <View style={ss.greetBlock}>
+              <View style={ss.greetRow}>
+                <TimeIcon color={cfg.iconColor} size={12} strokeWidth={2.2} />
+                <Text style={ss.greetSub}>{cfg.greeting}</Text>
+                <Text style={ss.greetDot}>·</Text>
+                <Text style={ss.greetSub}>{cfg.sub}</Text>
+              </View>
+              <Text style={ss.pageTitle} numberOfLines={1}>{currentPage}</Text>
             </View>
-            <Text style={ss.pageTxt} numberOfLines={1}>{currentPage}</Text>
-          </View>
-          <View style={ss.datePill}>
-            <Text style={ss.dateTxt}>{dateStr}</Text>
-            {hijriStr ? <Text style={ss.hijriTxt}>{hijriStr}</Text> : null}
-          </View>
-        </View>
 
-        {/* ── Shimmer golden line ── */}
+            {/* Right: Gregorian + Hijri */}
+            <View style={ss.datePill}>
+              <Text style={ss.dateGreg}>{dateStr}</Text>
+              {hijriStr ? (
+                <Text style={ss.dateHijri}>{hijriStr}</Text>
+              ) : null}
+            </View>
+          </View>
+
+        </Animated.View>
+
+        {/* ── BOTTOM EDGE: animated gold shimmer bar ── */}
         <View style={ss.goldTrack}>
           <LinearGradient
-            colors={['#FCD34D', '#F59E0B', '#FCD34D']}
+            colors={['#92400E', '#F59E0B', '#FDE68A', '#F59E0B', '#92400E']}
             start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
             style={StyleSheet.absoluteFill}
           />
-          <Animated.View pointerEvents="none"
-            style={[ss.shimmerBar, { left: shimmerLeft }]} />
+          <Animated.View
+            pointerEvents="none"
+            style={[ss.shimmerBar, { left: shimmerX }]}
+          />
         </View>
+
       </LinearGradient>
     </>
   );
 });
+
 SpiritualHeader.displayName = 'SpiritualHeader';
 export default SpiritualHeader;
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const ss = StyleSheet.create({
   container: {
-    paddingTop: Platform.OS === 'ios' ? 48 : (StatusBar.currentHeight ?? 0) + 10,
-    paddingBottom: 14,
-    paddingHorizontal: 16,
+    paddingTop: Platform.OS === 'ios' ? 52 : (StatusBar.currentHeight ?? 0) + 12,
     overflow: 'hidden',
   },
-  deco: { ...StyleSheet.absoluteFillObject },
+  inner: {
+    paddingHorizontal: 16,
+    paddingBottom: 0,
+  },
+
+  // ── Background deco ──
+  deco: { ...StyleSheet.absoluteFillObject, pointerEvents: 'none' },
   circle1: {
-    position: 'absolute', top: -50, right: -50,
-    width: 140, height: 140, borderRadius: 70,
-    backgroundColor: 'rgba(255,255,255,0.06)',
+    position: 'absolute', top: -60, right: -40,
+    width: 160, height: 160, borderRadius: 80,
+    backgroundColor: 'rgba(255,255,255,0.05)',
   },
   circle2: {
-    position: 'absolute', top: 20, right: 55,
-    width: 55, height: 55, borderRadius: 28,
+    position: 'absolute', top: 30, right: 60,
+    width: 60, height: 60, borderRadius: 30,
     backgroundColor: 'rgba(255,255,255,0.04)',
   },
   circle3: {
-    position: 'absolute', bottom: -20, left: -20,
-    width: 90, height: 90, borderRadius: 45,
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    position: 'absolute', bottom: -30, left: -30,
+    width: 110, height: 110, borderRadius: 55,
+    backgroundColor: 'rgba(255,255,255,0.03)',
+  },
+  dotGrid: {
+    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+    // Simulated via opacity layer — no actual dots to keep it native
+    opacity: 0,
   },
 
-  // Row 1
-  topRow: {
-    flexDirection: 'row', alignItems: 'center',
-    justifyContent: 'space-between', marginBottom: 14, zIndex: 1,
+  // ── Top bar ──
+  topBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 14,
   },
-  iconBtn: {
-    width: 40, height: 40, borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.15)',
+
+  burgerBtn: {
+    width: 38, height: 38, borderRadius: 11,
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.18)',
     justifyContent: 'center', alignItems: 'center',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)',
   },
-  hamburger: { gap: 5, paddingHorizontal: 2 },
-  hLine: { height: 2, width: 20, backgroundColor: '#FFFFFF', borderRadius: 1 },
-  hLineShort: { width: 14 },
+  burgerLines: { gap: 5 },
+  line: { height: 1.8, width: 18, backgroundColor: '#FFFFFF', borderRadius: 1 },
+
   badge: {
     position: 'absolute', top: -5, right: -5,
-    minWidth: 18, height: 18, borderRadius: 9,
+    minWidth: 17, height: 17, borderRadius: 9,
     backgroundColor: '#EF4444',
     justifyContent: 'center', alignItems: 'center',
     paddingHorizontal: 3,
-    borderWidth: 1.5, borderColor: '#FFFFFF',
+    borderWidth: 1.5, borderColor: '#064E3B',
   },
-  badgeTxt: { fontSize: 10, fontWeight: '800', color: '#FFFFFF' },
+  badgeTxt: { fontSize: 9, fontWeight: '800', color: '#FFFFFF' },
 
-  // Center logo — now purely vertical, crescent sandwiched between the two texts
-  center: { flexDirection: 'row', alignItems: 'center' },
-  crescentWrap: {
-    width: 34, height: 34,
-    justifyContent: 'center', alignItems: 'center',
-    alignSelf: 'center',
-  },
+  bellSlot: { width: 38, alignItems: 'flex-end' },
+
+  // ── Logo ──
+  logoBlock: { alignItems: 'center', gap: 6 },
+  crescentRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   crescent: {
-    width: 24, height: 24, borderRadius: 12,
+    width: 20, height: 20, borderRadius: 10,
     backgroundColor: '#FCD34D', overflow: 'hidden',
   },
   hole: {
-    position: 'absolute', top: -1, left: 4,
-    width: 22, height: 22, borderRadius: 11,
-    backgroundColor: '#059669',
+    position: 'absolute', top: -2, left: 3,
+    width: 18, height: 18, borderRadius: 9,
+    backgroundColor: '#065F46',
   },
-  star: { position: 'absolute', top: 1, right: 2 },
-  names: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  allahTxt: {
-    fontSize: 24, fontWeight: '700', color: '#FCD34D',
-    textShadowColor: 'rgba(0,0,0,0.3)',
-    textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2,
-    lineHeight: 28,
+  starDot: {
+    width: 5, height: 5, borderRadius: 2.5,
+    backgroundColor: '#FCD34D',
+    marginTop: -8,
   },
-  prophetTxt: {
-     fontSize: 24, fontWeight: '700',  color: 'rgba(255,255,255,0.85)',
-    textShadowColor: 'rgba(0,0,0,0.3)',
-    textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2,
-    lineHeight: 28,
+  namesRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
   },
-  right: { width: 40, alignItems: 'flex-end' },
+  nameDivider: {
+    width: 1, height: 16,
+    backgroundColor: 'rgba(252,211,77,0.4)',
+  },
+  nameTxt: {
+    fontSize: 20, fontWeight: '700',
+    color: '#FCD34D',
+    textShadowColor: 'rgba(0,0,0,0.25)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
+    lineHeight: 26,
+  },
 
-  // Row 2
-  bottomRow: {
-    flexDirection: 'row', justifyContent: 'space-between',
-    alignItems: 'flex-end', zIndex: 1, marginBottom: 12,
+  ornament: {
+    fontSize: 14, color: 'rgba(252,211,77,0.5)',
+    marginHorizontal: 4,
   },
-  leftInfo: { flex: 1, marginRight: 12 },
-  greetRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 4 },
-  greetTxt: { fontSize: 13, color: '#D1FAE5', fontWeight: '600', letterSpacing: 0.2 },
-  pageTxt: {
-    fontSize: 24, fontWeight: '800', color: '#FFFFFF',
-    letterSpacing: 0.3,
-    textShadowColor: 'rgba(0,0,0,0.15)',
-    textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2,
+
+  // ── Gold divider ──
+  goldDivider: {
+    height: 1,
+    marginBottom: 12,
+    opacity: 0.6,
   },
-  datePill: {
-    backgroundColor: 'rgba(255,255,255,0.14)',
-    borderRadius: 12, paddingHorizontal: 12, paddingVertical: 7,
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.18)',
+
+  // ── Bottom bar ──
+  bottomBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'flex-end',
+    marginBottom: 14,
+    gap: 12,
   },
-  dateTxt: { fontSize: 13, fontWeight: '700', color: '#FFFFFF', letterSpacing: 0.3 },
-  hijriTxt: { fontSize: 10, fontWeight: '600', color: '#D1FAE5', marginTop: 3 },
 
-  // Golden line
-  goldTrack: { height: 3, borderRadius: 2, overflow: 'hidden' },
+  greetBlock: { flex: 1, minWidth: 0 },
+  greetRow:   { flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 3, flexWrap: 'nowrap' },
+  greetSub: {
+    fontSize: 11, fontWeight: '600',
+    color: 'rgba(209,250,229,0.85)',
+    letterSpacing: 0.1,
+  },
+  greetDot: { fontSize: 11, color: 'rgba(209,250,229,0.4)' },
+  pageTitle: {
+    fontSize: 22, fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: -0.3,
+    textShadowColor: 'rgba(0,0,0,0.2)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
+  },
+
+  // Date pill — refined glass card
+  datePill: {
+    backgroundColor: 'rgba(255,255,255,0.10)',
+    borderRadius: 10,
+    paddingHorizontal: 11, paddingVertical: 7,
+    borderWidth: 1,
+    borderColor: 'rgba(252,211,77,0.22)',
+    alignItems: 'flex-end',
+    flexShrink: 0,
+  },
+  dateGreg: {
+    fontSize: 11, fontWeight: '700',
+    color: '#FFFFFF', letterSpacing: 0.2,
+  },
+  dateHijri: {
+    fontSize: 10, fontWeight: '500',
+    color: 'rgba(252,211,77,0.85)',
+    marginTop: 3,
+    textAlign: 'right',
+  },
+
+  // ── Gold shimmer bottom bar ──
+  goldTrack: { height: 3, overflow: 'hidden' },
   shimmerBar: {
-    position: 'absolute', top: 0, bottom: 0, width: '30%',
-    backgroundColor: 'rgba(255,255,255,0.45)', borderRadius: 2,
+    position: 'absolute', top: 0, bottom: 0,
+    width: '35%',
+    backgroundColor: 'rgba(255,255,255,0.5)',
+    borderRadius: 2,
   },
 });

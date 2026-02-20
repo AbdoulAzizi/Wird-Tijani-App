@@ -1,7 +1,7 @@
 import React, { memo, useCallback, useState, useRef, useEffect } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet, Platform, StatusBar,
-  Modal, Animated, Pressable, TouchableWithoutFeedback, Dimensions,
+  Modal, Animated, TouchableWithoutFeedback, Dimensions,
 } from 'react-native';
 import { ArrowLeft, MoreVertical } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -11,29 +11,29 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface MinimalHeaderProps {
-  title: string;
-  subtitle?: string;
-  onBackPress: () => void;
+  title:        string;
+  subtitle?:    string;
+  onBackPress:  () => void;
   onMorePress?: () => void;
-  showMore?: boolean;
+  showMore?:    boolean;
   menuActions?: HeaderAction[];
-  theme?: 'default' | 'dark' | 'light';
+  theme?:       'default' | 'dark' | 'light';
 }
 
-const GRADIENTS: Record<string, readonly [string, string]> = {
-  default: ['#059669', '#047857'],
-  dark:    ['#0F172A', '#1E293B'],
-  light:   ['#10B981', '#059669'],
+const GRADIENTS: Record<string, readonly [string, string, string]> = {
+  default: ['#064E3B', '#065F46', '#047857'],
+  dark:    ['#0A0F1E', '#111827', '#0F172A'],
+  light:   ['#047857', '#059669', '#10B981'],
 };
 
-// ─── Dropdown Menu ────────────────────────────────────────────────────────────
-const MENU_WIDTH   = Math.min(240, SCREEN_WIDTH - 32); // jamais + large que l'écran − 32px
-const MENU_MARGIN  = 12; // marge par rapport aux bords de l'écran
+// ─── Dropdown ─────────────────────────────────────────────────────────────────
+const MENU_WIDTH  = Math.min(240, SCREEN_WIDTH - 32);
+const MENU_MARGIN = 12;
 
 interface DropdownMenuProps {
-  visible: boolean;
-  onClose: () => void;
-  actions: HeaderAction[];
+  visible:        boolean;
+  onClose:        () => void;
+  actions:        HeaderAction[];
   anchorPosition: { top: number; right: number };
 }
 
@@ -46,39 +46,19 @@ const DropdownMenu = memo(({ visible, onClose, actions, anchorPosition }: Dropdo
     if (visible) {
       setRendered(true);
       Animated.parallel([
-        Animated.spring(scaleAnim, {
-          toValue: 1,
-          useNativeDriver: true,
-          damping: 18,
-          stiffness: 260,
-        }),
-        Animated.timing(opacityAnim, {
-          toValue: 1,
-          duration: 140,
-          useNativeDriver: true,
-        }),
+        Animated.spring(scaleAnim,   { toValue: 1,    useNativeDriver: true, damping: 18, stiffness: 260 }),
+        Animated.timing(opacityAnim, { toValue: 1,    duration: 140, useNativeDriver: true }),
       ]).start();
     } else {
       Animated.parallel([
-        Animated.spring(scaleAnim, {
-          toValue: 0.85,
-          useNativeDriver: true,
-          damping: 20,
-          stiffness: 300,
-        }),
-        Animated.timing(opacityAnim, {
-          toValue: 0,
-          duration: 110,
-          useNativeDriver: true,
-        }),
+        Animated.spring(scaleAnim,   { toValue: 0.88, useNativeDriver: true, damping: 20, stiffness: 300 }),
+        Animated.timing(opacityAnim, { toValue: 0,    duration: 110, useNativeDriver: true }),
       ]).start(() => setRendered(false));
     }
   }, [visible]);
 
   if (!visible && !rendered) return null;
 
-  // ── Le menu est ancré à droite avec right: MENU_MARGIN.
-  // On s'assure qu'il ne sort pas du bord gauche non plus.
   const menuRight = Math.max(MENU_MARGIN, anchorPosition.right);
 
   return (
@@ -91,36 +71,31 @@ const DropdownMenu = memo(({ visible, onClose, actions, anchorPosition }: Dropdo
     >
       <TouchableWithoutFeedback onPress={onClose}>
         <View style={dd.overlay}>
-          {/* Stop propagation pour que le tap sur le menu ne ferme pas */}
           <TouchableWithoutFeedback>
-            <Animated.View
-              style={[
-                dd.menu,
-                {
-                  top:     anchorPosition.top,
-                  right:   menuRight,
-                  width:   MENU_WIDTH,       // ← largeur fixe, pas minWidth
-                  opacity: opacityAnim,
-                  transform: [
-                    // Scale depuis le coin haut-droite :
-                    // translateX/Y avant le scale pour déplacer l'origine
-                    { translateX: MENU_WIDTH / 2 - 12 },
-                    { translateY: -8 },
-                    { scale: scaleAnim },
-                    { translateX: -(MENU_WIDTH / 2 - 12) },
-                    { translateY: 8 },
-                  ],
-                },
-              ]}
-            >
+            <Animated.View style={[
+              dd.menu,
+              {
+                top:     anchorPosition.top,
+                right:   menuRight,
+                width:   MENU_WIDTH,
+                opacity: opacityAnim,
+                transform: [
+                  { translateX:  MENU_WIDTH / 2 - 12 },
+                  { translateY: -8 },
+                  { scale: scaleAnim },
+                  { translateX: -(MENU_WIDTH / 2 - 12) },
+                  { translateY:  8 },
+                ],
+              },
+            ]}>
+              {/* Menu header accent */}
+              <View style={dd.menuAccent} />
+
               {actions.map((action, index) => (
                 <React.Fragment key={action.key}>
                   <TouchableOpacity
                     style={[dd.item, action.destructive && dd.itemDestructive]}
-                    onPress={() => {
-                      onClose();
-                      setTimeout(() => action.onPress(), 160);
-                    }}
+                    onPress={() => { onClose(); setTimeout(() => action.onPress(), 160); }}
                     activeOpacity={0.7}
                   >
                     {action.icon && (
@@ -130,7 +105,7 @@ const DropdownMenu = memo(({ visible, onClose, actions, anchorPosition }: Dropdo
                     )}
                     <Text
                       style={[dd.label, action.destructive && dd.labelDestructive]}
-                      numberOfLines={2}      // ← retour à la ligne si texte long
+                      numberOfLines={2}
                     >
                       {action.label}
                     </Text>
@@ -150,62 +125,48 @@ const DropdownMenu = memo(({ visible, onClose, actions, anchorPosition }: Dropdo
 DropdownMenu.displayName = 'DropdownMenu';
 
 const dd = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'transparent',
-  },
+  overlay: { flex: 1, backgroundColor: 'transparent' },
   menu: {
     position: 'absolute',
-    // width est défini inline avec MENU_WIDTH
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
-    paddingVertical: 6,
+    paddingTop: 0,
+    paddingBottom: 6,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.18,
+    shadowOpacity: 0.14,
     shadowRadius: 24,
     elevation: 20,
     borderWidth: 1,
     borderColor: 'rgba(0,0,0,0.06)',
-    // Pas de overflow: 'hidden' → permet aux ombres de s'afficher
+    overflow: 'hidden',
+  },
+  // Thin green accent on top of the dropdown — mirrors the header gold line
+  menuAccent: {
+    height: 3,
+    backgroundColor: '#059669',
+    marginBottom: 4,
   },
   item: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    gap: 10,
+    flexDirection: 'row', alignItems: 'center',
+    paddingVertical: 11, paddingHorizontal: 14, gap: 10,
   },
-  itemDestructive: {
-    // pas de background pour rester propre
-  },
+  itemDestructive: {},
   iconWrap: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
+    width: 32, height: 32, borderRadius: 10,
     backgroundColor: '#F0FDF4',
-    justifyContent: 'center',
-    alignItems: 'center',
-    flexShrink: 0,          // ← l'icône ne se compresse jamais
+    justifyContent: 'center', alignItems: 'center',
+    flexShrink: 0,
   },
-  iconWrapDestructive: {
-    backgroundColor: '#FFF5F5',
-  },
+  iconWrapDestructive: { backgroundColor: '#FFF5F5' },
   label: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#1E293B',
-    flexShrink: 1,          // ← le texte cède de la place si nécessaire
-    flexWrap: 'wrap',
+    fontSize: 14, fontWeight: '600', color: '#1E293B',
+    flexShrink: 1, flexWrap: 'wrap',
   },
-  labelDestructive: {
-    color: '#EF4444',
-  },
+  labelDestructive: { color: '#EF4444' },
   divider: {
-    height: 1,
-    backgroundColor: '#F1F5F9',
-    marginHorizontal: 12,
-    marginVertical: 4,
+    height: 1, backgroundColor: '#F1F5F9',
+    marginHorizontal: 12, marginVertical: 3,
   },
 });
 
@@ -215,25 +176,29 @@ const MinimalHeader = memo(({
   subtitle,
   onBackPress,
   onMorePress,
-  showMore = false,
+  showMore    = false,
   menuActions = [],
-  theme = 'default',
+  theme       = 'default',
 }: MinimalHeaderProps) => {
-  const gradient = (GRADIENTS[theme] ?? GRADIENTS.default) as [string, string];
+  const gradient = (GRADIENTS[theme] ?? GRADIENTS.default) as [string, string, string];
+
   const [dropdownVisible, setDropdownVisible] = useState(false);
-  const [anchorPosition, setAnchorPosition] = useState({ top: 0, right: MENU_MARGIN });
+  const [anchorPosition,  setAnchorPosition]  = useState({ top: 0, right: MENU_MARGIN });
   const moreButtonRef = useRef<View>(null);
+
+  // Fade-in on mount
+  const fadeIn = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    Animated.timing(fadeIn, { toValue: 1, duration: 500, useNativeDriver: true }).start();
+  }, []);
 
   const handleBack = useCallback(() => onBackPress(), [onBackPress]);
 
   const handleMorePress = useCallback(() => {
     if (menuActions.length > 0) {
-      moreButtonRef.current?.measure((_x, _y, width, height, pageX, pageY) => {
-        // Calcul de la position right à partir du bord droit de l'écran
-        const rightEdge = SCREEN_WIDTH - pageX - width;
-        const right = Math.max(MENU_MARGIN, rightEdge);
-        const top = pageY + height + 8;
-        setAnchorPosition({ top, right });
+      moreButtonRef.current?.measure((_x, _y, w, h, pageX, pageY) => {
+        const right = Math.max(MENU_MARGIN, SCREEN_WIDTH - pageX - w);
+        setAnchorPosition({ top: pageY + h + 8, right });
         setDropdownVisible(true);
       });
     } else {
@@ -242,73 +207,78 @@ const MinimalHeader = memo(({
   }, [menuActions, onMorePress]);
 
   const closeDropdown = useCallback(() => setDropdownVisible(false), []);
-
-  const hasActions = showMore && (menuActions.length > 0 || onMorePress != null);
+  const hasActions    = showMore && (menuActions.length > 0 || onMorePress != null);
 
   return (
     <>
       <StatusBar barStyle="light-content" backgroundColor={gradient[0]} translucent />
+
       <LinearGradient
         colors={gradient}
         start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 0 }}
+        end={{ x: 1, y: 1 }}
         style={ss.container}
       >
-        {/* Deco circles */}
+        {/* Deco circles — same language as SpiritualHeader */}
         <View style={ss.deco} pointerEvents="none">
           <View style={ss.circle1} />
           <View style={ss.circle2} />
         </View>
 
-        <View style={ss.row}>
-          {/* Back */}
-          <TouchableOpacity
-            style={ss.iconBtn}
-            onPress={handleBack}
-            activeOpacity={0.7}
-            accessibilityLabel="Go back"
-            accessibilityRole="button"
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
-            <ArrowLeft color="#FFFFFF" size={22} strokeWidth={2.5} />
-          </TouchableOpacity>
+        <Animated.View style={[ss.inner, { opacity: fadeIn }]}>
 
-          {/* Title */}
-          <View style={ss.center}>
-            <Text style={ss.title} numberOfLines={1}>{title}</Text>
-            {subtitle ? (
-              <Text style={ss.subtitle} numberOfLines={1}>{subtitle}</Text>
-            ) : null}
+          {/* ── Row: back | title | more ── */}
+          <View style={ss.row}>
+
+            {/* Back */}
+            <TouchableOpacity
+              style={ss.iconBtn}
+              onPress={handleBack}
+              activeOpacity={0.7}
+              accessibilityLabel="Go back"
+              accessibilityRole="button"
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            >
+              <ArrowLeft color="#FFFFFF" size={20} strokeWidth={2.5} />
+            </TouchableOpacity>
+
+            {/* Title block */}
+            <View style={ss.center}>
+              <Text style={ss.title} numberOfLines={1}>{title}</Text>
+              {subtitle ? (
+                <Text style={ss.subtitle} numberOfLines={1}>{subtitle}</Text>
+              ) : null}
+            </View>
+
+            {/* More / spacer */}
+            {hasActions ? (
+              <View ref={moreButtonRef} collapsable={false}>
+                <TouchableOpacity
+                  style={[ss.iconBtn, dropdownVisible && ss.iconBtnActive]}
+                  onPress={handleMorePress}
+                  activeOpacity={0.7}
+                  accessibilityLabel="More options"
+                  accessibilityRole="button"
+                  hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                >
+                  <MoreVertical color="#FFFFFF" size={20} strokeWidth={2.5} />
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <View style={ss.spacer} />
+            )}
           </View>
 
-          {/* More / spacer */}
-          {hasActions ? (
-            <View ref={moreButtonRef} collapsable={false}>
-              <TouchableOpacity
-                style={[ss.iconBtn, dropdownVisible && ss.iconBtnActive]}
-                onPress={handleMorePress}
-                activeOpacity={0.7}
-                accessibilityLabel="More options"
-                accessibilityRole="button"
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-              >
-                <MoreVertical color="#FFFFFF" size={22} strokeWidth={2.5} />
-              </TouchableOpacity>
-            </View>
-          ) : (
-            <View style={ss.spacer} />
-          )}
-        </View>
+        </Animated.View>
 
-        {/* Bottom golden line */}
+        {/* ── Gold shimmer bottom line — identique à SpiritualHeader ── */}
         <LinearGradient
-          colors={['#FCD34D', '#F59E0B', '#FCD34D']}
+          colors={['transparent', '#F59E0B', '#FDE68A', '#F59E0B', 'transparent']}
           start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
           style={ss.goldLine}
         />
       </LinearGradient>
 
-      {/* Dropdown */}
       <DropdownMenu
         visible={dropdownVisible}
         onClose={closeDropdown}
@@ -324,55 +294,62 @@ export default MinimalHeader;
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const ss = StyleSheet.create({
   container: {
-    paddingTop: Platform.OS === 'ios' ? 48 : (StatusBar.currentHeight ?? 0) + 10,
-    paddingBottom: 14,
-    paddingHorizontal: 16,
+    paddingTop: Platform.OS === 'ios' ? 52 : (StatusBar.currentHeight ?? 0) + 12,
     overflow: 'hidden',
-    position: 'relative',
+  },
+  inner: {
+    paddingHorizontal: 16,
+    paddingBottom: 14,
   },
   deco: { ...StyleSheet.absoluteFillObject },
   circle1: {
-    position: 'absolute', top: -30, right: -30,
-    width: 90, height: 90, borderRadius: 45,
-    backgroundColor: 'rgba(255,255,255,0.06)',
+    position: 'absolute', top: -40, right: -30,
+    width: 110, height: 110, borderRadius: 55,
+    backgroundColor: 'rgba(255,255,255,0.05)',
   },
   circle2: {
-    position: 'absolute', bottom: -20, left: 60,
-    width: 60, height: 60, borderRadius: 30,
+    position: 'absolute', bottom: -20, left: 50,
+    width: 70, height: 70, borderRadius: 35,
     backgroundColor: 'rgba(255,255,255,0.04)',
   },
+
+  // ── Row ──
   row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    minHeight: 44,
-    zIndex: 1,
-    marginBottom: 12,
+    flexDirection: 'row', alignItems: 'center',
+    justifyContent: 'space-between', minHeight: 44, zIndex: 1,
   },
   iconBtn: {
-    width: 40, height: 40, borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.15)',
+    width: 38, height: 38, borderRadius: 11,
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.18)',
     justifyContent: 'center', alignItems: 'center',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)',
   },
   iconBtnActive: {
-    backgroundColor: 'rgba(255,255,255,0.3)',
-    borderColor: 'rgba(255,255,255,0.5)',
+    backgroundColor: 'rgba(255,255,255,0.25)',
+    borderColor: 'rgba(255,255,255,0.40)',
   },
-  spacer: { width: 40 },
+  spacer: { width: 38 },
+
+  // ── Title ──
   center: { flex: 1, alignItems: 'center', paddingHorizontal: 12 },
   title: {
-    fontSize: 20, fontWeight: '700',
-    color: '#FFFFFF', letterSpacing: 0.3,
+    fontSize: 19, fontWeight: '800',
+    color: '#FFFFFF', letterSpacing: -0.2,
     textAlign: 'center',
     textShadowColor: 'rgba(0,0,0,0.2)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 2,
   },
   subtitle: {
-    fontSize: 13, fontWeight: '500',
-    color: '#D1FAE5', letterSpacing: 0.2,
+    fontSize: 11, fontWeight: '500',
+    color: 'rgba(209,250,229,0.85)',
     textAlign: 'center', marginTop: 3,
+    letterSpacing: 0.1,
   },
-  goldLine: { height: 3, borderRadius: 2 },
+
+  // ── Gold bottom line ──
+  goldLine: {
+    height: 3,
+    opacity: 0.7,
+  },
 });
