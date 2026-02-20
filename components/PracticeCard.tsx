@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, Dimensions } from 'react-native';
-import { Clock, LucideIcon } from 'lucide-react-native';
+import { Clock, CheckCircle2, LucideIcon } from 'lucide-react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -22,7 +22,7 @@ interface PracticeCardData {
   route: string;
   time: string;
   priority: string;
-  isNew?: boolean;           // ← badge "New"
+  isNew?: boolean;
 }
 
 interface PracticeCardProps {
@@ -30,11 +30,18 @@ interface PracticeCardProps {
   progress?: number;
   onPress: (route: string) => void;
   darkMode: boolean;
+  isCompletedToday?: boolean;
 }
 
 const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
 
-export default function PracticeCard({ card, progress = 0, onPress, darkMode }: PracticeCardProps) {
+export default function PracticeCard({ 
+  card, 
+  progress = 0, 
+  onPress, 
+  darkMode,
+  isCompletedToday = false 
+}: PracticeCardProps) {
   const scale = useSharedValue(1);
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -50,6 +57,7 @@ export default function PracticeCard({ card, progress = 0, onPress, darkMode }: 
         <View style={[
           styles.iconContainer,
           { backgroundColor: darkMode ? card.color : card.lightColor },
+          isCompletedToday && styles.iconContainerCompleted,
         ]}>
           <Image source={card.image} style={styles.cardImage} resizeMode="contain" />
         </View>
@@ -61,6 +69,7 @@ export default function PracticeCard({ card, progress = 0, onPress, darkMode }: 
         <View style={[
           styles.iconContainer,
           { backgroundColor: darkMode ? card.color : card.lightColor },
+          isCompletedToday && styles.iconContainerCompleted,
         ]}>
           <CardIcon
             color={darkMode ? '#FFFFFF' : card.color}
@@ -77,14 +86,33 @@ export default function PracticeCard({ card, progress = 0, onPress, darkMode }: 
 
   return (
     <AnimatedTouchable
-      style={[styles.card, darkMode && styles.cardDark, animatedStyle, { width: CARD_WIDTH }]}
+      style={[
+        styles.card, 
+        darkMode && styles.cardDark, 
+        animatedStyle, 
+        { width: CARD_WIDTH },
+        isCompletedToday && styles.cardCompleted,
+      ]}
       onPress={() => onPress(card.route)}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
       activeOpacity={1}
     >
-      {/* Coloured top accent strip */}
-      <View style={[styles.accentStrip, { backgroundColor: card.color }]} />
+      {/* ✅ CORRIGÉ: Coloured top accent strip */}
+      <View style={[
+        styles.accentStrip, 
+        { backgroundColor: isCompletedToday ? '#10B981' : card.color }
+      ]} />
+
+      {/* Completion Badge Overlay */}
+      {isCompletedToday && (
+        <View style={styles.completedBadgeOverlay}>
+          <View style={styles.completedBadge}>
+            <CheckCircle2 color="#FFFFFF" size={16} strokeWidth={3} />
+            <Text style={styles.completedBadgeText}>Done</Text>
+          </View>
+        </View>
+      )}
 
       {/* Header row: icon + badges */}
       <View style={styles.header}>
@@ -92,14 +120,14 @@ export default function PracticeCard({ card, progress = 0, onPress, darkMode }: 
 
         <View style={styles.badgesRow}>
           {/* Priority dot */}
-          {card.priority === 'high' && (
+          {card.priority === 'high' && !isCompletedToday && (
             <View style={styles.priorityBadge}>
               <View style={[styles.priorityDot, { backgroundColor: card.color }]} />
             </View>
           )}
 
           {/* "New" badge */}
-          {card.isNew && (
+          {card.isNew && !isCompletedToday && (
             <View style={[styles.newBadge, { backgroundColor: card.color }]}>
               <Text style={styles.newBadgeText}>NEW</Text>
             </View>
@@ -109,7 +137,11 @@ export default function PracticeCard({ card, progress = 0, onPress, darkMode }: 
 
       {/* Arabic title */}
       <Text
-        style={[styles.arabicTitle, darkMode && styles.arabicTitleDark]}
+        style={[
+          styles.arabicTitle, 
+          darkMode && styles.arabicTitleDark,
+          isCompletedToday && styles.textCompleted,
+        ]}
         numberOfLines={1}
       >
         {card.arabicTitle}
@@ -117,14 +149,18 @@ export default function PracticeCard({ card, progress = 0, onPress, darkMode }: 
 
       {/* English title */}
       <Text
-        style={[styles.title, darkMode && styles.titleDark]}
+        style={[
+          styles.title, 
+          darkMode && styles.titleDark,
+          isCompletedToday && styles.textCompleted,
+        ]}
         numberOfLines={2}
       >
         {card.title}
       </Text>
 
       {/* Progress bar */}
-      {progress > 0 && (
+      {progress > 0 && !isCompletedToday && (
         <View style={styles.progressWrap}>
           <View style={[styles.progressTrack, darkMode && styles.progressTrackDark]}>
             <View
@@ -139,6 +175,15 @@ export default function PracticeCard({ card, progress = 0, onPress, darkMode }: 
             { color: isComplete ? card.color : (darkMode ? '#94A3B8' : '#64748B') },
           ]}>
             {isComplete ? '✓' : `${Math.round(progress)}%`}
+          </Text>
+        </View>
+      )}
+
+      {/* Completed Today Message */}
+      {isCompletedToday && (
+        <View style={styles.completedMessage}>
+          <Text style={styles.completedMessageText}>
+            ✓ Completed today
           </Text>
         </View>
       )}
@@ -161,22 +206,59 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: '#FFFFFF',
     borderRadius: 20,
-    overflow: 'hidden',
+    overflow: 'hidden', // ← Important pour que le strip respecte le borderRadius
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.08,
     shadowRadius: 14,
     elevation: 5,
+    position: 'relative',
   },
   cardDark: {
     backgroundColor: '#1E293B',
     shadowOpacity: 0.25,
   },
+  cardCompleted: {
+    borderWidth: 2,
+    borderColor: '#10B981',
+    shadowColor: '#10B981',
+    shadowOpacity: 0.15,
+  },
 
-  // Coloured top strip
+  // Completion Badge Overlay
+  completedBadgeOverlay: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    zIndex: 10,
+  },
+  completedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#10B981',
+    borderRadius: 20,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    shadowColor: '#10B981',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  completedBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.3,
+  },
+
+  // ✅ CORRIGÉ: Coloured top strip
   accentStrip: {
     height: 3,
     width: '100%',
+    borderTopLeftRadius: 20,   // ← même valeur que card.borderRadius
+    borderTopRightRadius: 20,  // ← même valeur que card.borderRadius
   },
 
   // Header
@@ -194,6 +276,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     overflow: 'hidden',
+  },
+  iconContainerCompleted: {
+    opacity: 0.7,
   },
   cardImage: {
     width: '100%',
@@ -219,7 +304,6 @@ const styles = StyleSheet.create({
     height: 7,
     borderRadius: 4,
   },
-  // "New" badge — card corner
   newBadge: {
     borderRadius: 6,
     paddingHorizontal: 5,
@@ -243,6 +327,9 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   arabicTitleDark: { color: '#64748B' },
+  textCompleted: {
+    opacity: 0.7,
+  },
 
   title: {
     fontSize: 14,
@@ -279,6 +366,23 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     width: 24,
     textAlign: 'right',
+  },
+
+  // Completed Message
+  completedMessage: {
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    marginHorizontal: 14,
+    marginBottom: 8,
+    backgroundColor: '#D1FAE5',
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  completedMessageText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#059669',
+    letterSpacing: 0.3,
   },
 
   // Footer

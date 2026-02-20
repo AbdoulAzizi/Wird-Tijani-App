@@ -19,6 +19,7 @@ import { useApp } from '../../contexts/AppContext';
 import { openHadraMap } from '../../utils/OpenHadraMap';
 import QuickActionsBar from '../../components/QuickActionsBar';
 import PracticeCard from '../../components/PracticeCard';
+import DailyProgressCard from '../../components/DailyProgressCard';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 interface PracticeCardData {
@@ -174,41 +175,29 @@ const quickActions: QuickAction[] = [
   },
 ];
 
-// ── Compact Progress Bar ───────────────────────────────────────────────────
-const MiniBar = ({
-  label,
-  value,
-  color,
-  darkMode,
-}: {
-  label: string;
-  value: number;
-  color: string;
-  darkMode: boolean;
-}) => (
-  <View style={miniStyles.row}>
-    <Text style={[miniStyles.label, darkMode && miniStyles.labelDark]}>{label}</Text>
-    <View style={[miniStyles.track, darkMode && miniStyles.trackDark]}>
-      <View style={[miniStyles.fill, { width: `${value}%`, backgroundColor: color }]} />
-    </View>
-    <Text style={[miniStyles.pct, { color }]}>{value}%</Text>
-  </View>
-);
-
-const miniStyles = StyleSheet.create({
-  row:      { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 5 },
-  label:    { fontSize: 11, fontWeight: '600', color: '#64748B', width: 44 },
-  labelDark:{ color: '#94A3B8' },
-  track:    { flex: 1, height: 6, backgroundColor: '#F1F5F9', borderRadius: 3, overflow: 'hidden' },
-  trackDark:{ backgroundColor: '#334155' },
-  fill:     { height: '100%', borderRadius: 3 },
-  pct:      { fontSize: 11, fontWeight: '700', width: 32, textAlign: 'right' },
-});
-
 // ── Main Screen ────────────────────────────────────────────────────────────
 export default function HomeScreen() {
   const { state, getWirdProgress, getWazifaProgress } = useApp();
   const dark = state.settings.darkMode;
+
+  // Helper pour vérifier si une pratique est complétée aujourd'hui
+  const getTodayDate = (): string => {
+    return new Date().toISOString().split('T')[0];
+  };
+
+  const isCardCompletedToday = (cardId: string): boolean => {
+    const today = getTodayDate();
+    switch (cardId) {
+      case 'wird':
+        return state.completedWirds.includes(today);
+      case 'wazifa':
+        return state.completedWazifas.includes(today);
+      case 'hadra-jumua':
+        return state.completedHadras.includes(today);
+      default:
+        return false;
+    }
+  };
 
   const handleCardPress = (route: string) => {
     switch (route) {
@@ -236,13 +225,15 @@ export default function HomeScreen() {
 
   const wirdProgress   = getWirdProgress();
   const wazifaProgress = getWazifaProgress();
-  const totalProgress  = Math.round((wirdProgress + wazifaProgress) / 2);
-  const streak         = state.streak || 0;
 
   const getCardProgress = (cardId: string): number => {
     if (cardId === 'wird')   return wirdProgress;
     if (cardId === 'wazifa') return wazifaProgress;
     return 0;
+  };
+
+  const handleProgressCardPress = () => {
+    router.push('/(tabs)/stats');
   };
 
   return (
@@ -253,45 +244,11 @@ export default function HomeScreen() {
         contentContainerStyle={styles.scrollContent}
       >
 
-        {/* ── COMPACT PROGRESS CARD ─────────────────────────────── */}
-        <TouchableOpacity
-          activeOpacity={0.8}
-          onPress={() => router.push('/(tabs)/stats')}
-          style={styles.progressWrapper}
-        >
-          <View style={[styles.progressCard, dark && styles.progressCardDark]}>
-            {/* Left: icon + total */}
-            <View style={styles.progressLeft}>
-              <View style={[styles.progressIconBg, { backgroundColor: totalProgress >= 100 ? '#D1FAE5' : dark ? '#1E3A2F' : '#F0FDF4' }]}>
-                <TrendingUp color="#059669" size={18} strokeWidth={2.5} />
-              </View>
-              <View>
-                <Text style={[styles.progressPct, dark && styles.progressPctDark]}>
-                  {totalProgress}%
-                </Text>
-                <Text style={[styles.progressLabel, dark && styles.progressLabelDark]}>
-                  Daily Goal
-                </Text>
-              </View>
-            </View>
-
-            {/* Center: mini bars */}
-            <View style={styles.progressCenter}>
-              <MiniBar label="Wird"   value={Math.round(wirdProgress)}   color="#059669" darkMode={dark} />
-              <MiniBar label="Wazifa" value={Math.round(wazifaProgress)} color="#D97706" darkMode={dark} />
-            </View>
-
-            {/* Right: streak + arrow */}
-            <View style={styles.progressRight}>
-              <View style={styles.streakPill}>
-                <Flame color="#D97706" size={13} />
-                <Text style={styles.streakNum}>{streak}</Text>
-              </View>
-              <Text style={[styles.streakDays, dark && styles.streakDaysDark]}>streak</Text>
-              <ArrowRight color={dark ? '#475569' : '#CBD5E1'} size={14} style={{ marginTop: 4 }} />
-            </View>
-          </View>
-        </TouchableOpacity>
+        {/* ── DAILY PROGRESS CARD ─────────────────────────────── */}
+        <DailyProgressCard 
+          onPress={handleProgressCardPress}
+          darkMode={dark}
+        />
 
         {/* ── QUICK ACTIONS ──────────────────────────────────────── */}
         <View style={styles.quickActionsSection}>
@@ -317,6 +274,7 @@ export default function HomeScreen() {
                 progress={getCardProgress(card.id)}
                 onPress={handleCardPress}
                 darkMode={dark}
+                isCompletedToday={isCardCompletedToday(card.id)}
               />
             ))}
           </View>
@@ -383,53 +341,6 @@ const styles = StyleSheet.create({
   containerDark: { backgroundColor: '#0F172A' },
   scrollView:    { flex: 1 },
   scrollContent: { paddingBottom: 20 },
-
-  // ── Compact progress card
-  progressWrapper: { paddingHorizontal: 16, marginTop: 8 },
-  progressCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    gap: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.07,
-    shadowRadius: 10,
-    elevation: 4,
-  },
-  progressCardDark: { backgroundColor: '#1E293B' },
-
-  progressLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    width: 96,
-  },
-  progressIconBg: {
-    width: 36, height: 36, borderRadius: 10,
-    justifyContent: 'center', alignItems: 'center',
-  },
-  progressPct: {
-    fontSize: 18, fontWeight: '800', color: '#1E293B', letterSpacing: -0.5,
-  },
-  progressPctDark:  { color: '#F8FAFC' },
-  progressLabel:    { fontSize: 10, color: '#94A3B8', fontWeight: '600', marginTop: 1 },
-  progressLabelDark:{ color: '#64748B' },
-
-  progressCenter: { flex: 1 },
-
-  progressRight: { alignItems: 'center', gap: 2 },
-  streakPill: {
-    flexDirection: 'row', alignItems: 'center', gap: 3,
-    backgroundColor: '#FEF3C7', borderRadius: 20,
-    paddingHorizontal: 8, paddingVertical: 4,
-  },
-  streakNum:  { fontSize: 13, fontWeight: '800', color: '#D97706' },
-  streakDays: { fontSize: 9, color: '#94A3B8', fontWeight: '600' },
-  streakDaysDark: { color: '#64748B' },
 
   // ── Quick actions
   quickActionsSection: { marginTop: 20 },
