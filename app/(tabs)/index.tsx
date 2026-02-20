@@ -241,7 +241,7 @@ export default function HomeScreen() {
   };
 
   const handleProgressCardPress = () => {
-    router.push('/(tabs)/stats');
+    router.push('/(tabs)/daily-achievements');
   };
 
   return (

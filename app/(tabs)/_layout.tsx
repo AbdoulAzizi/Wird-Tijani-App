@@ -2,7 +2,7 @@ import { Tabs, useRouter, usePathname } from 'expo-router';
 import {
   Heart, BookOpen, ChartBar as BarChart3, Settings as SettingsIcon,
   Star, Moon, Home, Info, X, ChevronRight, Sparkles, Bell,
-  Grid3X3, Timer
+  Grid3X3, Timer,CheckCircle2,
 } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
@@ -238,6 +238,7 @@ function InnerTabLayout() {
     { name: 'Dhikr Counter',    route: '/dhikr-counter',   icon: Timer,        description: 'Your dhikr counter',   color: '#0891B2', useMinimalHeader: true,  isNew: true },
     { name: 'Library',          route: '/library',         icon: BookOpen,     description: 'Resources & texts',    color: '#059669', useMinimalHeader: true,  dividerAfter: true },
     { name: 'Statistics',       route: '/stats',           icon: BarChart3,    description: 'Your progress',        color: '#0891B2', useMinimalHeader: true  },
+    { name: "Today's Practices", route: '/daily-achievements', icon: CheckCircle2, description: "Today's daily log",color: '#059669', useMinimalHeader: true },
     { name: 'Notifications',    route: '/notifications',   icon: Bell,         description: 'Alerts & reminders',   color: '#059669', badge: unreadCount,      useMinimalHeader: true, isNew: true },
     { name: 'Notif. Settings',  route: '/notification-settings', icon: Bell,   description: 'Manage notifications', color: '#64748B', useMinimalHeader: true  },
     { name: 'Settings',         route: '/settings',        icon: SettingsIcon, description: 'Configuration',        color: '#475569', useMinimalHeader: true  },
@@ -496,7 +497,7 @@ function InnerTabLayout() {
         {[
           'names', 'dhikr-counter', 'stats', 'settings', 'about',
           'library', 'library-screen', 'notifications',
-          'notification-settings', 'notification-test',
+          'notification-settings', 'notification-test', 'daily-achievements',
         ].map(name => (
           <Tabs.Screen key={name} name={name} options={{ href: null }} />
         ))}
