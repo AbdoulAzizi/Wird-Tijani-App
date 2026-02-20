@@ -34,7 +34,7 @@ interface PracticeCardData {
   route: string;
   time: string;
   priority: string;
-  isNew?: boolean;           // ← badge "New"
+  isNew?: boolean;
 }
 
 interface QuickAction {
@@ -180,22 +180,16 @@ export default function HomeScreen() {
   const { state, getWirdProgress, getWazifaProgress } = useApp();
   const dark = state.settings.darkMode;
 
-  // Helper pour vérifier si une pratique est complétée aujourd'hui
-  const getTodayDate = (): string => {
-    return new Date().toISOString().split('T')[0];
-  };
+  const getTodayDate = (): string => new Date().toISOString().split('T')[0];
+  const isFriday = (): boolean => new Date().getDay() === 5;
 
   const isCardCompletedToday = (cardId: string): boolean => {
     const today = getTodayDate();
     switch (cardId) {
-      case 'wird':
-        return state.completedWirds.includes(today);
-      case 'wazifa':
-        return state.completedWazifas.includes(today);
-      case 'hadra-jumua':
-        return state.completedHadras.includes(today);
-      default:
-        return false;
+      case 'wird':       return state.completedWirds.includes(today);
+      case 'wazifa':     return state.completedWazifas.includes(today);
+      case 'hadra-jumua':return state.completedHadras.includes(today);
+      default:           return false;
     }
   };
 
@@ -214,7 +208,21 @@ export default function HomeScreen() {
 
   const handleQuickAction = (action: string) => {
     switch (action) {
-      case 'continue':       router.push('/(tabs)/wird');    break;
+
+      // ✅ Action intelligente : détecte le dhikr en cours
+      case 'continue': {
+        const today    = getTodayDate();
+        const wirdDone  = state.completedWirds.includes(today);
+        const wazifaDone = state.completedWazifas.includes(today);
+        const hadraDone  = state.completedHadras.includes(today);
+
+        if (!wirdDone)                       router.push('/(tabs)/wird');
+        else if (!wazifaDone)                router.push('/(tabs)/wazifa');
+        else if (isFriday() && !hadraDone)   router.push('/(tabs)/hadra');
+        else                                 router.push('/(tabs)/stats'); // tout complété → stats
+        break;
+      }
+
       case 'schedule':       openHadraMap();                 break;
       case 'achievements':   router.push('/(tabs)/stats');   break;
       case 'names':          router.push('/(tabs)/names');   break;
@@ -245,7 +253,7 @@ export default function HomeScreen() {
       >
 
         {/* ── DAILY PROGRESS CARD ─────────────────────────────── */}
-        <DailyProgressCard 
+        <DailyProgressCard
           onPress={handleProgressCardPress}
           darkMode={dark}
         />
@@ -342,20 +350,17 @@ const styles = StyleSheet.create({
   scrollView:    { flex: 1 },
   scrollContent: { paddingBottom: 20 },
 
-  // ── Quick actions
   quickActionsSection: { marginTop: 20 },
 
-  // ── Practice cards
-  practiceSection: { marginTop: 28, paddingHorizontal: 16 },
-  sectionHeader:   { marginBottom: 16 },
-  sectionTitle:    { fontSize: 20, fontWeight: '800', color: '#1E293B', letterSpacing: -0.5 },
-  sectionTitleDark:{ color: '#F8FAFC' },
+  practiceSection:  { marginTop: 28, paddingHorizontal: 16 },
+  sectionHeader:    { marginBottom: 16 },
+  sectionTitle:     { fontSize: 20, fontWeight: '800', color: '#1E293B', letterSpacing: -0.5 },
+  sectionTitleDark: { color: '#F8FAFC' },
   cardsGrid: {
     flexDirection: 'row', flexWrap: 'wrap',
     justifyContent: 'space-between', gap: 16,
   },
 
-  // ── 99 Names featured
   featuredCard: {
     marginHorizontal: 16, marginTop: 28,
     borderRadius: 20, overflow: 'hidden',
@@ -374,12 +379,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center', alignItems: 'center',
     flexShrink: 0,
   },
-  featuredText:  { flex: 1 },
-  featuredArabic:{ fontSize: 14, color: 'rgba(255,255,255,0.85)', textAlign: 'right', marginBottom: 4 },
-  featuredTitle: { fontSize: 15, fontWeight: '700', color: '#FFFFFF', marginBottom: 3 },
-  featuredSub:   { fontSize: 12, color: 'rgba(255,255,255,0.75)', lineHeight: 17 },
+  featuredText:   { flex: 1 },
+  featuredArabic: { fontSize: 14, color: 'rgba(255,255,255,0.85)', textAlign: 'right', marginBottom: 4 },
+  featuredTitle:  { fontSize: 15, fontWeight: '700', color: '#FFFFFF', marginBottom: 3 },
+  featuredSub:    { fontSize: 12, color: 'rgba(255,255,255,0.75)', lineHeight: 17 },
 
-  // ── Library
   libraryCard: {
     marginHorizontal: 16, marginTop: 14,
     borderRadius: 20, backgroundColor: '#059669',
@@ -400,7 +404,6 @@ const styles = StyleSheet.create({
   libraryTitle: { fontSize: 15, fontWeight: '700', color: '#FFFFFF', marginBottom: 3 },
   librarySub:   { fontSize: 12, color: 'rgba(255,255,255,0.78)', lineHeight: 17 },
 
-  // ── Quote
   quoteCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 20, padding: 24,
