@@ -17,6 +17,8 @@ import { Settings as SettingsIcon, Volume2, Bell, Info, Share2, Heart, Moon, Glo
 import GradientHeader from '../../components/GradientHeader';
 import { useApp } from '../../contexts/AppContext';
 import { useNotifications } from '../../contexts/NotificationContext';
+import { Repeat } from 'lucide-react-native';
+import FrequencySettingsSection from '../pages/frequency-settings';
 import { exportReport } from '../../utils/exportReport';
 import ScreenBackground from '../../components/ScreenBackground';
 import { useRouter } from 'expo-router';
@@ -483,6 +485,16 @@ export default function SettingsScreen() {
                 thumbColor="#FFFFFF"
               />
             </View>
+          </View>
+
+          {/* ── Practices Frequency ── */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Repeat color="#059669" size={24} />
+              <Text style={styles.sectionTitle}>Practice Frequency</Text>
+            </View>
+
+            <FrequencySettingsSection darkMode={state.settings.darkMode} />
           </View>
 
           {/* Data Management */}

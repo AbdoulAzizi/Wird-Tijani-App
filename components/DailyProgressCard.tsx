@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { CheckCircle2, Circle, Flame, Calendar } from 'lucide-react-native';
+import { CheckCircle2, Circle, Flame, ChevronRight } from 'lucide-react-native';
 import { useApp } from '../contexts/AppContext';
 
 interface DailyProgressCardProps {
@@ -8,362 +8,198 @@ interface DailyProgressCardProps {
   darkMode?: boolean;
 }
 
-interface PracticeStatus {
-  id: 'wird' | 'wazifa' | 'hadra';
-  title: string;
-  isCompleted: boolean;
-  isActive: boolean;
-  color: string;
-  lightColor: string;
-}
+const isFriday = () => new Date().getDay() === 5;
 
-const isFriday = (): boolean => new Date().getDay() === 5;
-const getTodayDate = (): string => new Date().toISOString().split('T')[0];
-const isCompletedToday = (completedDates: string[]): boolean =>
-  completedDates.includes(getTodayDate());
+const DailyProgressCard: React.FC<DailyProgressCardProps> = ({ onPress, darkMode = false }) => {
+  const {
+    state,
+    isWirdFullyDoneToday, isWazifaFullyDoneToday, isHadraFullyDoneToday,
+    wirdCompletionsToday, wazifaCompletionsToday, hadraCompletionsToday,
+  } = useApp();
 
-const DailyProgressCard: React.FC<DailyProgressCardProps> = ({
-  onPress,
-  darkMode = false,
-}) => {
-  const { state } = useApp();
-
-  const practiceStatuses: PracticeStatus[] = useMemo(() => {
-    const friday = isFriday();
-    return [
-      {
-        id: 'wird',
-        title: 'Wird',
-        isCompleted: isCompletedToday(state.completedWirds),
-        isActive: true,
-        color: '#DC2626',
-        lightColor: '#FEE2E2',
-      },
-      {
-        id: 'wazifa',
-        title: 'Wazifa',
-        isCompleted: isCompletedToday(state.completedWazifas),
-        isActive: true,
-        color: '#D97706',
-        lightColor: '#FEF3C7',
-      },
-      {
-        id: 'hadra',
-        title: 'Hadra',
-        isCompleted: isCompletedToday(state.completedHadras),
-        isActive: friday,
-        color: '#7C3AED',
-        lightColor: '#EDE9FE',
-      },
-    ];
-  }, [state.completedWirds, state.completedWazifas, state.completedHadras]);
-
-  const stats = useMemo(() => {
-    const activePractices = practiceStatuses.filter(p => p.isActive);
-    const completedCount = activePractices.filter(p => p.isCompleted).length;
-    const totalCount = activePractices.length;
-    const percentage = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
-    const allCompleted = completedCount === totalCount && totalCount > 0;
-    return { completedCount, totalCount, percentage, allCompleted };
-  }, [practiceStatuses]);
-
+  const { frequencySettings } = state;
+  const friday = isFriday();
   const streak = state.streak || 0;
 
-  const renderPracticeStatus = (practice: PracticeStatus) => {
-    if (!practice.isActive) return null;
-    return (
-      <View key={practice.id} style={styles.practiceRow}>
-        {practice.isCompleted ? (
-          <CheckCircle2 color={practice.color} size={18} strokeWidth={2.5} />
-        ) : (
-          <Circle color={darkMode ? '#475569' : '#CBD5E1'} size={18} strokeWidth={2} />
-        )}
-        <Text
-          style={[
-            styles.practiceLabel,
-            practice.isCompleted && styles.practiceLabelCompleted,
-            practice.isCompleted && { color: practice.color },
-            darkMode && !practice.isCompleted && styles.practiceLabelDark,
-          ]}
-        >
-          {practice.title}
-        </Text>
-      </View>
-    );
-  };
+  const practices = useMemo(() => [
+    {
+      id: 'wird', label: 'Wird', arabic: 'الوِرد',
+      done: isWirdFullyDoneToday, completions: wirdCompletionsToday,
+      target: frequencySettings.wirdPerDay, color: '#DC2626', active: true,
+    },
+    {
+      id: 'wazifa', label: 'Wazifa', arabic: 'الوَظِيفَة',
+      done: isWazifaFullyDoneToday, completions: wazifaCompletionsToday,
+      target: frequencySettings.wazifaPerDay, color: '#D97706', active: true,
+    },
+    {
+      id: 'hadra', label: 'Hadra', arabic: 'حضرة',
+      done: isHadraFullyDoneToday, completions: hadraCompletionsToday,
+      target: frequencySettings.hadraPerDay, color: '#7C3AED', active: friday,
+    },
+  ], [isWirdFullyDoneToday, isWazifaFullyDoneToday, isHadraFullyDoneToday,
+      wirdCompletionsToday, wazifaCompletionsToday, hadraCompletionsToday,
+      frequencySettings, friday]);
+
+  const active    = practices.filter(p => p.active);
+  const completed = active.filter(p => p.done).length;
+  const total     = active.length;
+  const pct       = total > 0 ? Math.round((completed / total) * 100) : 0;
+  const allDone   = completed === total && total > 0;
 
   return (
     <TouchableOpacity activeOpacity={0.8} onPress={onPress} style={styles.wrapper}>
       <View style={[styles.card, darkMode && styles.cardDark]}>
 
-        {/* Left Section */}
-        <View style={styles.leftSection}>
-          <View
-            style={[
-              styles.iconContainer,
-              {
-                backgroundColor: stats.allCompleted
-                  ? '#D1FAE5'
-                  : darkMode
-                  ? '#1E3A2F'
-                  : '#F0FDF4',
-              },
-            ]}
-          >
-            {stats.allCompleted ? (
-              <CheckCircle2 color="#059669" size={24} strokeWidth={2.5} />
-            ) : (
-              <Calendar color="#059669" size={24} strokeWidth={2.5} />
+        {/* ── Left: circular % ── */}
+        <View style={[
+          styles.ring,
+          { borderColor: allDone ? '#10B981' : (darkMode ? '#334155' : '#D1FAE5') },
+        ]}>
+          <Text style={[styles.ringPct, { color: allDone ? '#10B981' : '#059669' }]}>
+            {pct}
+          </Text>
+          <Text style={styles.ringMark}>%</Text>
+        </View>
+
+        {/* ── Center: practice rows ── */}
+        <View style={styles.center}>
+          {/* Title */}
+          <View style={styles.titleRow}>
+            <Text style={[styles.title, darkMode && styles.titleDark]}>
+              {allDone ? 'All done today 🌿' : friday ? "🕌 Jumu'a Mubārak" : 'Daily Practices'}
+            </Text>
+            {streak > 0 && (
+              <View style={styles.streakBadge}>
+                <Flame color="#F97316" size={10} strokeWidth={2.5} />
+                <Text style={styles.streakNum}>{streak}</Text>
+              </View>
             )}
           </View>
-          <View style={styles.statusTextContainer}>
-            <Text style={[styles.statusTitle, darkMode && styles.statusTitleDark]}>
-              {stats.allCompleted ? 'Completed!' : 'Daily Practices'}
-            </Text>
-            <Text style={[styles.statusSubtitle, darkMode && styles.statusSubtitleDark]}>
-              {stats.allCompleted
-                ? 'All practices done'
-                : `${stats.completedCount} of ${stats.totalCount} completed`}
-            </Text>
-            {isFriday() && (
-              <Text style={[styles.fridayTag, darkMode && styles.fridayTagDark]}>
-                Friday · Hadra day
-              </Text>
-            )}
+
+          {/* Practice items — horizontal compact row */}
+          <View style={styles.pillsRow}>
+            {practices.map(p => {
+              if (!p.active) return null;
+              const multi = p.target > 1;
+              return (
+                <View key={p.id} style={[
+                  styles.pill,
+                  darkMode && styles.pillDark,
+                  p.done && { backgroundColor: p.color + '18', borderColor: p.color + '35' },
+                ]}>
+                  {p.done
+                    ? <CheckCircle2 color={p.color} size={11} strokeWidth={3} />
+                    : <Circle color={darkMode ? '#475569' : '#CBD5E1'} size={11} strokeWidth={2} />
+                  }
+                  <Text style={[
+                    styles.pillLabel,
+                    darkMode && styles.pillLabelDark,
+                    p.done && { color: p.color },
+                  ]}>
+                    {p.label}
+                  </Text>
+                  {multi && (
+                    <Text style={[styles.pillCount, { color: p.done ? p.color : (darkMode ? '#475569' : '#CBD5E1') }]}>
+                      {Math.min(p.completions, p.target)}/{p.target}
+                    </Text>
+                  )}
+                </View>
+              );
+            })}
+          </View>
+
+          {/* Progress bar */}
+          <View style={[styles.track, darkMode && styles.trackDark]}>
+            <View style={[
+              styles.fill,
+              { width: `${pct}%`, backgroundColor: allDone ? '#10B981' : '#059669' },
+            ]} />
           </View>
         </View>
 
-        {/* Center Section */}
-        <View style={styles.centerSection}>
-          {practiceStatuses.map(renderPracticeStatus)}
-        </View>
-
-        {/* Right Section */}
-        <View style={styles.rightSection}>
-          <View style={styles.percentageCircle}>
-            <Text style={[styles.percentageText, darkMode && styles.percentageTextDark]}>
-              {stats.percentage}
-            </Text>
-            <Text style={[styles.percentageSymbol, darkMode && styles.percentageSymbolDark]}>
-              %
-            </Text>
-          </View>
-          <View style={styles.streakContainer}>
-            <View style={styles.streakPill}>
-              <Flame color="#D97706" size={12} strokeWidth={2} />
-              <Text style={styles.streakNumber}>{streak}</Text>
-            </View>
-            <Text style={[styles.streakLabel, darkMode && styles.streakLabelDark]}>
-              streak
-            </Text>
-          </View>
-        </View>
+        {/* ── Right: chevron ── */}
+        <ChevronRight
+          color={darkMode ? '#334155' : '#CBD5E1'}
+          size={16}
+          strokeWidth={2.5}
+        />
 
       </View>
-
-      {/* Friday Banner */}
-      {isFriday() && (
-        <View style={[styles.fridayBanner, darkMode && styles.fridayBannerDark]}>
-          <Text style={styles.fridayEmoji}>🕌</Text>
-          <Text style={[styles.fridayGreeting, darkMode && styles.fridayGreetingDark]}>
-            Jumu'a Mubarak
-          </Text>
-          <Text style={[styles.fridayDot, darkMode && styles.fridayDotDark]}>·</Text>
-          <Text style={[styles.fridaySubtitle, darkMode && styles.fridaySubtitleDark]}>
-            May Allah accept your deeds 🤲
-          </Text>
-        </View>
-      )}
     </TouchableOpacity>
   );
 };
 
 const styles = StyleSheet.create({
-  wrapper: {
-    paddingHorizontal: 16,
-    marginTop: 8,
-  },
+  wrapper: { paddingHorizontal: 16, marginTop: 10 },
+
   card: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 12,
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    paddingVertical: 16,
-    paddingHorizontal: 16,
-    gap: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
+    borderRadius: 18,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(5,150,105,0.1)',
+    shadowColor: '#059669',
+    shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.08,
     shadowRadius: 12,
-    elevation: 5,
-    borderWidth: 1,
-    borderColor: 'rgba(5, 150, 105, 0.1)',
+    elevation: 4,
   },
   cardDark: {
     backgroundColor: '#1E293B',
-    borderColor: 'rgba(5, 150, 105, 0.2)',
+    borderColor: 'rgba(16,185,129,0.12)',
   },
 
-  // Left Section
-  leftSection: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    flex: 1,
-  },
-  iconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
+  // ── Ring ──
+  ring: {
+    width: 54, height: 54, borderRadius: 27,
+    borderWidth: 3,
+    justifyContent: 'center', alignItems: 'center',
     flexShrink: 0,
   },
-  statusTextContainer: {
-    flex: 1,
-  },
-  statusTitle: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: '#1E293B',
-    letterSpacing: -0.3,
-    marginBottom: 2,
-  },
-  statusTitleDark: { color: '#F8FAFC' },
-  statusSubtitle: {
-    fontSize: 12,
-    color: '#64748B',
-    fontWeight: '600',
-  },
-  statusSubtitleDark: { color: '#94A3B8' },
-  fridayTag: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: '#7C3AED',
-    letterSpacing: 0.3,
-    marginTop: 3,
-  },
-  fridayTagDark: { color: '#A78BFA' },
+  ringPct:  { fontSize: 17, fontWeight: '900', lineHeight: 18 },
+  ringMark: { fontSize: 8,  fontWeight: '700', color: '#94A3B8', marginTop: -2 },
 
-  // Center Section
-  centerSection: {
-    gap: 8,
-    paddingVertical: 4,
-  },
-  practiceRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  practiceLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#64748B',
-  },
-  practiceLabelCompleted: { fontWeight: '700' },
-  practiceLabelDark: { color: '#94A3B8' },
+  // ── Center ──
+  center: { flex: 1, gap: 6 },
 
-  // Right Section
-  rightSection: {
-    alignItems: 'center',
-    gap: 10,
-  },
-  percentageCircle: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: '#F0FDF4',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 3,
-    borderColor: '#059669',
-  },
-  percentageText: {
-    fontSize: 20,
-    fontWeight: '900',
-    color: '#059669',
-    lineHeight: 20,
-    marginTop: -2,
-  },
-  percentageTextDark: { color: '#10B981' },
-  percentageSymbol: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: '#059669',
-    marginTop: -2,
-  },
-  percentageSymbolDark: { color: '#10B981' },
-  streakContainer: {
-    alignItems: 'center',
-    gap: 2,
-  },
-  streakPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: '#FEF3C7',
-    borderRadius: 20,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-  },
-  streakNumber: {
-    fontSize: 13,
-    fontWeight: '800',
-    color: '#D97706',
-  },
-  streakLabel: {
-    fontSize: 9,
-    color: '#94A3B8',
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  streakLabelDark: { color: '#64748B' },
+  titleRow:  { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  title:     { fontSize: 13, fontWeight: '800', color: '#0F172A', letterSpacing: -0.2, flex: 1 },
+  titleDark: { color: '#F1F5F9' },
 
-  // Friday Banner
-  fridayBanner: {
-    marginTop: 6,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    backgroundColor: '#F5F3FF',
-    borderRadius: 10,
-    paddingVertical: 7,
-    paddingHorizontal: 14,
-    borderWidth: 1,
-    borderColor: 'rgba(124, 58, 237, 0.12)',
+  streakBadge: {
+    flexDirection: 'row', alignItems: 'center', gap: 3,
+    backgroundColor: '#FFF7ED', borderRadius: 20,
+    paddingHorizontal: 6, paddingVertical: 2,
+    borderWidth: 1, borderColor: '#FED7AA',
   },
-  fridayBannerDark: {
-    backgroundColor: 'rgba(109, 40, 217, 0.15)',
-    borderColor: 'rgba(167, 139, 250, 0.2)',
+  streakNum: { fontSize: 10, fontWeight: '800', color: '#F97316' },
+
+  // ── Pills row ──
+  pillsRow: { flexDirection: 'row', gap: 6 },
+  pill: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    backgroundColor: '#F8FAFC',
+    borderRadius: 8,
+    paddingHorizontal: 7, paddingVertical: 4,
+    borderWidth: 1, borderColor: 'transparent',
   },
-  fridayEmoji: {
-    fontSize: 13,
+  pillDark:  { backgroundColor: '#0F172A' },
+  pillLabel: { fontSize: 11, fontWeight: '700', color: '#64748B' },
+  pillLabelDark: { color: '#94A3B8' },
+  pillCount: { fontSize: 9, fontWeight: '700' },
+
+  // ── Bar ──
+  track: {
+    height: 3, backgroundColor: '#F1F5F9',
+    borderRadius: 2, overflow: 'hidden',
   },
-  fridayGreeting: {
-    fontSize: 12,
-    fontWeight: '800',
-    color: '#5B21B6',
-    letterSpacing: 0.3,
-  },
-  fridayGreetingDark: { color: '#A78BFA' },
-  fridayDot: {
-    fontSize: 12,
-    color: '#A78BFA',
-  },
-  fridayDotDark: { color: '#6D28D9' },
-  fridaySubtitle: {
-    fontSize: 11,
-    fontWeight: '500',
-    color: '#7C3AED',
-    opacity: 0.75,
-    fontStyle: 'italic',
-  },
-  fridaySubtitleDark: {
-    color: '#C4B5FD',
-    opacity: 0.85,
-  },
+  trackDark: { backgroundColor: '#273549' },
+  fill: { height: '100%', borderRadius: 2 },
 });
 
 export default DailyProgressCard;

@@ -2,26 +2,15 @@ import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
 import { router } from 'expo-router';
 import {
-  Heart,
-  Star,
-  Users,
-  BookOpen,
-  TrendingUp,
-  Clock,
-  Award,
-  ChevronRight,
-  Sparkles,
-  Flame,
-  LucideIcon,
-  ArrowRight,
+  Heart, Star, Users, BookOpen, TrendingUp, Clock,
+  Award, ChevronRight, Sparkles, LucideIcon,
 } from 'lucide-react-native';
-import { useApp } from '../../contexts/AppContext';
+import { useApp, getTodayDate } from '../../contexts/AppContext';
 import { openHadraMap } from '../../utils/OpenHadraMap';
 import QuickActionsBar from '../../components/QuickActionsBar';
 import PracticeCard from '../../components/PracticeCard';
 import DailyProgressCard from '../../components/DailyProgressCard';
 
-// ── Types ──────────────────────────────────────────────────────────────────
 interface PracticeCardData {
   id: string;
   title: string;
@@ -47,7 +36,6 @@ interface QuickAction {
 
 const { width } = Dimensions.get('window');
 
-// ── Data ───────────────────────────────────────────────────────────────────
 const practiceCards: PracticeCardData[] = [
   {
     id: 'wird',
@@ -99,7 +87,7 @@ const practiceCards: PracticeCardData[] = [
   },
   {
     id: 'names-allah',
-    title: 'Asmā\' Al-Husnā',
+    title: "Asmā' Al-Husnā",
     arabicTitle: 'أسماء الله الحسنى',
     description: 'The 99 Beautiful Names of Allah',
     icon: Sparkles,
@@ -138,58 +126,57 @@ const practiceCards: PracticeCardData[] = [
 ];
 
 const quickActions: QuickAction[] = [
-  {
-    title: 'Continue Practice',
-    description: 'Resume your spiritual journey',
-    icon: TrendingUp,
-    color: '#059669',
-    action: 'continue',
-  },
-  {
-    title: "Today's Schedule",
-    description: 'View prayer times & practices',
-    icon: Clock,
-    color: '#7C3AED',
-    action: 'schedule',
-  },
-  {
-    title: "Asm'a Al-Husn'a",
-    description: 'The 99 Beautiful Names of Allah',
-    icon: Sparkles,
-    color: '#1e40af',
-    action: 'names',
-  },
-  {
-    title: 'Library',
-    description: 'Sacred formulas, biographies & wisdom',
-    icon: BookOpen,
-    color: '#059669',
-    action: 'library-screen',
-  },
-  {
-    title: 'Achievements',
-    description: 'Your spiritual milestones',
-    icon: Award,
-    color: '#D97706',
-    action: 'achievements',
-  },
+  { title: 'Continue Practice', description: 'Resume your spiritual journey', icon: TrendingUp, color: '#059669',  action: 'continue'      },
+  { title: "Today's Schedule",  description: 'View prayer times & practices',  icon: Clock,      color: '#7C3AED',  action: 'schedule'      },
+  { title: "Asm'a Al-Husn'a",  description: 'The 99 Beautiful Names of Allah', icon: Sparkles,   color: '#1e40af',  action: 'names'         },
+  { title: 'Library',           description: 'Sacred formulas & wisdom',        icon: BookOpen,   color: '#059669',  action: 'library-screen'},
+  { title: 'Achievements',      description: 'Your spiritual milestones',        icon: Award,      color: '#D97706',  action: 'achievements'  },
 ];
 
-// ── Main Screen ────────────────────────────────────────────────────────────
 export default function HomeScreen() {
-  const { state, getWirdProgress, getWazifaProgress } = useApp();
-  const dark = state.settings.darkMode;
+  const {
+    state,
+    getWirdProgress,
+    getWazifaProgress,
+    isWirdFullyDoneToday,
+    isWazifaFullyDoneToday,
+    isHadraFullyDoneToday,
+    wirdCompletionsToday,
+    wazifaCompletionsToday,
+    hadraCompletionsToday,
+  } = useApp();
 
-  const getTodayDate = (): string => new Date().toISOString().split('T')[0];
+  const dark = state.settings.darkMode;
+  const { frequencySettings } = state;
   const isFriday = (): boolean => new Date().getDay() === 5;
 
+  // ── Card completion status (uses "fully done" logic) ────────────────────
   const isCardCompletedToday = (cardId: string): boolean => {
-    const today = getTodayDate();
     switch (cardId) {
-      case 'wird':       return state.completedWirds.includes(today);
-      case 'wazifa':     return state.completedWazifas.includes(today);
-      case 'hadra-jumua':return state.completedHadras.includes(today);
-      default:           return false;
+      case 'wird':        return isWirdFullyDoneToday;
+      case 'wazifa':      return isWazifaFullyDoneToday;
+      case 'hadra-jumua': return isHadraFullyDoneToday;
+      default:            return false;
+    }
+  };
+
+  // ── Completions today per card ───────────────────────────────────────────
+  const getCompletionsToday = (cardId: string): number => {
+    switch (cardId) {
+      case 'wird':        return wirdCompletionsToday;
+      case 'wazifa':      return wazifaCompletionsToday;
+      case 'hadra-jumua': return hadraCompletionsToday;
+      default:            return 0;
+    }
+  };
+
+  // ── Target per day per card ──────────────────────────────────────────────
+  const getTargetPerDay = (cardId: string): number => {
+    switch (cardId) {
+      case 'wird':        return frequencySettings.wirdPerDay;
+      case 'wazifa':      return frequencySettings.wazifaPerDay;
+      case 'hadra-jumua': return frequencySettings.hadraPerDay;
+      default:            return 1;
     }
   };
 
@@ -208,21 +195,14 @@ export default function HomeScreen() {
 
   const handleQuickAction = (action: string) => {
     switch (action) {
-
-      // ✅ Action intelligente : détecte le dhikr en cours
       case 'continue': {
-        const today    = getTodayDate();
-        const wirdDone  = state.completedWirds.includes(today);
-        const wazifaDone = state.completedWazifas.includes(today);
-        const hadraDone  = state.completedHadras.includes(today);
-
-        if (!wirdDone)                       router.push('/(tabs)/wird');
-        else if (!wazifaDone)                router.push('/(tabs)/wazifa');
-        else if (isFriday() && !hadraDone)   router.push('/(tabs)/hadra');
-        else                                 router.push('/(tabs)/stats'); // tout complété → stats
+        // Smart navigation: find the first incomplete practice
+        if (!isWirdFullyDoneToday)                      router.push('/(tabs)/wird');
+        else if (!isWazifaFullyDoneToday)               router.push('/(tabs)/wazifa');
+        else if (isFriday() && !isHadraFullyDoneToday)  router.push('/(tabs)/hadra');
+        else                                            router.push('/(tabs)/stats');
         break;
       }
-
       case 'schedule':       openHadraMap();                 break;
       case 'achievements':   router.push('/(tabs)/stats');   break;
       case 'names':          router.push('/(tabs)/names');   break;
@@ -240,10 +220,6 @@ export default function HomeScreen() {
     return 0;
   };
 
-  const handleProgressCardPress = () => {
-    router.push('/(tabs)/daily-achievements');
-  };
-
   return (
     <View style={[styles.container, dark && styles.containerDark]}>
       <ScrollView
@@ -254,7 +230,7 @@ export default function HomeScreen() {
 
         {/* ── DAILY PROGRESS CARD ─────────────────────────────── */}
         <DailyProgressCard
-          onPress={handleProgressCardPress}
+          onPress={() => router.push('/(tabs)/daily-achievements')}
           darkMode={dark}
         />
 
@@ -283,6 +259,8 @@ export default function HomeScreen() {
                 onPress={handleCardPress}
                 darkMode={dark}
                 isCompletedToday={isCardCompletedToday(card.id)}
+                completionsToday={getCompletionsToday(card.id)}
+                targetPerDay={getTargetPerDay(card.id)}
               />
             ))}
           </View>
@@ -343,7 +321,6 @@ export default function HomeScreen() {
   );
 }
 
-// ── Styles ─────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   container:     { flex: 1, backgroundColor: '#F8FAFC' },
   containerDark: { backgroundColor: '#0F172A' },
@@ -362,22 +339,16 @@ const styles = StyleSheet.create({
   },
 
   featuredCard: {
-    marginHorizontal: 16, marginTop: 28,
-    borderRadius: 20, overflow: 'hidden',
+    marginHorizontal: 16, marginTop: 28, borderRadius: 20, overflow: 'hidden',
     backgroundColor: '#1e40af',
-    shadowColor: '#1e40af',
-    shadowOffset: { width: 0, height: 10 },
+    shadowColor: '#1e40af', shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.28, shadowRadius: 18, elevation: 8,
   },
-  featuredInner: {
-    flexDirection: 'row', alignItems: 'center',
-    padding: 20, gap: 14,
-  },
+  featuredInner:    { flexDirection: 'row', alignItems: 'center', padding: 20, gap: 14 },
   featuredIconWrap: {
     width: 52, height: 52, borderRadius: 26,
     backgroundColor: 'rgba(255,255,255,0.15)',
-    justifyContent: 'center', alignItems: 'center',
-    flexShrink: 0,
+    justifyContent: 'center', alignItems: 'center', flexShrink: 0,
   },
   featuredText:   { flex: 1 },
   featuredArabic: { fontSize: 14, color: 'rgba(255,255,255,0.85)', textAlign: 'right', marginBottom: 4 },
@@ -385,16 +356,11 @@ const styles = StyleSheet.create({
   featuredSub:    { fontSize: 12, color: 'rgba(255,255,255,0.75)', lineHeight: 17 },
 
   libraryCard: {
-    marginHorizontal: 16, marginTop: 14,
-    borderRadius: 20, backgroundColor: '#059669',
-    shadowColor: '#059669',
-    shadowOffset: { width: 0, height: 8 },
+    marginHorizontal: 16, marginTop: 14, borderRadius: 20, backgroundColor: '#059669',
+    shadowColor: '#059669', shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.25, shadowRadius: 14, elevation: 6,
   },
-  libraryInner: {
-    flexDirection: 'row', alignItems: 'center',
-    padding: 18, gap: 14,
-  },
+  libraryInner:    { flexDirection: 'row', alignItems: 'center', padding: 18, gap: 14 },
   libraryIconWrap: {
     width: 46, height: 46, borderRadius: 23,
     backgroundColor: 'rgba(255,255,255,0.2)',
@@ -405,13 +371,10 @@ const styles = StyleSheet.create({
   librarySub:   { fontSize: 12, color: 'rgba(255,255,255,0.78)', lineHeight: 17 },
 
   quoteCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20, padding: 24,
-    marginHorizontal: 16, marginTop: 20,
-    alignItems: 'center',
+    backgroundColor: '#FFFFFF', borderRadius: 20, padding: 24,
+    marginHorizontal: 16, marginTop: 20, alignItems: 'center',
     borderLeftWidth: 4, borderLeftColor: '#059669',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
+    shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.07, shadowRadius: 10, elevation: 4,
   },
   quoteCardDark:        { backgroundColor: '#1E293B' },
