@@ -228,7 +228,7 @@ export default function HadraScreen() {
               onDecrement={() => handleDecrement('tahlil')}
               onReset={() => handleReset('tahlil', `Tahlīl (${state.hadraTargets.tahlil}x)`)}
               onPlayAudio={() => playAudio('tahlil')}
-              status={getStepStatus(0)} blessing="بارك الله فيك"
+              status={getStepStatus(0)} blessing="سيدنا محمد رسول الله عليه السلام"
             />
           </View>
 
@@ -243,7 +243,7 @@ export default function HadraScreen() {
               onDecrement={() => handleDecrement('ismuLlah')}
               onReset={() => handleReset('ismuLlah', `Ism Allāh (${state.hadraTargets.ismuLlah}x)`)}
               onPlayAudio={() => playAudio('ismuLlah')}
-              status={getStepStatus(1)} blessing="بارك الله فيك"
+              status={getStepStatus(1)} blessing="سيدنا محمد رسول الله عليه السلام"
             />
           </View>
           

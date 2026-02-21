@@ -86,7 +86,7 @@ function Instructions({ dark }: { dark: boolean }) {
       </View>
       {[
         { icon: '🌅', text: 'After Fajr prayer (morning)' },
-        { icon: '🌆', text: 'Before Maghrib prayer (evening)' },
+        { icon: '🌆', text: 'After Asr prayer (evening)' },
         { icon: '🔢', text: 'Complete each dhikr in sequence' },
       ].map((item, i) => (
         <View key={i} style={instr.row}>

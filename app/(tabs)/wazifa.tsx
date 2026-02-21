@@ -439,7 +439,7 @@ export default function WazifaScreen() {
               onDecrement={() => handleDecrement('jawhara')}
               onReset={() => handleReset('jawhara', finalDhikrContent.title)}
               onPlayAudio={() => playAudio(finalDhikrContent.audioType)}
-              status={getStepStatus(3)} blessing="بارك الله فيك"
+              status={getStepStatus(3)} blessing=""
             />
           </View>
 

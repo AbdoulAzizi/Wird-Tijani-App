@@ -208,7 +208,7 @@ export default function HadraScreen() {
             onReset={() => handleReset('tahlil', `Tahlīl (${state.hadraTargets.tahlil}x)`)}
             onPlayAudio={() => playAudio('tahlil')}
             status={getStepStatus(0)}
-            blessing="بارك الله فيك"
+            blessing="سيدنا محمد رسول الله عليه السلام"
           />
 
           {/* Ism Allah */}
@@ -224,7 +224,7 @@ export default function HadraScreen() {
             onReset={() => handleReset('ismuLlah', `Ism Allāh (${state.hadraTargets.ismuLlah}x)`)}
             onPlayAudio={() => playAudio('ismuLlah')}
             status={getStepStatus(1)}
-            blessing="بارك الله فيك"
+            blessing="سيدنا محمد رسول الله عليه السلام"
           />
 
           {/* Instructions */}

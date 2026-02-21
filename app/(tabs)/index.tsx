@@ -42,12 +42,13 @@ const practiceCards: PracticeCardData[] = [
   { id: 'hadra-jumua',   title: 'Haḍratu-Jumūʿa',        arabicTitle: 'حضرة الجمعة',            description: 'Friday spiritual gathering',       icon: Users,    color: '#7C3AED', lightColor: '#EDE9FE', route: '/hadra-jumua',   time: 'Friday evening',         priority: 'medium' },
   { id: 'hadra-map',     title: 'Hadara Map',             arabicTitle: 'خريطة الحضرة',           description: 'Find local Zawiya & gatherings',   image: require('../../assets/images/hadara-map-logo.png'), color: '#059669', lightColor: '#D1FAE5', route: '/hadra-map', time: 'Dhikr, Prayer & Zakat', priority: 'low' },
   { id: 'names-allah',   title: "Asmā' Al-Husnā",         arabicTitle: 'أسماء الله الحسنى',       description: 'The 99 Beautiful Names of Allah',  icon: Sparkles, color: '#1e40af', lightColor: '#dbeafe', route: '/names',         time: 'Meditation & Reflection', priority: 'high',   isNew: true },
-  { id: 'dhikr-counter', title: 'Dhikr Counter',          arabicTitle: 'عداد الذكر',             description: 'Free personal dhikr counter',      icon: Clock,    color: '#0891B2', lightColor: '#E0F2FE', route: '/dhikr-counter', time: 'Anytime',                priority: 'medium', isNew: true },
+  { id: 'dhikr-counter', title: 'Dhikr Counter',          arabicTitle: 'عداد الذكر',             description: 'Personal dhikr counter',      icon: Clock,    color: '#0891B2', lightColor: '#E0F2FE', route: '/dhikr-counter', time: 'Anytime',                priority: 'medium', isNew: true },
   { id: 'library',       title: 'Spiritual Library',      arabicTitle: 'المكتبة الروحية',        description: 'Sacred texts & wisdom',            icon: BookOpen, color: '#059669', lightColor: '#D1FAE5', route: '/library',       time: 'Anytime',                priority: 'low'   },
 ];
 
 const quickActions: QuickAction[] = [
   { title: 'Continue Practice', description: 'Resume your spiritual journey',  icon: TrendingUp, color: '#059669', action: 'continue'       },
+  { title: 'Dhikr Counter',     description: 'Personal dhikr counter',      icon: Clock,      color: '#0891B2', action: 'dhikr-counter'  },
   { title: "Today's Schedule",  description: 'View prayer times & practices',  icon: Clock,      color: '#7C3AED', action: 'schedule'       },
   { title: "Asmā' Al-Husnā",    description: 'The 99 Beautiful Names of Allah',icon: Sparkles,   color: '#1e40af', action: 'names'          },
   { title: 'Library',           description: 'Sacred formulas & wisdom',       icon: BookOpen,   color: '#059669', action: 'library-screen' },
@@ -226,6 +227,7 @@ export default function HomeScreen() {
         else if (isFriday() && !isHadraFullyDoneToday)router.push('/(tabs)/hadra');
         else                                          router.push('/(tabs)/stats');
         break;
+      case 'dhikr-counter':  router.push('/(tabs)/dhikr-counter'); break;
       case 'schedule':       openHadraMap();                 break;
       case 'achievements':   router.push('/(tabs)/stats');   break;
       case 'names':          router.push('/(tabs)/names');   break;
