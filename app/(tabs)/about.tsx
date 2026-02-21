@@ -1,826 +1,376 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { 
-  Info, 
-  Heart, 
-  Star, 
-  Users, 
-  Mail, 
-  Globe, 
-  Award, 
-  Code,
-  Coffee,
-  Github,
-  Moon, 
-  Sparkles, 
-  ChevronLeft,
-  MapPin,
-  BookOpen,
-  ShieldCheck,
+import {
+  View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking,
+} from 'react-native';
+import {
+  Heart, Star, Users, Mail, Globe, Award, Code, Coffee,
+  Moon, Sparkles, MapPin, BookOpen, Info, Github, ShieldCheck,
+  Timer, BarChart3,
 } from 'lucide-react-native';
-import GradientHeader from '../../components/GradientHeader';
 import { useApp } from '../../contexts/AppContext';
 import { useAppVersion } from '@/hooks/useAppVersion';
 import ScreenBackground from '../../components/ScreenBackground';
+import SectionLabel from '../../components/SectionLabel';
 
-const features = [
-  {
-    icon: Heart,
-    title: 'Daily Wird',
-    description: 'Complete your daily spiritual practice with guided counters and progress tracking.',
-    color: '#059669',
-  },
-  {
-    icon: Star,
-    title: 'Daily Wazīfa',
-    description: 'Join the collective dhikr with the traditional Friday Wazīfa sequence.',
-    color: '#D97706',
-  },
-  {
-    icon: Moon,
-    title: 'Hadra Sessions',
-    description: 'Participate in spiritual gatherings with audio guidance and timers.',
-    color: '#9333EA',
-  },
-  {
-    icon: MapPin,
-    title: 'Hadara Map',
-    description: 'Find nearby zawiyas and community events to enhance your spiritual journey.',
-    color: '#B45309',
-  },
-  {
-    icon: Info,
-    title: 'Prayer Times',
-    description: 'Get accurate prayer times and schedules for your location.',
-    color: '#1e40af',
-  },
-  { icon: Sparkles,
-    title: 'Asma al-Husna',
-    description: 'Explore the 99 Names of Allah with meanings and recitation guides.',
-    color: '#2563EB',
-  },
-  {
-    icon: BookOpen,
-    title: 'Spiritual Library',
-    description: 'Access a vast library of spiritual texts, prayers, and resources.',
-    color: '#7C3AED',
-  },
-  
-  {
-    icon: Users,
-    title: 'Community',
-    description: 'Connect with fellow disciples and find local spiritual gatherings.',
-    color: '#7C3AED',
-  },
-  {
-    icon: Award,
-    title: 'Progress Tracking',
-    description: 'Monitor your spiritual journey with detailed statistics and achievements.',
-    color: '#DC2626',
-  },
+// ─── Data ─────────────────────────────────────────────────────────────────────
+
+const FEATURES = [
+  { icon: Heart,    title: 'Daily Wird',       description: 'Guided counters and progress tracking for your daily practice.', color: '#DC2626' },
+  { icon: Star,     title: 'Daily Wazīfa',     description: 'The traditional Friday Wazīfa sequence with collective dhikr.', color: '#D97706' },
+  { icon: Moon,     title: 'Ḥaḍra Sessions',   description: 'Spiritual gatherings with audio guidance and timers.',            color: '#7C3AED' },
+  { icon: Sparkles, title: 'Asmā al-Ḥusnā',   description: 'The 99 Names of Allah with meanings and recitation guides.',     color: '#1E40AF' },
+  { icon: Timer,    title: 'Dhikr Counter',    description: 'Count your personal dhikr with a dedicated tasbih counter.',     color: '#0891B2' },
+  { icon: BookOpen, title: 'Library',          description: 'A rich library of spiritual texts, prayers and resources.',       color: '#059669' },
+  { icon: MapPin,   title: 'Hadara Map',       description: 'Find nearby zawiyas and community events.',                      color: '#B45309' },
+  { icon: BarChart3,title: 'Progress Tracking',description: 'Detailed statistics, streaks and spiritual achievements.',        color: '#0891B2' },
 ];
 
-const developers = [
-  {
-    name: 'Development Team',
-    role: 'Mobile App Development',
-    description: '“Dedicated to serving the Tijāni community through technology, and the entire Muslim Ummah.”',
-    icon: Code,
-  },
-  {
-    name: 'UI/UX Design',
-    role: 'User Experience Design',
-    description: 'Crafting intuitive and beautiful spiritual experiences',
-    icon: Coffee,
-  },
+const TEAM = [
+  { icon: Code,   name: 'Development Team', role: 'Mobile App Development',   quote: '"Dedicated to serving the Tijāni community through technology, and the entire Muslim Ummah."' },
+  { icon: Coffee, name: 'UI/UX Design',     role: 'User Experience Design',   quote: 'Crafting intuitive and beautiful spiritual experiences.' },
 ];
+
+const CONTACT = [
+  { icon: Mail,   label: 'Email Support', value: 'support@tijaniapp.com', onPress: () => Linking.openURL('mailto:support@tijaniapp.com') },
+  { icon: Globe,  label: 'Website',       value: 'tijaniapp.com',          onPress: () => Linking.openURL('https://tijaniapp.com') },
+  { icon: Github, label: 'Open Source',   value: 'Contribute on GitHub',   onPress: () => {} },
+];
+
+// ─── Screen ───────────────────────────────────────────────────────────────────
 
 export default function AboutScreen() {
-  const { state } = useApp();
-  const { appName, appVersion, fullVersion } = useAppVersion();
-
-  const handleEmailPress = () => {
-    Linking.openURL('mailto:support@tijaniapp.com');
-  };
-
-  const handleWebsitePress = () => {
-    Linking.openURL('https://tijaniapp.com');
-  };
-
-  const handleGithubPress = () => {
-    // Add GitHub link if available
-    console.log('GitHub link clicked');
-  };
+  const { state }                    = useApp();
+  const { appName, appVersion }      = useAppVersion();
 
   return (
-    <View style={[
-      styles.container,
-      state.settings.darkMode && styles.containerDark
-    ]} 
-    >
+    <View style={styles.root}>
       <ScreenBackground>
-      {/* <GradientHeader
-        arabicTitle="حول التطبيق"
-        englishTitle="About"
-        subtitle="Learn More About Our Mission"
-        icon={<Info color="#FFFFFF" size={32} />}
-      /> */}
+        <ScrollView
+          style={styles.scroll}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+        >
 
-      <ScrollView 
-        style={styles.scrollView} 
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-      >
-        {/* App Description */}
-        <View style={[
-          styles.descriptionContainer,
-          state.settings.darkMode && styles.descriptionContainerDark
-        ]}>
-          <View style={styles.appIconContainer}>
-            <Heart color="#059669" size={32} fill="#059669" />
+          {/* ── HERO CARD ── */}
+          <View style={styles.heroCard}>
+            {/* Decor circles */}
+            <View style={styles.heroCircle1} />
+            <View style={styles.heroCircle2} />
+
+            <View style={styles.heroIconRing}>
+              <Heart color="#FFFFFF" size={28} fill="rgba(255,255,255,0.3)" />
+            </View>
+            <Text style={styles.heroAppName}>Wird &amp; Wazīfa Tijāniyya</Text>
+            <View style={styles.heroBadge}>
+              <Text style={styles.heroBadgeText}>Version {appVersion}</Text>
+            </View>
+            <Text style={styles.heroDesc}>
+              A spiritual companion for disciples of the Tijāniyya Sufi order — maintaining
+              daily practices, tracking progress, and connecting with the tradition of Tijāni dhikr.
+            </Text>
           </View>
-          <Text style={[
-            styles.appTitle,
-            state.settings.darkMode && styles.appTitleDark
-          ]}>
-            Wird & Wazīfa Tijāniyya
-          </Text>
-          <View style={styles.versionBadge}>
-            <Text style={styles.versionText}>Version {appVersion}</Text>
+
+          {/* ── MISSION ── */}
+          <SectionLabel accentColor="#059669">Our Mission</SectionLabel>
+          <View style={styles.card}>
+            <View style={styles.missionInner}>
+              <View style={styles.missionIconBox}>
+                <ShieldCheck color="#059669" size={22} strokeWidth={2} />
+              </View>
+              <Text style={styles.missionText}>
+                To support the spiritual journey of Tijāni disciples worldwide by providing a modern,
+                accessible tool for maintaining traditional practices while fostering community
+                connection and spiritual growth.
+              </Text>
+            </View>
           </View>
-          <Text style={[
-            styles.description,
-            state.settings.darkMode && styles.descriptionDark
-          ]}>
-            A spiritual companion app designed specifically for disciples of the Tijāniyya Sufi order. 
-            This app helps you maintain your daily spiritual practices, track your progress, and connect 
-            with the rich tradition of Tijāni dhikr and worship.
-          </Text>
-        </View>
 
-        {/* Mission Statement */}
-        <View style={[
-          styles.missionContainer,
-          state.settings.darkMode && styles.missionContainerDark
-        ]}>
-          <Text style={[
-            styles.sectionTitle,
-            state.settings.darkMode && styles.sectionTitleDark
-          ]}>
-            Our Mission
-          </Text>
-          <Text style={[
-            styles.missionText,
-            state.settings.darkMode && styles.missionTextDark
-          ]}>
-            To support the spiritual journey of Tijāni disciples worldwide by providing a modern, 
-            accessible tool for maintaining traditional practices while fostering community connection 
-            and spiritual growth.
-          </Text>
-        </View>
-
-        {/* Features */}
-        <View style={styles.featuresSection}>
-          <Text style={[
-            styles.sectionTitle,
-            state.settings.darkMode && styles.sectionTitleDark
-          ]}>
-            Key Features
-          </Text>
-          
+          {/* ── FEATURES ── */}
+          <SectionLabel accentColor="#6366F1">Key Features</SectionLabel>
           <View style={styles.featuresGrid}>
-            {features.map((feature, index) => {
-              const FeatureIcon = feature.icon;
+            {FEATURES.map((f) => {
+              const Icon = f.icon;
               return (
-                <View key={index} style={[
-                  styles.featureCard,
-                  state.settings.darkMode && styles.featureCardDark
-                ]}>
-                  <View style={[
-                    styles.featureIconContainer,
-                    { backgroundColor: `${feature.color}15` }
-                  ]}>
-                    <FeatureIcon color={feature.color} size={24} />
+                <View key={f.title} style={styles.featureCard}>
+                  <View style={[styles.featureIconBox, { backgroundColor: f.color + '15' }]}>
+                    <Icon color={f.color} size={20} strokeWidth={2} />
                   </View>
-                  <Text style={[
-                    styles.featureTitle,
-                    state.settings.darkMode && styles.featureTitleDark
-                  ]}>
-                    {feature.title}
-                  </Text>
-                  <Text style={[
-                    styles.featureDescription,
-                    state.settings.darkMode && styles.featureDescriptionDark
-                  ]}>
-                    {feature.description}
-                  </Text>
+                  <Text style={styles.featureTitle}>{f.title}</Text>
+                  <Text style={styles.featureDesc}>{f.description}</Text>
                 </View>
               );
             })}
           </View>
-        </View>
 
-        {/* Development Team */}
-        <View style={styles.developersSection}>
-          <Text style={[
-            styles.sectionTitle,
-            state.settings.darkMode && styles.sectionTitleDark
-          ]}>
-            Development Team
-          </Text>
-          
-          {developers.map((developer, index) => {
-            const DeveloperIcon = developer.icon;
-            return (
-              <View key={index} style={[
-                styles.developerCard,
-                state.settings.darkMode && styles.developerCardDark
-              ]}>
-                <View style={styles.developerHeader}>
-                  <View style={styles.developerIconContainer}>
-                    <DeveloperIcon color="#059669" size={24} />
+          {/* ── TEAM ── */}
+          <SectionLabel accentColor="#D97706">Development Team</SectionLabel>
+          <View style={styles.card}>
+            {TEAM.map((member, i) => {
+              const Icon = member.icon;
+              return (
+                <View
+                  key={member.name}
+                  style={[styles.teamRow, i < TEAM.length - 1 && styles.teamRowBorder]}
+                >
+                  <View style={styles.teamIconBox}>
+                    <Icon color="#059669" size={20} strokeWidth={2} />
                   </View>
-                  <View style={styles.developerInfo}>
-                    <Text style={[
-                      styles.developerName,
-                      state.settings.darkMode && styles.developerNameDark
-                    ]}>
-                      {developer.name}
-                    </Text>
-                    <Text style={[
-                      styles.developerRole,
-                      state.settings.darkMode && styles.developerRoleDark
-                    ]}>
-                      {developer.role}
-                    </Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.teamName}>{member.name}</Text>
+                    <Text style={styles.teamRole}>{member.role}</Text>
+                    <Text style={styles.teamQuote}>{member.quote}</Text>
                   </View>
                 </View>
-                <Text style={[
-                  styles.developerDescription,
-                  state.settings.darkMode && styles.developerDescriptionDark
-                ]}>
-                  {developer.description}
-                </Text>
-              </View>
-            );
-          })}
-        </View>
-
-        {/* Acknowledgments */}
-        <View style={[
-          styles.acknowledgementsContainer,
-          state.settings.darkMode && styles.acknowledgementsContainerDark
-        ]}>
-          <Text style={[
-            styles.sectionTitle,
-            state.settings.darkMode && styles.sectionTitleDark
-          ]}>
-            Acknowledgments
-          </Text>
-          <Text style={[
-            styles.acknowledgmentText,
-            state.settings.darkMode && styles.acknowledgmentTextDark
-          ]}>
-            Above all, we extend our deepest gratitude to Allah ﷻ, the Source of all guidance and light. We are profoundly thankful to the esteemed scholars and spiritual guides of the Tijāniyya, whose dedication has preserved and transmitted these sacred practices across generations. Special thanks are also due to the community members whose guidance and thoughtful feedback greatly enriched this work.
-          </Text>
-        </View>
-
-        {/* Contact Information */}
-        <View style={styles.contactSection}>
-          <Text style={[
-            styles.sectionTitle,
-            state.settings.darkMode && styles.sectionTitleDark
-          ]}>
-            Contact & Support
-          </Text>
-          
-          <TouchableOpacity 
-            style={[
-              styles.contactCard,
-              state.settings.darkMode && styles.contactCardDark
-            ]}
-            onPress={handleEmailPress}
-            activeOpacity={0.7}
-          >
-            <View style={styles.contactIconContainer}>
-              <Mail color="#059669" size={20} />
-            </View>
-            <View style={styles.contactContent}>
-              <Text style={[
-                styles.contactTitle,
-                state.settings.darkMode && styles.contactTitleDark
-              ]}>
-                Email Support
-              </Text>
-              <Text style={[
-                styles.contactDescription,
-                state.settings.darkMode && styles.contactDescriptionDark
-              ]}>
-                support@tijaniapp.com
-              </Text>
-            </View>
-          </TouchableOpacity>
-
-          <TouchableOpacity 
-            style={[
-              styles.contactCard,
-              state.settings.darkMode && styles.contactCardDark
-            ]}
-            onPress={handleWebsitePress}
-            activeOpacity={0.7}
-          >
-            <View style={styles.contactIconContainer}>
-              <Globe color="#059669" size={20} />
-            </View>
-            <View style={styles.contactContent}>
-              <Text style={[
-                styles.contactTitle,
-                state.settings.darkMode && styles.contactTitleDark
-              ]}>
-                Website
-              </Text>
-              <Text style={[
-                styles.contactDescription,
-                state.settings.darkMode && styles.contactDescriptionDark
-              ]}>
-                tijaniapp.com
-              </Text>
-            </View>
-          </TouchableOpacity>
-
-          <TouchableOpacity 
-            style={[
-              styles.contactCard,
-              state.settings.darkMode && styles.contactCardDark
-            ]}
-            onPress={handleGithubPress}
-            activeOpacity={0.7}
-          >
-            <View style={styles.contactIconContainer}>
-              <Github color="#059669" size={20} />
-            </View>
-            <View style={styles.contactContent}>
-              <Text style={[
-                styles.contactTitle,
-                state.settings.darkMode && styles.contactTitleDark
-              ]}>
-                Open Source
-              </Text>
-              <Text style={[
-                styles.contactDescription,
-                state.settings.darkMode && styles.contactDescriptionDark
-              ]}>
-                Contribute on GitHub
-              </Text>
-            </View>
-          </TouchableOpacity>
-        </View>
-
-        {/* Spiritual Quote */}
-        <View style={[
-          styles.quoteContainer,
-          state.settings.darkMode && styles.quoteContainerDark
-        ]}>
-          <View style={styles.quoteIconContainer}>
-            <Text style={styles.quoteMark}>"</Text>
+              );
+            })}
           </View>
-          <Text style={[
-            styles.arabicQuote,
-            state.settings.darkMode && styles.arabicQuoteDark
-          ]}>
-            رَبَّنَا آتِنَا فِي الدُّنْيَا حَسَنَةً وَفِي الْآخِرَةِ حَسَنَةً وَقِنَا عَذَابَ النَّارِ
-          </Text>
-          <Text style={[
-            styles.quoteTranslation,
-            state.settings.darkMode && styles.quoteTranslationDark
-          ]}>
-            "Our Lord, give us good in this world and good in the next world, and save us from the punishment of the Fire"
-          </Text>
-          <Text style={[
-            styles.quoteReference,
-            state.settings.darkMode && styles.quoteReferenceDark
-          ]}>
-            — Quran 2:201
-          </Text>
-        </View>
 
-        {/* Copyright */}
-        <View style={styles.copyrightContainer}>
-          <Text style={[
-            styles.copyrightText,
-            state.settings.darkMode && styles.copyrightTextDark
-          ]}>
-            {/* © 2024 Wird & Wazīfa Tijāniyya */}
-            © {new Date().getFullYear()} {appName}
-          </Text>
-          <Text style={[
-            styles.copyrightSubtext,
-            state.settings.darkMode && styles.copyrightSubtextDark
-          ]}>
-            Made with ❤️ for the Muslim community
-          </Text>
-        </View>
+          {/* ── ACKNOWLEDGMENTS ── */}
+          <SectionLabel accentColor="#7C3AED">Acknowledgments</SectionLabel>
+          <View style={styles.card}>
+            <Text style={styles.ackText}>
+              Above all, we extend our deepest gratitude to Allah ﷻ, the Source of all guidance
+              and light. We are profoundly thankful to the esteemed scholars and spiritual guides
+              of the Tijāniyya, whose dedication has preserved and transmitted these sacred
+              practices across generations. Special thanks are also due to the community members
+              whose guidance and thoughtful feedback greatly enriched this work.
+            </Text>
+          </View>
 
-        <View style={styles.bottomSpacing} />
-      </ScrollView>
+          {/* ── CONTACT ── */}
+          <SectionLabel accentColor="#0891B2">Contact &amp; Support</SectionLabel>
+          <View style={styles.card}>
+            {CONTACT.map((c, i) => {
+              const Icon = c.icon;
+              return (
+                <TouchableOpacity
+                  key={c.label}
+                  style={[styles.contactRow, i < CONTACT.length - 1 && styles.contactRowBorder]}
+                  onPress={c.onPress}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.contactIconBox}>
+                    <Icon color="#059669" size={18} strokeWidth={2} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.contactLabel}>{c.label}</Text>
+                    <Text style={styles.contactValue}>{c.value}</Text>
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+
+          {/* ── QUOTE ── */}
+          <SectionLabel accentColor="#7C3AED">Reflection</SectionLabel>
+          <View style={styles.quoteCard}>
+            <Sparkles color="#7C3AED" size={16} strokeWidth={2} />
+            <Text style={styles.quoteArabic}>
+              رَبَّنَا آتِنَا فِي الدُّنْيَا حَسَنَةً وَفِي الْآخِرَةِ حَسَنَةً وَقِنَا عَذَابَ النَّارِ
+            </Text>
+            <Text style={styles.quoteTranslation}>
+              "Our Lord, give us good in this world and good in the next world,
+              and save us from the punishment of the Fire"
+            </Text>
+            <Text style={styles.quoteRef}>— Quran 2:201</Text>
+          </View>
+
+          {/* ── COPYRIGHT ── */}
+          <View style={styles.copyrightCard}>
+            <View style={styles.copyrightCircle1} />
+            <View style={styles.copyrightCircle2} />
+            <Heart color="#FFFFFF" size={18} fill="rgba(255,255,255,0.4)" strokeWidth={0} />
+            <Text style={styles.copyrightText}>
+              © {new Date().getFullYear()} {appName}
+            </Text>
+            <Text style={styles.copyrightSub}>Made with ❤️ for the Muslim community</Text>
+          </View>
+
+          <View style={{ height: 40 }} />
+        </ScrollView>
       </ScreenBackground>
     </View>
   );
 }
 
+// ─── Styles — same tokens as StatsScreen ──────────────────────────────────────
+
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F8FAFC',
-  },
-  containerDark: {
-    backgroundColor: '#0F172A',
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingBottom: 20,
-  },
-  
-  // App Description
-  descriptionContainer: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 28,
-    marginHorizontal: 16,
-    marginTop: 16,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 5,
-  },
-  descriptionContainerDark: {
-    backgroundColor: '#1E293B',
-  },
-  appIconContainer: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: '#F0FDF4',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  appTitle: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#1E293B',
-    textAlign: 'center',
-    marginBottom: 12,
-  },
-  appTitleDark: {
-    color: '#F8FAFC',
-  },
-  versionBadge: {
+  root:          { flex: 1 },
+  scroll:        { flex: 1 },
+  scrollContent: { paddingBottom: 20 },
+
+  // ── Hero card (copied from StatsScreen heroCard)
+  heroCard: {
     backgroundColor: '#059669',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
-    marginBottom: 20,
+    borderRadius: 20,
+    marginHorizontal: 16,
+    marginTop: 20,
+    padding: 24,
+    alignItems: 'center',
+    overflow: 'hidden',
+    shadowColor: '#059669',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 12,
+    elevation: 8,
   },
-  versionText: {
-    fontSize: 12,
-    color: '#FFFFFF',
-    fontWeight: '600',
+  heroCircle1: {
+    position: 'absolute', width: 180, height: 180, borderRadius: 90,
+    backgroundColor: 'rgba(255,255,255,0.06)', top: -50, right: -40,
   },
-  description: {
-    fontSize: 16,
-    color: '#64748B',
-    textAlign: 'center',
-    lineHeight: 24,
+  heroCircle2: {
+    position: 'absolute', width: 100, height: 100, borderRadius: 50,
+    backgroundColor: 'rgba(255,255,255,0.06)', bottom: -30, left: -10,
   },
-  descriptionDark: {
-    color: '#CBD5E1',
+  heroIconRing: {
+    width: 64, height: 64, borderRadius: 32,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center', alignItems: 'center',
+    marginBottom: 14,
+  },
+  heroAppName: {
+    fontSize: 20, fontWeight: '800', color: '#FFFFFF',
+    textAlign: 'center', letterSpacing: -0.3, marginBottom: 10,
+  },
+  heroBadge: {
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    borderRadius: 20, paddingHorizontal: 12, paddingVertical: 4,
+    marginBottom: 14,
+  },
+  heroBadgeText: { fontSize: 12, fontWeight: '700', color: '#FFFFFF' },
+  heroDesc: {
+    fontSize: 13, color: 'rgba(255,255,255,0.82)',
+    textAlign: 'center', lineHeight: 20,
   },
 
-  // Mission
-  missionContainer: {
+  // ── Generic white card (StatsScreen .card)
+  card: {
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
-    padding: 24,
+    paddingHorizontal: 16,
+    paddingVertical: 4,
     marginHorizontal: 16,
-    marginTop: 16,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  missionContainerDark: {
-    backgroundColor: '#1E293B',
-  },
-  sectionTitle: {
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#F8FAFC',
-    marginBottom: 16,
-    padding: 8,
-    borderRadius: 8,
-    // textAlign: 'center',
-  },
-  sectionTitleDark: {
-    color: '#F8FAFC',
-  },
-  missionText: {
-    fontSize: 15,
-    color: '#64748B',
-    lineHeight: 22,
-  },
-  missionTextDark: {
-    color: '#CBD5E1',
+    shadowRadius: 4,
+    elevation: 2,
   },
 
-  // Features
-  featuresSection: {
-    marginTop: 24,
-    paddingHorizontal: 16,
+  // ── Mission
+  missionInner: {
+    flexDirection: 'row', alignItems: 'flex-start', gap: 12,
+    paddingVertical: 16,
   },
+  missionIconBox: {
+    width: 40, height: 40, borderRadius: 11,
+    backgroundColor: '#F0FDF4',
+    justifyContent: 'center', alignItems: 'center', flexShrink: 0,
+  },
+  missionText: { flex: 1, fontSize: 14, color: '#4B5563', lineHeight: 22 },
+
+  // ── Features grid (2 columns, white cards)
   featuresGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    gap: 12,
+    flexDirection: 'row', flexWrap: 'wrap',
+    gap: 10, marginHorizontal: 16,
   },
   featureCard: {
+    width: '47.5%',
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 20,
-    width: '48%',
+    borderRadius: 14, padding: 14,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06, shadowRadius: 4, elevation: 2,
   },
-  featureCardDark: {
-    backgroundColor: '#1E293B',
+  featureIconBox: {
+    width: 38, height: 38, borderRadius: 10,
+    justifyContent: 'center', alignItems: 'center', marginBottom: 10,
   },
-  featureIconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  featureTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1E293B',
-    marginBottom: 8,
-  },
-  featureTitleDark: {
-    color: '#F8FAFC',
-  },
-  featureDescription: {
-    fontSize: 13,
-    color: '#64748B',
-    lineHeight: 18,
-  },
-  featureDescriptionDark: {
-    color: '#CBD5E1',
-  },
+  featureTitle: { fontSize: 13, fontWeight: '700', color: '#111827', marginBottom: 4 },
+  featureDesc:  { fontSize: 11, color: '#6B7280', lineHeight: 16 },
 
-  // Developers Section
-  developersSection: {
-    marginTop: 24,
-    paddingHorizontal: 16,
+  // ── Team rows
+  teamRow: {
+    flexDirection: 'row', alignItems: 'flex-start', gap: 12,
+    paddingVertical: 14,
   },
-  developerCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  developerCardDark: {
-    backgroundColor: '#1E293B',
-  },
-  developerHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  developerIconContainer: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+  teamRowBorder:  { borderBottomWidth: 1, borderBottomColor: '#F3F4F6' },
+  teamIconBox: {
+    width: 40, height: 40, borderRadius: 11,
     backgroundColor: '#F0FDF4',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
+    justifyContent: 'center', alignItems: 'center', flexShrink: 0,
   },
-  developerInfo: {
-    flex: 1,
-  },
-  developerName: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: '#1E293B',
-    marginBottom: 2,
-  },
-  developerNameDark: {
-    color: '#F8FAFC',
-  },
-  developerRole: {
-    fontSize: 14,
-    color: '#059669',
-    fontWeight: '500',
-  },
-  developerRoleDark: {
-    color: '#10B981',
-  },
-  developerDescription: {
-    fontSize: 14,
-    color: '#64748B',
-    lineHeight: 20,
-  },
-  developerDescriptionDark: {
-    color: '#CBD5E1',
+  teamName:  { fontSize: 14, fontWeight: '700', color: '#111827', marginBottom: 2 },
+  teamRole:  { fontSize: 12, fontWeight: '600', color: '#059669', marginBottom: 6 },
+  teamQuote: { fontSize: 12, color: '#6B7280', lineHeight: 18, fontStyle: 'italic' },
+
+  // ── Acknowledgments
+  ackText: {
+    fontSize: 14, color: '#4B5563', lineHeight: 22,
+    paddingVertical: 16,
   },
 
-  // Acknowledgments
-  acknowledgementsContainer: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 24,
-    marginHorizontal: 16,
-    marginTop: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 3,
+  // ── Contact rows (same pattern as stat rows)
+  contactRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    paddingVertical: 14,
   },
-  acknowledgementsContainerDark: {
-    backgroundColor: '#1E293B',
-  },
-  acknowledgmentText: {
-    fontSize: 15,
-    color: '#64748B',
-    lineHeight: 22,
-  },
-  acknowledgmentTextDark: {
-    color: '#CBD5E1',
-  },
-
-  // Contact
-  contactSection: {
-    marginTop: 24,
-    paddingHorizontal: 16,
-  },
-  contactCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  contactCardDark: {
-    backgroundColor: '#1E293B',
-  },
-  contactIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+  contactRowBorder: { borderBottomWidth: 1, borderBottomColor: '#F3F4F6' },
+  contactIconBox: {
+    width: 38, height: 38, borderRadius: 10,
     backgroundColor: '#F0FDF4',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
+    justifyContent: 'center', alignItems: 'center', flexShrink: 0,
   },
-  contactContent: {
-    flex: 1,
-  },
-  contactTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1E293B',
-    marginBottom: 4,
-  },
-  contactTitleDark: {
-    color: '#F8FAFC',
-  },
-  contactDescription: {
-    fontSize: 14,
-    color: '#64748B',
-  },
-  contactDescriptionDark: {
-    color: '#CBD5E1',
-  },
+  contactLabel: { fontSize: 14, fontWeight: '600', color: '#111827', marginBottom: 2 },
+  contactValue: { fontSize: 13, color: '#6B7280' },
 
-  // Quote
-  quoteContainer: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 28,
+  // ── Quote card (same as DailyAchievementsScreen)
+  quoteCard: {
     marginHorizontal: 16,
-    marginTop: 24,
-    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16, padding: 20,
+    alignItems: 'center', gap: 8,
+    borderLeftWidth: 4, borderLeftColor: '#7C3AED',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 5,
-    borderLeftWidth: 4,
-    borderLeftColor: '#059669',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06, shadowRadius: 4, elevation: 2,
   },
-  quoteContainerDark: {
-    backgroundColor: '#1E293B',
-  },
-  quoteIconContainer: {
-    marginBottom: 16,
-  },
-  quoteMark: {
-    fontSize: 48,
-    color: '#059669',
-    fontWeight: 'bold',
-    opacity: 0.3,
-  },
-  arabicQuote: {
-    fontSize: 18,
-    textAlign: 'center',
-    color: '#1E293B',
-    marginBottom: 16,
-    fontFamily: 'Amiri_400Regular',
-    lineHeight: 28,
-  },
-  arabicQuoteDark: {
-    color: '#F8FAFC',
+  quoteArabic: {
+    fontSize: 16, textAlign: 'center', color: '#1F2937',
+    lineHeight: 30, marginTop: 4,
   },
   quoteTranslation: {
-    fontSize: 14,
-    textAlign: 'center',
-    color: '#64748B',
-    fontStyle: 'italic',
-    marginBottom: 12,
-    lineHeight: 20,
+    fontSize: 12, textAlign: 'center', color: '#6B7280',
+    fontStyle: 'italic', lineHeight: 19,
   },
-  quoteTranslationDark: {
-    color: '#CBD5E1',
-  },
-  quoteReference: {
-    fontSize: 12,
-    color: '#9CA3AF',
-    fontWeight: '600',
-  },
-  quoteReferenceDark: {
-    color: '#9CA3AF',
-  },
+  quoteRef: { fontSize: 10, color: '#7C3AED', fontWeight: '700', opacity: 0.6 },
 
-  // Copyright
-  copyrightContainer: {
-   backgroundColor: '#FFFFFF',
+  // ── Copyright
+  copyrightCard: {
+    backgroundColor: '#059669',
     borderRadius: 16,
-    padding: 28,
     marginHorizontal: 16,
+    marginTop: 24,
+    paddingVertical: 20,
+    paddingHorizontal: 24,
     alignItems: 'center',
-    shadowColor: '#000',
+    gap: 6,
+    overflow: 'hidden',
+    shadowColor: '#059669',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 5,
-    borderLeftWidth: 4,
-    borderLeftColor: '#059669',
-    marginTop: 32,
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 6,
   },
-  copyrightText: {
-    
-    fontSize: 14,
-    color: '#64748B',
-    fontWeight: '600',
-    marginBottom: 4,
+  copyrightCircle1: {
+    position: 'absolute', width: 100, height: 100, borderRadius: 50,
+    backgroundColor: 'rgba(255,255,255,0.07)', top: -30, right: -20,
   },
-  copyrightTextDark: {
-    color: '#CBD5E1',
+  copyrightCircle2: {
+    position: 'absolute', width: 60, height: 60, borderRadius: 30,
+    backgroundColor: 'rgba(255,255,255,0.07)', bottom: -20, left: 10,
   },
-  copyrightSubtext: {
-    fontSize: 12,
-    color: '#9CA3AF',
-  },
-  copyrightSubtextDark: {
-    color: '#9CA3AF',
-  },
-  bottomSpacing: {
-    height: 20,
-  },
+  copyrightText: { fontSize: 13, color: '#FFFFFF', fontWeight: '700' },
+  copyrightSub:  { fontSize: 11, color: 'rgba(255,255,255,0.75)' },
 });
