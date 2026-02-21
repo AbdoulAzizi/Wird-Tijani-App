@@ -1,0 +1,43 @@
+import { LibraryItem } from './types';
+
+export const formulas: LibraryItem[] = [
+  {
+    id: 'istighfar',
+    title: 'Istighfār',
+    badge: 'Essential',
+    badgeColor: '#DC2626',
+    description: 'Seeking forgiveness — purifies the heart and opens divine mercy.',
+    fullDescription: 'Istighfār is the gateway to all spiritual stations in the Tijāni path. It purifies the soul from the stains of sin and prepares it for higher spiritual receptions.',
+    arabicText: 'أَسْتَغْفِرُ اللَّهَ الْعَظِيمَ الَّذِي لَا إِلَهَ إِلَّا هُوَ الْحَيُّ الْقَيُّومُ وَأَتُوبُ إِلَيْهِ',
+    transliteration: 'Astaghfiru Allāh al-ʿAẓīm alladhī lā ilāha illā Huwa al-Ḥayy al-Qayyūm wa atūbu ilayh',
+    translation: 'I seek forgiveness from Allah the Magnificent, there is no deity except Him, the Ever-Living, the Sustainer, and I repent to Him.',
+    benefits: ['Purifies the heart from spiritual impurities', 'Opens the door to divine mercy', 'Prepares the soul for higher spiritual experiences', 'Brings peace and tranquility', 'Strengthens connection with Allah'],
+    recitation: { frequency: '100 times daily', timing: 'After each prayer and before sleep', requirements: 'State of purity (wudu) recommended' },
+  },
+  {
+    id: 'salat-fatih',
+    title: 'Ṣalāt al-Fātiḥ',
+    badge: 'Signature',
+    badgeColor: '#D97706',
+    description: 'The Opening Prayer — the most distinguished Tijāni prayer upon the Prophet ﷺ.',
+    fullDescription: 'Ṣalāt al-Fātiḥ was revealed to Shaykh Ahmad al-Tijāni and possesses extraordinary spiritual power. It opens spiritual doors, removes obstacles, and brings the believer close to the Prophet ﷺ.',
+    arabicText: 'اللَّهُمَّ صَلِّ عَلَى سَيِّدِنَا مُحَمَّدٍ الْفَاتِحِ لِمَا أُغْلِقَ وَالْخَاتِمِ لِمَا سَبَقَ نَاصِرِ الْحَقِّ بِالْحَقِّ وَالْهَادِي إِلَى صِرَاطِكَ الْمُسْتَقِيمِ وَعَلَى آلِهِ حَقَّ قَدْرِهِ وَمِقْدَارِهِ الْعَظِيمِ',
+    transliteration: 'Allāhumma ṣalli ʿalā sayyidinā Muḥammad al-fātiḥi limā ughliqa wa al-khātimi limā sabaqa nāṣiri al-ḥaqqi bi-al-ḥaqqi wa al-hādī ilā ṣirāṭika al-mustaqīm wa ʿalā ālihi ḥaqqa qadrihi wa miqdārihi al-ʿaẓīm',
+    translation: 'O Allah, send prayers upon our master Muhammad, the opener of what was closed, the seal of what preceded, the supporter of truth by truth, and the guide to Your straight path, and upon his family according to his rightful due and his magnificent status.',
+    benefits: ['Opens spiritual doors and removes obstacles', 'Brings the believer closer to the Prophet ﷺ', 'Provides immense reward beyond calculation', 'Illuminates the heart with prophetic light', 'Grants spiritual elevation and divine favor'],
+    recitation: { frequency: '50 times morning, 50 times evening', timing: 'Part of the daily wird', requirements: 'Must be recited with the complete wird' },
+  },
+  {
+    id: 'jawhara',
+    title: 'Jawharat al-Kamāl',
+    badge: 'Advanced',
+    badgeColor: '#7C3AED',
+    description: 'Pearl of Perfection — the crown jewel of Tijāni prayers.',
+    fullDescription: 'Jawharat al-Kamāl is the supreme prayer of the Tijāniyya, revealed directly to Shaykh Ahmad al-Tijāni by the Prophet ﷺ in a waking vision. It encapsulates the perfection of the Prophet ﷺ.',
+    arabicText: 'اللهم صل وسلم على عين الرحمة الربانية والياقوتة المتحققة الحائطة بمركز الفهوم والمعانى ونور الاكوان المتكونة الآدمى صاحب الحق الربانى',
+    transliteration: 'Allāhumma ṣalli wa sallim ʿalā ʿayni r-raḥmati r-rabbāniyya wa l-yāqūti l-mutaḥaqqiqati l-ḥāʾiṭati bi-muqarrati l-fuhūmi wa l-maʿānī wa nūri l-akwāni l-mutaʾakkina l-ādami ṣāḥibi l-ḥaqqi r-rabbānī',
+    translation: 'O Allah, send prayers and peace upon the Eye of Divine Mercy and the Perfected Ruby, the Encompassing One at the Center of Understandings and Meanings, and the Light of the Universes, the Human Being, the Possessor of Divine Truth.',
+    benefits: ['Grants spiritual perfection and completion', 'Connects directly to the Prophet\'s essence', 'Provides protection from spiritual and physical harm', 'Opens the highest levels of divine knowledge', 'Brings the reciter to the station of iḥsān'],
+    recitation: { frequency: '12 times on Friday between Maghrib and Ishāʾ', timing: 'Exclusively on Friday evening', requirements: 'Requires ijāza from a qualified shaykh' },
+  },
+];

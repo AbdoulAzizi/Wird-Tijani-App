@@ -1,10 +1,10 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useContext } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
-  TouchableOpacity, Alert, Animated, Platform
+  TouchableOpacity, Alert, Animated, Platform,
 } from 'react-native';
 import {
-  RotateCcw, Settings, Info, CheckCircle, Award, Flame, Target
+  RotateCcw, Settings, Info, CheckCircle, Award, Flame, Target,
 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import DhikrCard from '../../components/DhikrCard';
@@ -15,6 +15,8 @@ import WirdSettingsModal from '../../components/WirdSettingsModal';
 import StatsBar from '../../components/StatsBar';
 import { useAutoScroll } from '@/components/hooks/useAutoScroll';
 import { useRegisterHeaderActions } from '../../contexts/HeaderActionsContext';
+import MinimalHeader from '../../components/MinimalHeader';
+import { LayoutActionsContext } from '../../contexts/LayoutActionsContext';
 
 const DHIKR_DATA = {
   istighfar: {
@@ -60,19 +62,10 @@ function CompletionBanner({ dark, onComplete }: { dark: boolean; onComplete: () 
 }
 
 const cBanner = StyleSheet.create({
-  wrap: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    backgroundColor: '#F0FDF4', borderRadius: 20, padding: 18,
-    marginHorizontal: 16, marginTop: 8, borderWidth: 2, borderColor: '#A7F3D0',
-    shadowColor: '#059669', shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.15, shadowRadius: 12, elevation: 5,
-  },
+  wrap:     { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#F0FDF4', borderRadius: 20, padding: 18, marginHorizontal: 16, marginTop: 8, borderWidth: 2, borderColor: '#A7F3D0', shadowColor: '#059669', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.15, shadowRadius: 12, elevation: 5 },
   wrapDark: { backgroundColor: '#052E16', borderColor: '#065F46' },
-  left: { flexDirection: 'row', alignItems: 'center', gap: 14, flex: 1 },
-  iconWrap: {
-    width: 48, height: 48, borderRadius: 24,
-    backgroundColor: '#FEF3C7', justifyContent: 'center', alignItems: 'center',
-  },
+  left:     { flexDirection: 'row', alignItems: 'center', gap: 14, flex: 1 },
+  iconWrap: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#FEF3C7', justifyContent: 'center', alignItems: 'center' },
   title:    { fontSize: 17, fontWeight: '800', color: '#065F46', marginBottom: 3 },
   subtitle: { fontSize: 13, color: '#059669', fontWeight: '500' },
 });
@@ -99,20 +92,15 @@ function Instructions({ dark }: { dark: boolean }) {
 }
 
 const instr = StyleSheet.create({
-  wrap: {
-    backgroundColor: '#FFFFFF', borderRadius: 20, padding: 20,
-    marginHorizontal: 16, marginTop: 16, borderWidth: 1, borderColor: '#F1F5F9',
-    shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06, shadowRadius: 8, elevation: 3,
-  },
-  wrapDark: { backgroundColor: '#1E293B', borderColor: '#334155' },
-  header: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 14 },
-  emoji: { fontSize: 20 },
-  title: { fontSize: 16, fontWeight: '700', color: '#1E293B' },
-  titleDark: { color: '#F8FAFC' },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
-  rowIcon: { fontSize: 16 },
-  rowText: { fontSize: 14, color: '#64748B', flex: 1, lineHeight: 20 },
+  wrap:        { backgroundColor: '#FFFFFF', borderRadius: 20, padding: 20, marginHorizontal: 16, marginTop: 16, borderWidth: 1, borderColor: '#F1F5F9', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8, elevation: 3 },
+  wrapDark:    { backgroundColor: '#1E293B', borderColor: '#334155' },
+  header:      { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 14 },
+  emoji:       { fontSize: 20 },
+  title:       { fontSize: 16, fontWeight: '700', color: '#1E293B' },
+  titleDark:   { color: '#F8FAFC' },
+  row:         { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
+  rowIcon:     { fontSize: 16 },
+  rowText:     { fontSize: 14, color: '#64748B', flex: 1, lineHeight: 20 },
   rowTextDark: { color: '#94A3B8' },
 });
 
@@ -120,6 +108,9 @@ export default function WirdScreen() {
   const { state, dispatch, isWirdComplete, getWirdProgress, getCurrentSalawatFormula } = useApp();
   const [showInfoModal,     setShowInfoModal]     = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
+
+  // ── Callback back du layout ──────────────────────────────────────────────
+  const { handleBack } = useContext(LayoutActionsContext);
 
   const { darkMode, audioEnabled } = state.settings;
   const dark    = darkMode;
@@ -188,7 +179,7 @@ export default function WirdScreen() {
     if (audioEnabled) console.log(`Playing audio for ${type}`);
   }, [audioEnabled]);
 
-  useRegisterHeaderActions('/wird', [
+  const menuActions = [
     {
       key: 'info', label: 'Wird Information',
       icon: <Info color="#059669" size={16} strokeWidth={2} />,
@@ -197,17 +188,32 @@ export default function WirdScreen() {
     {
       key: 'settings', label: 'Wird Settings',
       icon: <Settings color="#059669" size={16} strokeWidth={2} />,
-      onPress: () => setShowSettingsModal(true), dividerAfter: true,
+      onPress: () => setShowSettingsModal(true),
+      dividerAfter: true,
     },
     {
       key: 'reset', label: 'Reset All Dhikr',
       icon: <RotateCcw color="#EF4444" size={16} strokeWidth={2.5} />,
-      onPress: handleResetAll, destructive: true,
+      onPress: handleResetAll,
+      destructive: true,
     },
-  ]);
+  ];
+
+  useRegisterHeaderActions('/wird', menuActions);
 
   return (
     <View style={[styles.root, dark && styles.rootDark]}>
+
+      {/* ── MinimalHeader rendu directement dans l'écran ── */}
+      <MinimalHeader
+        title="Wird Tijāni"
+        subtitle="Daily litany"
+        onBackPress={handleBack}
+        showMore={true}
+        menuActions={menuActions}
+        theme="default"
+      />
+
       <ScreenBackground>
         <StatsBar dark={dark} stats={[
           { icon: <Target color="#059669" size={13} strokeWidth={2.5} />, value: `${completedCount}/3`, label: 'Completed', color: '#059669' },
@@ -278,16 +284,16 @@ export default function WirdScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#F8FAFC' },
-  rootDark: { backgroundColor: '#0F172A' },
-  progressWrap: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 8 },
-  progressTrack: { height: 8, backgroundColor: '#E2E8F0', borderRadius: 4, overflow: 'hidden', marginBottom: 6 },
+  root:              { flex: 1, backgroundColor: '#F8FAFC' },
+  rootDark:          { backgroundColor: '#0F172A' },
+  progressWrap:      { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 8 },
+  progressTrack:     { height: 8, backgroundColor: '#E2E8F0', borderRadius: 4, overflow: 'hidden', marginBottom: 6 },
   progressTrackDark: { backgroundColor: '#334155' },
-  progressFill: { height: '100%', backgroundColor: '#059669', borderRadius: 4 },
-  progressComplete: { backgroundColor: '#F59E0B' },
-  progressLabel: { fontSize: 13, color: '#FFFFFF', fontWeight: '600' },
+  progressFill:      { height: '100%', backgroundColor: '#059669', borderRadius: 4 },
+  progressComplete:  { backgroundColor: '#F59E0B' },
+  progressLabel:     { fontSize: 13, color: '#FFFFFF', fontWeight: '600' },
   progressLabelDark: { color: '#64748B' },
-  scroll: { flex: 1 },
-  scrollContent: { paddingTop: 8 },
-  bottomSpace: { height: 32 },
+  scroll:            { flex: 1 },
+  scrollContent:     { paddingTop: 8 },
+  bottomSpace:       { height: 32 },
 });

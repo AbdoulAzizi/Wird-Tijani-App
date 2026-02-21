@@ -7,6 +7,11 @@ import { useNotifications } from '@/contexts/NotificationContext';
 import ReminderService from '@/contexts/ReminderService';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
+import { useContext } from 'react';
+import MinimalHeader from '../../components/MinimalHeader';
+import { LayoutActionsContext } from '../../contexts/LayoutActionsContext';
+import { useRegisterHeaderActions } from '../../contexts/HeaderActionsContext';
+
 interface TimePickerState {
   show: boolean;
   mode: 'time';
@@ -18,7 +23,7 @@ export default function NotificationSettingsScreen() {
   const { state, dispatch } = useApp();
   const { requestPermissions } = useNotifications();
   const { darkMode } = state.settings;
-
+  const { handleBack } = useContext(LayoutActionsContext);
   // États locaux pour les modifications
   const [notificationsEnabled, setNotificationsEnabled] = useState(state.settings.notificationsEnabled);
   const [soundEnabled, setSoundEnabled] = useState(state.settings.audioEnabled);
@@ -272,21 +277,39 @@ export default function NotificationSettingsScreen() {
     }
   };
 
+  useRegisterHeaderActions('/notification-settings', [
+    {
+      key: 'save',
+      label: 'Save Settings',
+      icon: <Save color="#059669" size={16} strokeWidth={2} />,
+      onPress: handleSave,
+    },
+    {
+      key: 'reset',
+      label: 'Reset to Defaults',
+      icon: <RotateCcw color="#EF4444" size={16} strokeWidth={2.5} />,
+      onPress: handleReset,
+      destructive: true,
+    },
+  ]);
+
   // ============================================================================
   // RENDER
   // ============================================================================
 
   return (
-    <SafeAreaView style={[styles.container, darkMode && styles.containerDark]}>
-      {/* Header */}
-      <View style={[styles.header, darkMode && styles.headerDark]}>
-        <Text style={[styles.title, darkMode && styles.titleDark]}>
-          Notification Settings
-        </Text>
-        <Text style={[styles.subtitle, darkMode && styles.subtitleDark]}>
-          Customize your reminders and alerts
-        </Text>
-      </View>
+    <View style={[styles.container, darkMode && styles.containerDark]}>
+      <MinimalHeader
+        title="Notification Settings"
+        subtitle="Reminders & alerts"
+        onBackPress={handleBack}
+        showMore={true}
+        menuActions={[
+          { key: 'save', label: 'Save Settings', icon: <Save color="#059669" size={16} strokeWidth={2} />, onPress: handleSave },
+          { key: 'reset', label: 'Reset to Defaults', icon: <RotateCcw color="#EF4444" size={16} strokeWidth={2.5} />, onPress: handleReset, destructive: true },
+        ]}
+        theme="default"
+      />
 
       <ScrollView 
         style={styles.scrollView}
@@ -639,7 +662,7 @@ export default function NotificationSettingsScreen() {
           )}
         </>
       )}
-    </SafeAreaView>
+    </View>
   );
 }
 

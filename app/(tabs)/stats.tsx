@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Dimensions,Alert } from 'react-native';
 import {
   Flame, Trophy, Star, Award, BookOpen, Moon,
   Zap, TrendingUp, CheckCircle2, Lock,
@@ -14,6 +14,11 @@ import {
 } from '../../contexts/AppContext';
 import ScreenBackground from '../../components/ScreenBackground';
 import SectionLabel from '../../components/SectionLabel';
+import { useContext } from 'react';
+import MinimalHeader from '../../components/MinimalHeader';
+import { LayoutActionsContext } from '../../contexts/LayoutActionsContext';
+import { useRegisterHeaderActions } from '../../contexts/HeaderActionsContext';
+import { RotateCcw } from 'lucide-react-native';
 
 const { width } = Dimensions.get('window');
 
@@ -339,7 +344,7 @@ export default function StatsScreen() {
   const [newlyUnlocked,  setNewlyUnlocked]  = useState<string[]>([]);
   const [confettiTarget, setConfettiTarget] = useState<string | null>(null);
   const [storedUnlocked, setStoredUnlocked] = useState<string[]>([]);
-
+  const { handleBack } = useContext(LayoutActionsContext);
   // ── Totals: count FULLY-completed sessions ────────────────────────────────
   // Each COMPLETE_WIRD dispatch pushes one entry → total sessions = array length
   const totalWirdSessions   = state.completedWirds.length;
@@ -446,9 +451,26 @@ export default function StatsScreen() {
   const today = getTodayDate();
   const isFriday = new Date().getDay() === 5;
 
+  useRegisterHeaderActions('/stats', [
+  {
+    key: 'reset', label: 'Reset All Data',
+    icon: <RotateCcw color="#EF4444" size={16} strokeWidth={2.5} />,
+    onPress: () => Alert.alert('Reset stats', 'This feature is coming soon.'),
+    destructive: true,
+  },
+]);
+
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <View style={styles.root}>
+
+       <MinimalHeader
+        title="Statistics"
+        subtitle="Your spiritual progress"
+        onBackPress={handleBack}
+        showMore={false}   // or true if you wire up the reset action above
+        theme="default"
+      />
       <ScreenBackground>
         <ScrollView
           style={styles.scroll}

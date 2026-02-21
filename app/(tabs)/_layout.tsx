@@ -1,52 +1,55 @@
+// app/(tabs)/_layout.tsx
+// ARCHITECTURE : Le layout ne rend AUCUN header.
+// Chaque écran importe et rend son propre SpiritualHeader ou MinimalHeader.
+// Le layout expose seulement les callbacks (drawer, notifications) via LayoutActionsContext.
+
 import { Tabs, useRouter, usePathname } from 'expo-router';
 import {
   Heart, BookOpen, ChartBar as BarChart3, Settings as SettingsIcon,
   Star, Moon, Home, Info, X, ChevronRight, Sparkles, Bell,
-  Grid3X3, Timer,CheckCircle2,
+  Grid3X3, Timer, CheckCircle2,
 } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   View, Text, TouchableOpacity, Animated, StyleSheet, ScrollView,
-  Pressable, PanResponder, Platform, Dimensions
+  Pressable, PanResponder, Platform, Dimensions,
 } from 'react-native';
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import * as Haptics from 'expo-haptics';
-import SpiritualHeader from '@/components/SpiritualHeader';
-import MinimalHeader from '@/components/MinimalHeader';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useNotifications } from '@/contexts/NotificationContext';
-import { useAppVersion } from '@/hooks/useAppVersion';
-import {
-  HeaderActionsProvider,
-  useHeaderActionsForRoute,
-} from '@/contexts/HeaderActionsContext';
+import { useAppVersion }    from '@/hooks/useAppVersion';
+import { HeaderActionsProvider } from '@/contexts/HeaderActionsContext';
+import { LayoutActionsContext }  from '@/contexts/LayoutActionsContext';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface MenuItem {
-  name: string;
-  route: string;
-  icon: any;
-  description: string;
-  badge?: number;
-  isNew?: boolean;           // ← badge "New"
+  name:          string;
+  route:         string;
+  icon:          any;
+  description:   string;
+  badge?:        number;
+  isNew?:        boolean;
   dividerAfter?: boolean;
-  useMinimalHeader?: boolean;
-  color?: string;
+  color?:        string;
 }
+
 interface TabIconProps {
   IconComponent: any;
-  color: string;
+  color:  string;
   focused: boolean;
-  name?: string;
+  name?:  string;
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-const DRAWER_WIDTH      = 300;
-const SWIPE_THRESHOLD   = 150;
-const SWIPE_AREA_WIDTH  = 30;
-const { width: SW, height: SCREEN_HEIGHT } = Dimensions.get('window');
-const BOTTOM_SHEET_H    = SCREEN_HEIGHT * 0.72;
-const MAIN_PAGES        = ['/', '/wird', '/wazifa', '/hadra'];
+const DRAWER_WIDTH     = 300;
+const SWIPE_THRESHOLD  = 150;
+const SWIPE_AREA_WIDTH = 30;
+const { height: SCREEN_HEIGHT } = Dimensions.get('window');
+const BOTTOM_SHEET_H   = SCREEN_HEIGHT * 0.72;
+
+// Pages principales (tab bar visible + swipe drawer)
+const MAIN_PAGES = ['/', '/wird', '/wazifa', '/hadra'];
 
 // ─── Bottom Sheet ─────────────────────────────────────────────────────────────
 function BottomMenuSheet({
@@ -88,12 +91,8 @@ function BottomMenuSheet({
       </Animated.View>
 
       <Animated.View style={[bs.sheet, { transform: [{ translateY: slideAnim }] }]}>
-        {/* Handle */}
-        <View style={bs.handleWrap}>
-          <View style={bs.handle} />
-        </View>
+        <View style={bs.handleWrap}><View style={bs.handle} /></View>
 
-        {/* Header */}
         <View style={bs.header}>
           <View>
             <Text style={bs.headerTitle}>Navigation</Text>
@@ -110,21 +109,25 @@ function BottomMenuSheet({
           contentContainerStyle={bs.scrollContent}
           bounces={false}
         >
-          {groups.map((group) => (
+          {groups.map(group => (
             <View key={group.label} style={bs.group}>
               <View style={bs.groupLabelRow}>
                 <Text style={bs.groupEmoji}>{group.emoji}</Text>
                 <Text style={bs.groupLabel}>{group.label}</Text>
               </View>
               <View style={bs.grid}>
-                {group.items.map((item) => {
+                {group.items.map(item => {
                   const Icon     = item.icon;
                   const isActive = pathname === item.route;
                   const color    = item.color || '#059669';
                   return (
                     <TouchableOpacity
                       key={item.route}
-                      style={[bs.card, isActive && bs.cardActive, isActive && { borderColor: color }]}
+                      style={[
+                        bs.card,
+                        isActive && bs.cardActive,
+                        isActive && { borderColor: color },
+                      ]}
                       onPress={() => onNavigate(item.route)}
                       activeOpacity={0.72}
                     >
@@ -135,8 +138,6 @@ function BottomMenuSheet({
                         {item.name}
                       </Text>
                       <Text style={bs.cardDesc} numberOfLines={1}>{item.description}</Text>
-
-                      {/* Numeric badge (notifications count) — takes priority */}
                       {!!item.badge && item.badge > 0 ? (
                         <View style={bs.badgePill}>
                           <Text style={bs.badgeTxt}>{item.badge > 9 ? '9+' : item.badge}</Text>
@@ -160,113 +161,77 @@ function BottomMenuSheet({
 }
 
 const bs = StyleSheet.create({
-  overlay:   { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 2000, justifyContent: 'flex-end' },
-  backdrop:  { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.40)' },
-  sheet: {
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 32, borderTopRightRadius: 32,
-    height: BOTTOM_SHEET_H,
-    shadowColor: '#000', shadowOffset: { width: 0, height: -6 },
-    shadowOpacity: 0.14, shadowRadius: 18, elevation: 30,
-  },
-  handleWrap: { alignItems: 'center', paddingTop: 12, paddingBottom: 2 },
-  handle:     { width: 36, height: 4, borderRadius: 2, backgroundColor: '#E2E8F0' },
-  header: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingHorizontal: 22, paddingVertical: 14,
-    borderBottomWidth: 1, borderBottomColor: '#F1F5F9',
-  },
-  headerTitle: { fontSize: 19, fontWeight: '800', color: '#1E293B', letterSpacing: -0.3 },
-  headerSub:   { fontSize: 12, color: '#94A3B8', marginTop: 2, fontWeight: '500' },
-  closeBtn: {
-    width: 34, height: 34, borderRadius: 17,
-    backgroundColor: '#F1F5F9', justifyContent: 'center', alignItems: 'center',
-  },
+  overlay:       { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 2000, justifyContent: 'flex-end' },
+  backdrop:      { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.40)' },
+  sheet:         { backgroundColor: '#FFFFFF', borderTopLeftRadius: 32, borderTopRightRadius: 32, height: BOTTOM_SHEET_H, shadowColor: '#000', shadowOffset: { width: 0, height: -6 }, shadowOpacity: 0.14, shadowRadius: 18, elevation: 30 },
+  handleWrap:    { alignItems: 'center', paddingTop: 12, paddingBottom: 2 },
+  handle:        { width: 36, height: 4, borderRadius: 2, backgroundColor: '#E2E8F0' },
+  header:        { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 22, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
+  headerTitle:   { fontSize: 19, fontWeight: '800', color: '#1E293B', letterSpacing: -0.3 },
+  headerSub:     { fontSize: 12, color: '#94A3B8', marginTop: 2, fontWeight: '500' },
+  closeBtn:      { width: 34, height: 34, borderRadius: 17, backgroundColor: '#F1F5F9', justifyContent: 'center', alignItems: 'center' },
   scrollContent: { paddingHorizontal: 18, paddingTop: 14, paddingBottom: 30 },
-  group:     { marginBottom: 22 },
+  group:         { marginBottom: 22 },
   groupLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 10, marginLeft: 2 },
   groupEmoji:    { fontSize: 13 },
-  groupLabel: { fontSize: 11, fontWeight: '700', color: '#94A3B8', textTransform: 'uppercase', letterSpacing: 1.2 },
-  grid:       { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  card: {
-    width: '47.5%', backgroundColor: '#F8FAFC',
-    borderRadius: 16, padding: 14,
-    borderWidth: 1.5, borderColor: 'transparent',
-    position: 'relative',
-  },
-  cardActive:  { backgroundColor: '#F0FDF4' },
-  cardIcon: { width: 42, height: 42, borderRadius: 13, justifyContent: 'center', alignItems: 'center', marginBottom: 9 },
-  cardTitle:   { fontSize: 13, fontWeight: '700', color: '#1E293B', marginBottom: 2 },
-  cardDesc:    { fontSize: 10.5, color: '#94A3B8', fontWeight: '500' },
-  // numeric badge
-  badgePill: {
-    position: 'absolute', top: 9, right: 9,
-    backgroundColor: '#EF4444', borderRadius: 7,
-    minWidth: 16, height: 16, paddingHorizontal: 3,
-    justifyContent: 'center', alignItems: 'center',
-  },
-  badgeTxt: { color: '#FFFFFF', fontSize: 9, fontWeight: '800' },
-  // "New" badge — bottom sheet card
-  newPill: {
-    position: 'absolute', top: 9, right: 9,
-    backgroundColor: '#059669', borderRadius: 6,
-    paddingHorizontal: 5, paddingVertical: 2,
-    justifyContent: 'center', alignItems: 'center',
-  },
-  newTxt: { color: '#FFFFFF', fontSize: 8, fontWeight: '800', letterSpacing: 0.6 },
-  version: { textAlign: 'center', fontSize: 11, color: '#CBD5E1', fontWeight: '500', marginTop: 6 },
+  groupLabel:    { fontSize: 11, fontWeight: '700', color: '#94A3B8', textTransform: 'uppercase', letterSpacing: 1.2 },
+  grid:          { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  card:          { width: '47.5%', backgroundColor: '#F8FAFC', borderRadius: 16, padding: 14, borderWidth: 1.5, borderColor: 'transparent', position: 'relative' },
+  cardActive:    { backgroundColor: '#F0FDF4' },
+  cardIcon:      { width: 42, height: 42, borderRadius: 13, justifyContent: 'center', alignItems: 'center', marginBottom: 9 },
+  cardTitle:     { fontSize: 13, fontWeight: '700', color: '#1E293B', marginBottom: 2 },
+  cardDesc:      { fontSize: 10.5, color: '#94A3B8', fontWeight: '500' },
+  badgePill:     { position: 'absolute', top: 9, right: 9, backgroundColor: '#EF4444', borderRadius: 7, minWidth: 16, height: 16, paddingHorizontal: 3, justifyContent: 'center', alignItems: 'center' },
+  badgeTxt:      { color: '#FFFFFF', fontSize: 9, fontWeight: '800' },
+  newPill:       { position: 'absolute', top: 9, right: 9, backgroundColor: '#059669', borderRadius: 6, paddingHorizontal: 5, paddingVertical: 2 },
+  newTxt:        { color: '#FFFFFF', fontSize: 8, fontWeight: '800', letterSpacing: 0.6 },
+  version:       { textAlign: 'center', fontSize: 11, color: '#CBD5E1', fontWeight: '500', marginTop: 6 },
 });
 
-// ─── Inner Layout ─────────────────────────────────────────────────────────────
+// ─── InnerTabLayout ───────────────────────────────────────────────────────────
 function InnerTabLayout() {
   const [drawerVisible,      setDrawerVisible]      = useState(false);
   const [bottomSheetVisible, setBottomSheetVisible] = useState(false);
+
   const slideAnim = useRef(new Animated.Value(-DRAWER_WIDTH)).current;
   const fadeAnim  = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(1)).current;
-  const router    = useRouter();
-  const pathname  = usePathname();
+
+  const router   = useRouter();
+  const pathname = usePathname();
   const { unreadCount, markAllAsRead } = useNotifications();
-  const headerMenuActions = useHeaderActionsForRoute(pathname);
+
+  const isMainPage = MAIN_PAGES.includes(pathname);
 
   const menuItems: MenuItem[] = useMemo(() => [
-    { name: 'Home',             route: '/',                icon: Home,         description: 'Main dashboard',       color: '#059669', useMinimalHeader: false },
-    { name: 'Wird',             route: '/wird',            icon: Heart,        description: 'Daily litany',        color: '#DC2626', useMinimalHeader: true  },
-    { name: 'Wazifa',           route: '/wazifa',          icon: Star,         description: 'The daily collective invocation',  color: '#D97706', useMinimalHeader: true  },
-    { name: 'Haḍratu-Jumūʿa',   route: '/hadra',           icon: Moon,         description: 'Friday sacred gathering',   color: '#7C3AED', useMinimalHeader: true  },
-    { name: "Asm'a Al-Husn'a",  route: '/names',           icon: Sparkles,     description: 'Contemplating the Divine Names',         color: '#1E40AF', useMinimalHeader: true,  isNew: true },
-    { name: 'Dhikr Counter',    route: '/dhikr-counter',   icon: Timer,        description: 'Your dhikr counter',   color: '#0891B2', useMinimalHeader: true,  isNew: true },
-    { name: 'Library',          route: '/library',         icon: BookOpen,     description: 'Resources & sacred texts',    color: '#059669', useMinimalHeader: true,  dividerAfter: true },
-    { name: 'Statistics',       route: '/stats',           icon: BarChart3,    description: 'Consistency & spiritual discipline',        color: '#0891B2', useMinimalHeader: true  },
-    { name: "Today's Practices", route: '/daily-achievements', icon: CheckCircle2, description: "Today's completed awrād",color: '#059669', useMinimalHeader: true },
-    { name: 'Notifications',    route: '/notifications',   icon: Bell,         description: 'Reminders for your awrād',   color: '#059669', badge: unreadCount,      useMinimalHeader: true, isNew: true },
-    { name: 'Notif. Settings',  route: '/notification-settings', icon: Bell,   description: 'Manage notifications', color: '#64748B', useMinimalHeader: true  },
-    { name: 'Settings',         route: '/settings',        icon: SettingsIcon, description: 'Configuration',        color: '#475569', useMinimalHeader: true  },
-    { name: 'About',            route: '/about',           icon: Info,         description: 'App information',      color: '#7C3AED', useMinimalHeader: true  },
+    { name: 'Home',              route: '/',                      icon: Home,         description: 'Main dashboard',                  color: '#059669' },
+    { name: 'Wird',              route: '/wird',                  icon: Heart,        description: 'Daily litany',                    color: '#DC2626' },
+    { name: 'Wazifa',            route: '/wazifa',                icon: Star,         description: 'The daily collective invocation', color: '#D97706' },
+    { name: 'Haḍratu-Jumūʿa',    route: '/hadra',                 icon: Moon,         description: 'Friday sacred gathering',         color: '#7C3AED' },
+    { name: "Asmā' Al-Husnā",    route: '/names',                 icon: Sparkles,     description: 'Contemplating the Divine Names',  color: '#1E40AF', isNew: true },
+    { name: 'Dhikr Counter',     route: '/dhikr-counter',         icon: Timer,        description: 'Your dhikr counter',              color: '#0891B2', isNew: true },
+    { name: 'Library',           route: '/library',               icon: BookOpen,     description: 'Resources & sacred texts',        color: '#059669', dividerAfter: true },
+    { name: 'Statistics',        route: '/stats',                 icon: BarChart3,    description: 'Consistency & discipline',        color: '#0891B2' },
+    { name: "Today's Practices", route: '/daily-achievements',    icon: CheckCircle2, description: "Today's completed awrād",         color: '#059669' },
+    { name: 'Notifications',     route: '/notifications',         icon: Bell,         description: 'Reminders for your awrād',        color: '#059669', badge: unreadCount, isNew: true },
+    { name: 'Notif. Settings',   route: '/notification-settings', icon: Bell,         description: 'Manage notifications',            color: '#64748B' },
+    { name: 'Settings',          route: '/settings',              icon: SettingsIcon, description: 'Configuration',                  color: '#475569' },
+    { name: 'About',             route: '/about',                 icon: Info,         description: 'App information',                color: '#7C3AED' },
   ], [unreadCount]);
 
-  const shouldUseMinimalHeader = useMemo(() => !MAIN_PAGES.includes(pathname), [pathname]);
-
-  const currentPageInfo = useMemo(() => {
-    const item = menuItems.find(i => i.route === pathname);
-    return {
-      name:        item?.name        || 'Home',
-      useMinimal:  item?.useMinimalHeader ?? shouldUseMinimalHeader,
-      icon:        item?.icon,
-      description: item?.description,
-    };
-  }, [pathname, menuItems, shouldUseMinimalHeader]);
-
+  // ── Haptics ─────────────────────────────────────────────────────────────────
   const haptic = useCallback((t: 'light' | 'medium' | 'success' = 'light') => {
     if (Platform.OS !== 'ios') return;
     if (t === 'success') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     else Haptics.impactAsync(t === 'medium' ? Haptics.ImpactFeedbackStyle.Medium : Haptics.ImpactFeedbackStyle.Light);
   }, []);
 
-  const openDrawer  = useCallback(() => { setDrawerVisible(true);  haptic('light');  }, [haptic]);
-  const closeDrawer = useCallback(() => { setDrawerVisible(false); haptic('light');  }, [haptic]);
-  const openBS      = useCallback(() => { haptic('medium'); setBottomSheetVisible(true);  }, [haptic]);
-  const closeBS     = useCallback(() => { haptic('light');  setBottomSheetVisible(false); }, [haptic]);
+  // ── Drawer ───────────────────────────────────────────────────────────────────
+  const openDrawer  = useCallback(() => { haptic('light'); setDrawerVisible(true);  }, [haptic]);
+  const closeDrawer = useCallback(() => { haptic('light'); setDrawerVisible(false); }, [haptic]);
+
+  const openBS  = useCallback(() => { haptic('medium'); setBottomSheetVisible(true);  }, [haptic]);
+  const closeBS = useCallback(() => { haptic('light');  setBottomSheetVisible(false); }, [haptic]);
 
   const handleBack = useCallback(() => {
     haptic('light');
@@ -285,7 +250,13 @@ function InnerTabLayout() {
     setTimeout(() => router.push(route as any), 260);
   }, [router, haptic]);
 
-  // Side drawer animation
+  const handleNavigation = useCallback((route: string) => {
+    haptic('success');
+    closeDrawer();
+    requestAnimationFrame(() => setTimeout(() => router.push(route as any), 240));
+  }, [router, closeDrawer, haptic]);
+
+  // ── Drawer animation ─────────────────────────────────────────────────────────
   useEffect(() => {
     if (drawerVisible) {
       Animated.parallel([
@@ -302,10 +273,13 @@ function InnerTabLayout() {
     }
   }, [drawerVisible]);
 
+  // ── Swipe gesture ────────────────────────────────────────────────────────────
   const panResponder = useRef(
     PanResponder.create({
       onMoveShouldSetPanResponder: (_, gs) => gs.dx > 10 && Math.abs(gs.dy) < 80,
-      onPanResponderGrant: () => { if (Platform.OS === 'ios') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); },
+      onPanResponderGrant: () => {
+        if (Platform.OS === 'ios') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      },
       onPanResponderMove: (_, gs) => {
         if (gs.dx > 0 && gs.dx < DRAWER_WIDTH) {
           slideAnim.setValue(-DRAWER_WIDTH + gs.dx);
@@ -324,15 +298,9 @@ function InnerTabLayout() {
     })
   ).current;
 
-  const handleNavigation = useCallback((route: string) => {
-    haptic('success');
-    closeDrawer();
-    requestAnimationFrame(() => setTimeout(() => router.push(route as any), 240));
-  }, [router, closeDrawer, haptic]);
-
   const isActive = useCallback((r: string) => pathname === r, [pathname]);
 
-  // ── Side Menu Item ──────────────────────────────────────────────────────────
+  // ── Side Menu Item ───────────────────────────────────────────────────────────
   const SideMenuItem = useCallback(({ item }: { item: MenuItem }) => {
     const Icon   = item.icon;
     const active = isActive(item.route);
@@ -350,8 +318,6 @@ function InnerTabLayout() {
           <View style={{ flex: 1 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
               <Text style={[s.menuLabel, active && { color }]}>{item.name}</Text>
-
-              {/* Numeric badge — takes priority over New */}
               {!!item.badge && item.badge > 0 ? (
                 <View style={s.menuBadge}>
                   <Text style={s.menuBadgeText}>{item.badge > 99 ? '99+' : item.badge}</Text>
@@ -371,7 +337,7 @@ function InnerTabLayout() {
     );
   }, [handleNavigation, isActive]);
 
-  // ── Tab Icon ────────────────────────────────────────────────────────────────
+  // ── Tab Icon ─────────────────────────────────────────────────────────────────
   const TabIcon = useCallback(({ IconComponent, color, focused, name }: TabIconProps) => (
     <View style={s.tabIconWrap}>
       {name === 'home'
@@ -382,7 +348,7 @@ function InnerTabLayout() {
     </View>
   ), []);
 
-  // ── Burger button ───────────────────────────────────────────────────────────
+  // ── Burger ───────────────────────────────────────────────────────────────────
   const BurgerBtn = useCallback(() => (
     <TouchableOpacity style={s.burgerBtn} onPress={openBS} activeOpacity={0.75}>
       <View style={[s.burgerCircle, bottomSheetVisible && s.burgerCircleActive]}>
@@ -400,109 +366,130 @@ function InnerTabLayout() {
     </TouchableOpacity>
   ), [openBS, bottomSheetVisible, unreadCount]);
 
+  // ── Context value exposé aux écrans ─────────────────────────────────────────
+  const layoutActions = useMemo(() => ({
+    openDrawer,
+    handleBack,
+    handleNotifications,
+    unreadCount,
+  }), [openDrawer, handleBack, handleNotifications, unreadCount]);
+
   return (
-    <SafeAreaView style={s.root} edges={['bottom']}>
-      {currentPageInfo.useMinimal ? (
-        <MinimalHeader
-          title={currentPageInfo.name}
-          subtitle={currentPageInfo.description}
-          onBackPress={handleBack}
-          showMore={true}
-          menuActions={headerMenuActions}
-          theme="default"
-        />
-      ) : (
-        <SpiritualHeader
-          onMenuPress={openDrawer}
-          currentPage={currentPageInfo.name}
-          onNotificationPress={handleNotifications}
-          notificationCount={unreadCount}
-          showNotification={true}
-          showHijriDate={true}
-          theme="default"
-        />
-      )}
+    // LayoutActionsContext wraps TOUT — les écrans peuvent consommer openDrawer etc.
+    <LayoutActionsContext.Provider value={layoutActions}>
+      <SafeAreaView style={s.root} edges={['bottom']}>
 
-      {/* Swipe zone */}
-      {!drawerVisible && !currentPageInfo.useMinimal && (
-        <View style={s.swipeZone} {...panResponder.panHandlers} />
-      )}
+        {/* ═══════════════════════════════════════════════════════════════════
+            ZERO HEADER ICI.
+            Chaque écran rend son propre header en première ligne de son JSX.
+            SpiritualHeader → index.tsx, wird.tsx, wazifa.tsx, hadra.tsx
+            MinimalHeader   → tous les autres SAUF library.tsx
+            Header custom   → library.tsx (hero intégré dans le scroll)
+        ════════════════════════════════════════════════════════════════════ */}
 
-      {/* ── Side Drawer ──────────────────────────────────────────────────────── */}
-      {drawerVisible && (
-        <View style={s.drawerOverlay}>
-          <Pressable style={{ flex: 1 }} onPress={closeDrawer}>
-            <Animated.View style={[s.drawerBackdrop, { opacity: fadeAnim }]} />
-          </Pressable>
+        {/* Swipe zone — seulement pages principales */}
+        {!drawerVisible && isMainPage && (
+          <View style={s.swipeZone} {...panResponder.panHandlers} />
+        )}
 
-          <Animated.View style={[s.drawer, { transform: [{ translateX: slideAnim }] }]}>
-            {/* Drawer header */}
-            <View style={s.drawerHeader}>
-              <View>
-                <Text style={s.drawerTitle}>Menu</Text>
-                <Text style={s.drawerSub}>Navigation</Text>
+        {/* ── Side Drawer ── */}
+        {drawerVisible && (
+          <View style={s.drawerOverlay}>
+            <Pressable style={{ flex: 1 }} onPress={closeDrawer}>
+              <Animated.View style={[s.drawerBackdrop, { opacity: fadeAnim }]} />
+            </Pressable>
+            <Animated.View style={[s.drawer, { transform: [{ translateX: slideAnim }] }]}>
+              <View style={s.drawerHeader}>
+                <View>
+                  <Text style={s.drawerTitle}>Menu</Text>
+                  <Text style={s.drawerSub}>Navigation</Text>
+                </View>
+                <TouchableOpacity onPress={closeDrawer} style={s.drawerClose} activeOpacity={0.7}>
+                  <X color="#FFFFFF" size={22} strokeWidth={2.5} />
+                </TouchableOpacity>
               </View>
-              <TouchableOpacity onPress={closeDrawer} style={s.drawerClose} activeOpacity={0.7}>
-                <X color="#FFFFFF" size={22} strokeWidth={2.5} />
-              </TouchableOpacity>
-            </View>
+              <ScrollView
+                style={{ flex: 1 }}
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={{ paddingTop: 8, paddingBottom: 16 }}
+              >
+                {menuItems.map(item => <SideMenuItem key={item.route} item={item} />)}
+              </ScrollView>
+              <View style={s.drawerFooter}>
+                <View style={s.footerLine} />
+                <Text style={s.footerText}>Version 1.0.0</Text>
+                <Text style={s.footerSub}>© 2025 Spiritual App</Text>
+              </View>
+            </Animated.View>
+          </View>
+        )}
 
-            {/* Items */}
-            <ScrollView
-              style={{ flex: 1 }}
-              showsVerticalScrollIndicator={false}
-              contentContainerStyle={{ paddingTop: 8, paddingBottom: 16 }}
-            >
-              {menuItems.map(item => <SideMenuItem key={item.route} item={item} />)}
-            </ScrollView>
+        {/* ── Bottom Sheet ── */}
+        <BottomMenuSheet
+          visible={bottomSheetVisible}
+          onClose={closeBS}
+          menuItems={menuItems}
+          onNavigate={handleBSNavigate}
+          pathname={pathname}
+        />
 
-            {/* Footer */}
-            <View style={s.drawerFooter}>
-              <View style={s.footerLine} />
-              <Text style={s.footerText}>Version 1.0.0</Text>
-              <Text style={s.footerSub}>© 2025 Spiritual App</Text>
-            </View>
-          </Animated.View>
-        </View>
-      )}
+        {/* ── Tabs ── */}
+        <Tabs
+          screenOptions={{
+            headerShown:             false,
+            tabBarActiveTintColor:   '#059669',
+            tabBarInactiveTintColor: '#94A3B8',
+            tabBarStyle:             s.tabBar,
+            tabBarLabelStyle:        s.tabLabel,
+            tabBarItemStyle:         s.tabItem,
+            tabBarHideOnKeyboard:    true,
+          }}
+          screenListeners={{ tabPress: () => haptic('light') }}
+        >
+          <Tabs.Screen
+            name="index"
+            options={{
+              title: 'Home',
+              tabBarIcon: ({ color, focused }) =>
+                <TabIcon IconComponent={Home} color={color} focused={focused} name="home" />,
+            }}
+          />
+          <Tabs.Screen
+            name="wird"
+            options={{
+              title: 'Wird',
+              tabBarIcon: ({ color, focused }) =>
+                <TabIcon IconComponent={Heart} color={color} focused={focused} />,
+            }}
+          />
+          <Tabs.Screen
+            name="wazifa"
+            options={{
+              title: 'Wazifa',
+              tabBarIcon: ({ color, focused }) =>
+                <TabIcon IconComponent={Star} color={color} focused={focused} />,
+            }}
+          />
+          <Tabs.Screen
+            name="hadra"
+            options={{
+              title: 'Menu',
+              tabBarButton: () => <BurgerBtn />,
+            }}
+          />
 
-      {/* ── Bottom Sheet ─────────────────────────────────────────────────────── */}
-      <BottomMenuSheet
-        visible={bottomSheetVisible}
-        onClose={closeBS}
-        menuItems={menuItems}
-        onNavigate={handleBSNavigate}
-        pathname={pathname}
-      />
+          {/* Routes cachées de la tab bar */}
+          {[
+            'names', 'dhikr-counter', 'stats', 'settings', 'about',
+            'library', 'notifications', 'notification-settings',
+            'notification-test', 'daily-achievements',
+          ].map(name => (
+            <Tabs.Screen key={name} name={name} options={{ href: null }} />
+          ))}
+        </Tabs>
 
-      {/* ── Tabs ─────────────────────────────────────────────────────────────── */}
-      <Tabs
-        screenOptions={{
-          headerShown: false,
-          tabBarActiveTintColor:   '#059669',
-          tabBarInactiveTintColor: '#94A3B8',
-          tabBarStyle:      s.tabBar,
-          tabBarLabelStyle: s.tabLabel,
-          tabBarItemStyle:  s.tabItem,
-          tabBarHideOnKeyboard: true,
-        }}
-        screenListeners={{ tabPress: () => haptic('light') }}
-      >
-        <Tabs.Screen name="index"  options={{ title: 'Home',   tabBarIcon: ({ color, focused }) => <TabIcon IconComponent={Home}  color={color} focused={focused} name="home" /> }} />
-        <Tabs.Screen name="wird"   options={{ title: 'Wird',   tabBarIcon: ({ color, focused }) => <TabIcon IconComponent={Heart} color={color} focused={focused} /> }} />
-        <Tabs.Screen name="wazifa" options={{ title: 'Wazifa', tabBarIcon: ({ color, focused }) => <TabIcon IconComponent={Star}  color={color} focused={focused} /> }} />
-        <Tabs.Screen name="hadra"  options={{ title: 'Menu',   tabBarButton: () => <BurgerBtn /> }} />
-
-        {/* Hidden routes */}
-        {[
-          'names', 'dhikr-counter', 'stats', 'settings', 'about',
-          'library', 'library-screen', 'notifications',
-          'notification-settings', 'notification-test', 'daily-achievements',
-        ].map(name => (
-          <Tabs.Screen key={name} name={name} options={{ href: null }} />
-        ))}
-      </Tabs>
-    </SafeAreaView>
+      </SafeAreaView>
+    </LayoutActionsContext.Provider>
   );
 }
 
@@ -518,14 +505,11 @@ export default function TabLayout() {
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const s = StyleSheet.create({
   root:      { flex: 1, backgroundColor: '#F8FAFC' },
-  tabBarShadow: { shadowColor: '#000', shadowOffset: { width: 0, height: -3 }, shadowOpacity: 0.09, shadowRadius: 10 },
   swipeZone: { position: 'absolute', left: 0, top: 0, bottom: 0, width: SWIPE_AREA_WIDTH, zIndex: 999 },
 
-  // Tab icon
-  tabIconWrap: { justifyContent: 'center', alignItems: 'center', paddingTop: 2, position: 'relative' },
-  dot: { position: 'absolute', bottom: -7, width: 4, height: 4, borderRadius: 2 },
+  tabIconWrap: { justifyContent: 'center', alignItems: 'center', paddingTop: 2 },
+  dot:         { position: 'absolute', bottom: -7, width: 4, height: 4, borderRadius: 2 },
 
-  // Tab bar
   tabBar: {
     backgroundColor: '#FFFFFF',
     borderTopWidth: 0,
@@ -537,80 +521,39 @@ const s = StyleSheet.create({
     shadowOffset: { width: 0, height: -3 },
     shadowOpacity: 0.09,
     shadowRadius: 10,
-    borderTopLeftRadius: 22, borderTopRightRadius: 22,
+    borderTopLeftRadius: 22,
+    borderTopRightRadius: 22,
   },
   tabLabel: { fontSize: 11, fontWeight: '700', marginTop: 3, letterSpacing: 0.2 },
   tabItem:  { paddingVertical: 4 },
 
-  // Burger
-  burgerBtn:    { flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 4 },
-  burgerCircle: {
-    width: 44, height: 44, borderRadius: 22,
-    backgroundColor: '#F0FDF4',
-    justifyContent: 'center', alignItems: 'center',
-    borderWidth: 1.5, borderColor: '#D1FAE5',
-    position: 'relative',
-  },
+  burgerBtn:          { flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 4 },
+  burgerCircle:       { width: 44, height: 44, borderRadius: 22, backgroundColor: '#F0FDF4', justifyContent: 'center', alignItems: 'center', borderWidth: 1.5, borderColor: '#D1FAE5', position: 'relative' },
   burgerCircleActive: { backgroundColor: '#059669', borderColor: '#047857' },
-  burgerBadge: {
-    position: 'absolute', top: -2, right: -2,
-    backgroundColor: '#EF4444', borderRadius: 7,
-    minWidth: 15, height: 15, paddingHorizontal: 2,
-    justifyContent: 'center', alignItems: 'center',
-    borderWidth: 1.5, borderColor: '#FFFFFF',
-  },
-  burgerBadgeTxt: { color: '#FFFFFF', fontSize: 8, fontWeight: '800' },
-  burgerLabel:    { fontSize: 11, fontWeight: '700', color: '#94A3B8', marginTop: 3, letterSpacing: 0.2 },
+  burgerBadge:        { position: 'absolute', top: -2, right: -2, backgroundColor: '#EF4444', borderRadius: 7, minWidth: 15, height: 15, paddingHorizontal: 2, justifyContent: 'center', alignItems: 'center', borderWidth: 1.5, borderColor: '#FFFFFF' },
+  burgerBadgeTxt:     { color: '#FFFFFF', fontSize: 8, fontWeight: '800' },
+  burgerLabel:        { fontSize: 11, fontWeight: '700', color: '#94A3B8', marginTop: 3, letterSpacing: 0.2 },
 
-  // Side drawer
-  drawerOverlay:  { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1000 },
-  drawerBackdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.48)' },
-  drawer: {
-    position: 'absolute', left: 0, top: 0, bottom: 0,
-    width: '85%', maxWidth: 340,
-    backgroundColor: '#FFFFFF',
-    shadowColor: '#000', shadowOffset: { width: 4, height: 0 },
-    shadowOpacity: 0.22, shadowRadius: 12, elevation: 18,
-    borderTopRightRadius: 28, borderBottomRightRadius: 28,
-  },
-  drawerHeader: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    padding: 22, paddingTop: Platform.OS === 'ios' ? 60 : 46,
-    backgroundColor: '#059669',
-    borderTopRightRadius: 28,
-  },
-  drawerTitle: { fontSize: 26, fontWeight: '800', color: '#FFFFFF', letterSpacing: -0.3 },
-  drawerSub:   { fontSize: 13, color: '#D1FAE5', marginTop: 2, fontWeight: '500' },
-  drawerClose: { padding: 8, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.18)' },
-  drawerFooter:{ padding: 18, borderTopWidth: 1, borderTopColor: '#F1F5F9', alignItems: 'center', borderBottomRightRadius: 28 },
-  footerLine:  { width: 36, height: 3, backgroundColor: '#E2E8F0', borderRadius: 2, marginBottom: 10 },
-  footerText:  { fontSize: 12, color: '#94A3B8', fontWeight: '600' },
-  footerSub:   { fontSize: 10, color: '#CBD5E1', marginTop: 3 },
+  drawerOverlay:    { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1000 },
+  drawerBackdrop:   { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.48)' },
+  drawer:           { position: 'absolute', left: 0, top: 0, bottom: 0, width: '85%', maxWidth: 340, backgroundColor: '#FFFFFF', shadowColor: '#000', shadowOffset: { width: 4, height: 0 }, shadowOpacity: 0.22, shadowRadius: 12, elevation: 18, borderTopRightRadius: 28, borderBottomRightRadius: 28 },
+  drawerHeader:     { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 22, paddingTop: Platform.OS === 'ios' ? 60 : 46, backgroundColor: '#059669', borderTopRightRadius: 28 },
+  drawerTitle:      { fontSize: 26, fontWeight: '800', color: '#FFFFFF', letterSpacing: -0.3 },
+  drawerSub:        { fontSize: 13, color: '#D1FAE5', marginTop: 2, fontWeight: '500' },
+  drawerClose:      { padding: 8, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.18)' },
+  drawerFooter:     { padding: 18, borderTopWidth: 1, borderTopColor: '#F1F5F9', alignItems: 'center', borderBottomRightRadius: 28 },
+  footerLine:       { width: 36, height: 3, backgroundColor: '#E2E8F0', borderRadius: 2, marginBottom: 10 },
+  footerText:       { fontSize: 12, color: '#94A3B8', fontWeight: '600' },
+  footerSub:        { fontSize: 10, color: '#CBD5E1', marginTop: 3 },
 
-  // Menu items
-  menuItem: {
-    flexDirection: 'row', alignItems: 'center', gap: 12,
-    paddingVertical: 12, paddingHorizontal: 16,
-    marginHorizontal: 10, marginVertical: 2,
-    borderRadius: 14,
-  },
-  menuItemActive: { backgroundColor: '#F0FDF4' },
-  menuIcon: { width: 40, height: 40, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
-  menuLabel:     { fontSize: 15, fontWeight: '600', color: '#1E293B' },
-  menuDesc:      { fontSize: 11, color: '#94A3B8', marginTop: 1 },
-  // numeric badge — side drawer
-  menuBadge: {
-    backgroundColor: '#EF4444', borderRadius: 9,
-    minWidth: 18, height: 18, paddingHorizontal: 5,
-    justifyContent: 'center', alignItems: 'center',
-  },
-  menuBadgeText: { color: '#FFFFFF', fontSize: 10, fontWeight: '700' },
-  // "New" badge — side drawer
-  menuNewBadge: {
-    backgroundColor: '#059669', borderRadius: 6,
-    paddingHorizontal: 6, paddingVertical: 2,
-    justifyContent: 'center', alignItems: 'center',
-  },
+  menuItem:         { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, paddingHorizontal: 16, marginHorizontal: 10, marginVertical: 2, borderRadius: 14 },
+  menuItemActive:   { backgroundColor: '#F0FDF4' },
+  menuIcon:         { width: 40, height: 40, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
+  menuLabel:        { fontSize: 15, fontWeight: '600', color: '#1E293B' },
+  menuDesc:         { fontSize: 11, color: '#94A3B8', marginTop: 1 },
+  menuBadge:        { backgroundColor: '#EF4444', borderRadius: 9, minWidth: 18, height: 18, paddingHorizontal: 5, justifyContent: 'center', alignItems: 'center' },
+  menuBadgeText:    { color: '#FFFFFF', fontSize: 10, fontWeight: '700' },
+  menuNewBadge:     { backgroundColor: '#059669', borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 },
   menuNewBadgeText: { color: '#FFFFFF', fontSize: 9, fontWeight: '800', letterSpacing: 0.6 },
-  divider: { height: 1, backgroundColor: '#F1F5F9', marginVertical: 6, marginHorizontal: 20 },
+  divider:          { height: 1, backgroundColor: '#F1F5F9', marginVertical: 6, marginHorizontal: 20 },
 });

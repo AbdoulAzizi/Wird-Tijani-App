@@ -15,6 +15,12 @@ import StatsBar from '../../components/StatsBar';
 import { useAutoScroll } from '@/components/hooks/useAutoScroll';
 import { useRegisterHeaderActions } from '../../contexts/HeaderActionsContext';
 
+import { useContext } from 'react';
+import MinimalHeader from '../../components/MinimalHeader';
+import { LayoutActionsContext } from '../../contexts/LayoutActionsContext';
+import * as Haptics from 'expo-haptics';
+import { Platform } from 'react-native';
+
 const HADRA_DHIKR = {
   tahlil: {
     title: 'Tahlīl',
@@ -114,6 +120,7 @@ export default function HadraScreen() {
   const { state, dispatch, isHadraComplete, getHadraProgress } = useApp();
   const [showSettings,  setShowSettings]  = useState(false);
   const [showInfoModal, setShowInfoModal] = useState(false);
+  const { handleBack } = useContext(LayoutActionsContext);
 
   const { darkMode, audioEnabled } = state.settings;
   const dark = darkMode;
@@ -181,7 +188,7 @@ export default function HadraScreen() {
     if (audioEnabled) console.log(`Playing audio for ${dhikrType}`);
   }, [audioEnabled]);
 
-  useRegisterHeaderActions('/hadra', [
+  const menuActions = [
     {
       key: 'info', label: 'Hadra Information',
       icon: <Info color="#7C3AED" size={16} strokeWidth={2} />,
@@ -197,10 +204,20 @@ export default function HadraScreen() {
       icon: <RotateCcw color="#EF4444" size={16} strokeWidth={2.5} />,
       onPress: handleResetAll, destructive: true,
     },
-  ]);
+  ];
 
+  useRegisterHeaderActions('/hadra', menuActions);
   return (
     <View style={[styles.root, dark && styles.rootDark]}>
+
+       <MinimalHeader
+          title="Ḥaḍra Joumouʿa"
+          subtitle="Friday gathering"
+          onBackPress={handleBack}
+          showMore={true}
+          menuActions={menuActions}
+          theme="default"
+        />
       <ScreenBackground>
         <StatsBar dark={dark} stats={[
           { icon: <Target color="#7C3AED" size={13} strokeWidth={2.5} />, value: `${completedCount}/2`, label: 'Completed', color: '#7C3AED' },

@@ -1,189 +1,56 @@
-// components/library/PlaceDetail.tsx
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { MapPin, Star, Clock, Heart } from 'lucide-react-native';
-import { COLORS } from '../constants/colors';
+import { MapPin } from 'lucide-react-native';
+import DetailShell, { Section, ArabicBlock, BulletList, InfoChip } from './DetailShell';
+import { HolyPlace } from '../../data/library/types';
 
-interface PlaceDetailProps {
-  item: any;
-}
+const GREEN = '#065F46';
 
-export const PlaceDetail: React.FC<PlaceDetailProps> = ({ item }) => {
+export default function PlaceDetail({ place, visible, onClose }: {
+  place: HolyPlace | null; visible: boolean; onClose: () => void;
+}) {
+  if (!place) return null;
   return (
-    <View style={styles.container}>
-      {/* Arabic Name */}
-      {item.arabicName && (
-        <View style={styles.arabicNameBox}>
-          <Text style={styles.arabicName}>{item.arabicName}</Text>
-        </View>
+    <DetailShell
+      visible={visible} onClose={onClose}
+      title={place.name}
+      subtitle={place.location}
+      gradient={['#064E3B', '#065F46', '#047857']}
+    >
+      {place.arabicName && (
+        <Section label="Arabic Name">
+          <ArabicBlock text={place.arabicName} />
+        </Section>
       )}
 
-      {/* Location */}
-      <View style={styles.locationBox}>
-        <MapPin color={COLORS.primary} size={20} />
-        <Text style={styles.locationText}>{item.location}</Text>
+      <View style={pd.locBox}>
+        <InfoChip icon={<MapPin color={GREEN} size={16} strokeWidth={2} />} label="Location" value={place.location} />
       </View>
 
-      {/* Description */}
-      <View style={styles.section}>
-        <Text style={styles.descriptionText}>{item.fullDescription}</Text>
-      </View>
+      <Section label="About This Place">
+        <Text style={pd.body}>{place.fullDescription}</Text>
+      </Section>
 
-      {/* Significance */}
-      <View style={styles.significanceCard}>
-        <View style={styles.cardHeader}>
-          <Star color={COLORS.primary} size={20} />
-          <Text style={styles.cardTitle}>Signification Spirituelle</Text>
+      <Section label="Significance">
+        <View style={pd.sigBox}>
+          <Text style={pd.sigTxt}>{place.significance}</Text>
         </View>
-        <Text style={styles.cardText}>{item.significance}</Text>
-      </View>
+      </Section>
 
-      {/* History */}
-      <View style={styles.historyCard}>
-        <View style={styles.cardHeader}>
-          <Clock color={COLORS.primary} size={20} />
-          <Text style={styles.cardTitle}>Histoire</Text>
-        </View>
-        <Text style={styles.cardText}>{item.history}</Text>
-      </View>
+      <Section label="History">
+        <Text style={pd.body}>{place.history}</Text>
+      </Section>
 
-      {/* Practices */}
-      <View style={styles.practicesBox}>
-        <View style={styles.practicesHeader}>
-          <Heart color={COLORS.white} size={20} />
-          <Text style={styles.practicesTitle}>Pratiques Spirituelles</Text>
-        </View>
-        <View style={styles.practicesList}>
-          {item.practices?.map((practice: string, index: number) => (
-            <View key={index} style={styles.practiceItem}>
-              <View style={styles.practiceNumber}>
-                <Text style={styles.practiceNumberText}>{index + 1}</Text>
-              </View>
-              <Text style={styles.practiceText}>{practice}</Text>
-            </View>
-          ))}
-        </View>
-      </View>
-    </View>
+      <Section label="Spiritual Practices">
+        <BulletList items={place.practices} color={GREEN} />
+      </Section>
+    </DetailShell>
   );
-};
+}
 
-const styles = StyleSheet.create({
-  container: {
-    gap: 20,
-  },
-  arabicNameBox: {
-    backgroundColor: COLORS.background,
-    borderRadius: 16,
-    padding: 20,
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: COLORS.primaryPale,
-  },
-  arabicName: {
-    fontSize: 24,
-    color: COLORS.primary,
-    fontWeight: '700',
-  },
-  locationBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    backgroundColor: COLORS.background,
-    padding: 14,
-    borderRadius: 12,
-  },
-  locationText: {
-    fontSize: 15,
-    color: COLORS.textPrimary,
-    fontWeight: '600',
-  },
-  section: {
-    gap: 12,
-  },
-  descriptionText: {
-    fontSize: 15,
-    color: COLORS.textSecondary,
-    lineHeight: 24,
-  },
-  significanceCard: {
-    backgroundColor: COLORS.white,
-    borderRadius: 16,
-    padding: 18,
-    gap: 12,
-    borderLeftWidth: 4,
-    borderLeftColor: COLORS.primary,
-    shadowColor: COLORS.primary,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  historyCard: {
-    backgroundColor: COLORS.background,
-    borderRadius: 16,
-    padding: 18,
-    gap: 12,
-    borderWidth: 2,
-    borderColor: COLORS.primaryPale,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  cardTitle: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
-  },
-  cardText: {
-    fontSize: 15,
-    color: COLORS.textSecondary,
-    lineHeight: 24,
-  },
-  practicesBox: {
-    backgroundColor: COLORS.primary,
-    borderRadius: 16,
-    padding: 20,
-    gap: 16,
-  },
-  practicesHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  practicesTitle: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: COLORS.white,
-  },
-  practicesList: {
-    gap: 12,
-  },
-  practiceItem: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 12,
-  },
-  practiceNumber: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: COLORS.white,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  practiceNumberText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: COLORS.primary,
-  },
-  practiceText: {
-    flex: 1,
-    fontSize: 14,
-    color: COLORS.white,
-    lineHeight: 22,
-    opacity: 0.95,
-  },
+const pd = StyleSheet.create({
+  locBox: { backgroundColor: '#FFFFFF', borderRadius: 14, borderWidth: 1, borderColor: '#E2E8F0', paddingHorizontal: 14, overflow: 'hidden' },
+  body:   { fontSize: 14, color: '#374151', lineHeight: 23 },
+  sigBox: { backgroundColor: '#F0FDF4', borderRadius: 14, padding: 14, borderLeftWidth: 3, borderLeftColor: '#065F46' },
+  sigTxt: { fontSize: 14, color: '#374151', lineHeight: 23, fontStyle: 'italic' },
 });

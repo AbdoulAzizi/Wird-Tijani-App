@@ -10,6 +10,11 @@ import { useApp, getTodayDate, countForDate } from '../../contexts/AppContext';
 import ScreenBackground from '../../components/ScreenBackground';
 import SectionLabel from '../../components/SectionLabel';
 
+import { useContext } from 'react';
+import MinimalHeader from '../../components/MinimalHeader';
+import { LayoutActionsContext } from '../../contexts/LayoutActionsContext';
+import { useRegisterHeaderActions } from '../../contexts/HeaderActionsContext';
+
 const { width } = Dimensions.get('window');
 
 function computeStreak(dates: string[]): number {
@@ -177,6 +182,9 @@ export default function DailyAchievementsScreen() {
   const today  = getTodayDate();
   const friday = isFriday();
   const { frequencySettings } = state;
+  const { handleBack } = useContext(LayoutActionsContext)
+
+  useRegisterHeaderActions('/daily-achievements', []);
 
   const heroFade  = useRef(new Animated.Value(0)).current;
   const heroSlide = useRef(new Animated.Value(-14)).current;
@@ -245,7 +253,14 @@ export default function DailyAchievementsScreen() {
   const streakMilestone = [7, 14, 30, 60, 90, 180, 365].find(m => streak < m) ?? 365;
 
   return (
-    <View style={styles.root}>
+  <View style={styles.root}>
+      <MinimalHeader
+        title="Today's Practices"
+        subtitle={allDone ? 'All done — Mā shā Allāh 🌿' : `${completedCount}/${totalCount} completed`}
+        onBackPress={handleBack}
+        showMore={false}
+        theme="default"
+      />
       <ScreenBackground>
         <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
 

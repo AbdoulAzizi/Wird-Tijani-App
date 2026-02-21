@@ -16,11 +16,11 @@ import {
 } from 'react-native';
 import { X } from 'lucide-react-native';
 import { COLORS } from '../constants/colors';
-import { FormulaDetail } from './FormulaDetail';
-import { MasterDetail } from './MasterDetail';
-import { BookDetail } from './BookDetail';
-import { PlaceDetail } from './PlaceDetail';
-import { WordDetail } from './WordDetail';
+import { FormulaDetail } from './FormulaDetail-fr';
+import { MasterDetail } from './MasterDetail-fr';
+import { BookDetail } from './BookDetail-fr';
+import { PlaceDetail } from './PlaceDetail-fr';
+import { WordDetail } from './WordDetail-fr';
 
 const { height, width } = Dimensions.get('window');
 

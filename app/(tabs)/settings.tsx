@@ -23,6 +23,11 @@ import { exportReport } from '../../utils/exportReport';
 import ScreenBackground from '../../components/ScreenBackground';
 import { useRouter } from 'expo-router';
 
+import { useContext } from 'react';
+import MinimalHeader from '../../components/MinimalHeader';
+import { LayoutActionsContext } from '../../contexts/LayoutActionsContext';
+import { useRegisterHeaderActions } from '../../contexts/HeaderActionsContext';
+
 const { width } = Dimensions.get('window');
 
 interface TimePickerState {
@@ -44,7 +49,7 @@ export default function SettingsScreen() {
   const [showLanguageModal, setShowLanguageModal] = useState(false);
   const [showFontSizeModal, setShowFontSizeModal] = useState(false);
   const [showResetModal, setShowResetModal] = useState(false);
-
+  const { handleBack } = useContext(LayoutActionsContext);
   // États pour les temps de rappel
   const [reminderTimes, setReminderTimes] = useState({
     morning: new Date(new Date().getFullYear(), 0, 1, 5, 30),
@@ -243,6 +248,23 @@ export default function SettingsScreen() {
   //   }
   // };
 
+  useRegisterHeaderActions('/settings', [
+  {
+    key: 'export',
+    label: 'Export Data',
+    icon: <Upload color="#059669" size={16} strokeWidth={2} />,
+    onPress: () => exportReport(state),
+  },
+  {
+    key: 'reset',
+    label: 'Reset All Data',
+    icon: <RotateCcw color="#EF4444" size={16} strokeWidth={2.5} />,
+    onPress: () => setShowResetModal(true),
+    destructive: true,
+  },
+]);
+
+
   const resetAllData = () => {
     Alert.alert(
       'Reset All Data',
@@ -302,17 +324,19 @@ export default function SettingsScreen() {
   };
 
   return (
-    <View style={[
-      styles.container,
-      state.settings.darkMode && styles.containerDark
-    ]}>
+  <View style={[styles.container, state.settings.darkMode && styles.containerDark]}>
+    <MinimalHeader
+      title="Settings"
+      subtitle="Customize your experience"
+      onBackPress={handleBack}
+      showMore={true}
+      menuActions={[
+        { key: 'export', label: 'Export Data', icon: <Upload color="#059669" size={16} strokeWidth={2} />, onPress: () => exportReport(state) },
+        { key: 'reset', label: 'Reset All Data', icon: <RotateCcw color="#EF4444" size={16} strokeWidth={2.5} />, onPress: () => setShowResetModal(true), destructive: true },
+      ]}
+      theme="default"
+    />
       <ScreenBackground>
-        {/* <GradientHeader
-          arabicTitle="الإعدادات"
-          englishTitle="Settings"
-          subtitle="Customize Your Experience"
-          icon={<SettingsIcon color="#FFFFFF" size={32} />}
-        /> */}
 
         <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
           {/* Notifications Section - NOUVEAU */}

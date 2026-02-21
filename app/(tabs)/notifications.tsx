@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { 
   View, 
   Text, 
@@ -28,6 +28,11 @@ import {
   NotificationType 
 } from '@/contexts/NotificationContext';
 
+import { useContext } from 'react';
+import MinimalHeader from '../../components/MinimalHeader';
+import { LayoutActionsContext } from '../../contexts/LayoutActionsContext';
+import { useRegisterHeaderActions } from '../../contexts/HeaderActionsContext';
+
 // --- Composant Icone Dynamique ---
 const NotificationIcon = ({ type, color }: { type: NotificationType; color: string }) => {
   const size = 22;
@@ -51,6 +56,8 @@ export default function NotificationsScreen() {
     unreadCount,
     clearAll
   } = useNotifications();
+
+  const { handleBack } = useContext(LayoutActionsContext);
 
   // Helper pour les fonds d'icônes
   const getIconBackground = (type: NotificationType): string => {
@@ -86,39 +93,37 @@ export default function NotificationsScreen() {
     );
   };
 
+  const menuActions = useMemo(() => [
+    ...(unreadCount > 0 ? [{
+      key: 'markAll',
+      label: 'Mark all as read',
+      icon: <CheckCheck color="#059669" size={16} strokeWidth={2} />,
+      onPress: handleMarkAll,
+    }] : []),
+    ...(notifications.length > 0 ? [{
+      key: 'clearAll',
+      label: 'Clear all notifications',
+      icon: <Trash2 color="#EF4444" size={16} strokeWidth={2.5} />,
+      onPress: handleClearAll,
+      destructive: true,
+    }] : []),
+  ], [unreadCount, notifications.length, handleMarkAll, handleClearAll]);
+
+  useRegisterHeaderActions('/notifications', menuActions);
+
+
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" />
       
-      {/* Header */}
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.title}>Notifications</Text>
-          <Text style={styles.subtitle}>
-            {unreadCount > 0 ? `${unreadCount} non lues` : 'Tout est à jour'}
-          </Text>
-        </View>
-        
-        <View style={styles.headerActions}>
-          {unreadCount > 0 && (
-            <TouchableOpacity 
-              onPress={handleMarkAll}
-              style={styles.iconActionButton}
-              accessibilityLabel="Tout marquer comme lu"
-            >
-              <CheckCheck size={20} color="#059669" />
-            </TouchableOpacity>
-          )}
-          {notifications.length > 0 && (
-            <TouchableOpacity 
-              onPress={handleClearAll}
-              style={[styles.iconActionButton, styles.clearButton]}
-            >
-              <Trash2 size={20} color="#EF4444" />
-            </TouchableOpacity>
-          )}
-        </View>
-      </View>
+      <MinimalHeader
+        title="Notifications"
+        subtitle={unreadCount > 0 ? `${unreadCount} unread` : 'All caught up'}
+        onBackPress={handleBack}
+        showMore={menuActions.length > 0}
+        menuActions={menuActions}
+        theme="default"
+      />
 
       {/* Notifications List */}
       <ScrollView

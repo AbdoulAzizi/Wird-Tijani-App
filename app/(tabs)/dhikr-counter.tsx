@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useRef, useEffect,useMemo } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
   Animated, Easing, Alert, Platform, Vibration,
@@ -13,6 +13,11 @@ import DhikrPickerModal from '@/components/Dhikrpickermodal';
 import { useApp } from '../../contexts/AppContext';
 import ScreenBackground from '../../components/ScreenBackground';
 import { CATEGORY_LABELS, CATEGORY_COLORS, CATEGORY_ICONS } from '../../data/azkarData';
+import { useContext } from 'react';
+import MinimalHeader from '../../components/MinimalHeader';
+import { LayoutActionsContext } from '../../contexts/LayoutActionsContext';
+import { useRegisterHeaderActions } from '../../contexts/HeaderActionsContext';
+
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -544,6 +549,7 @@ type ScreenTab = 'counter' | 'history';
 export default function DhikrCounterScreen() {
   const { state } = useApp();
   const dark = state.settings.darkMode;
+  const { handleBack } = useContext(LayoutActionsContext);
 
   const [showPicker, setShowPicker] = useState(false);
   const [screenTab,  setScreenTab]  = useState<ScreenTab>('counter');
@@ -571,8 +577,33 @@ export default function DhikrCounterScreen() {
     ]);
   }, [resetCount]);
 
+  const menuActions = useMemo(() => [
+    {
+      key: 'new', label: 'New Dhikr Session',
+      icon: <Plus color="#059669" size={16} strokeWidth={2} />,
+      onPress: () => setShowPicker(true),
+    },
+    ...(active ? [{
+      key: 'reset', label: 'Reset Counter',
+      icon: <RotateCcw color="#EF4444" size={16} strokeWidth={2.5} />,
+      onPress: handleReset, destructive: true,
+    }] : []),
+  ], [active, handleReset]);
+
+  useRegisterHeaderActions('/dhikr-counter', menuActions);
+
+
   return (
     <View style={styles.root}>
+
+       <MinimalHeader
+        title="Dhikr Counter"
+        subtitle="Track your recitations"
+        onBackPress={handleBack}
+        showMore={true}
+        menuActions={menuActions}
+        theme="default"
+      />
       {/* overlayOpacity reduced so the beautiful Islamic pattern shows through */}
       <ScreenBackground overlayOpacity={dark ? 0.45 : 0.18}>
 

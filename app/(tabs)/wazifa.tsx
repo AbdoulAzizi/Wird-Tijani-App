@@ -1,11 +1,11 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useContext } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
-  TouchableOpacity, Alert, Animated, Modal
+  TouchableOpacity, Alert, Animated, Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
-  Star, RotateCcw, Info, X, Settings, CheckCircle, Award, Flame, Target
+  Star, RotateCcw, Info, X, Settings, CheckCircle, Award, Flame, Target,
 } from 'lucide-react-native';
 import DhikrCard from '../../components/DhikrCard';
 import { useApp, WAZIFA_TARGETS } from '../../contexts/AppContext';
@@ -14,6 +14,8 @@ import WazifaInfoModal from '../../components/WazifaInfoModal';
 import StatsBar from '../../components/StatsBar';
 import { useAutoScroll } from '@/components/hooks/useAutoScroll';
 import { useRegisterHeaderActions } from '../../contexts/HeaderActionsContext';
+import MinimalHeader from '../../components/MinimalHeader';
+import { LayoutActionsContext } from '../../contexts/LayoutActionsContext';
 
 const WAZIFA_DHIKR = {
   istighfar: {
@@ -65,19 +67,10 @@ function CompletionBanner({ dark, onComplete }: { dark: boolean; onComplete: () 
 }
 
 const cBanner = StyleSheet.create({
-  wrap: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    backgroundColor: '#F0FDF4', borderRadius: 20, padding: 18,
-    marginHorizontal: 16, marginTop: 8, borderWidth: 2, borderColor: '#A7F3D0',
-    shadowColor: '#059669', shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.15, shadowRadius: 12, elevation: 5,
-  },
+  wrap:     { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#F0FDF4', borderRadius: 20, padding: 18, marginHorizontal: 16, marginTop: 8, borderWidth: 2, borderColor: '#A7F3D0', shadowColor: '#059669', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.15, shadowRadius: 12, elevation: 5 },
   wrapDark: { backgroundColor: '#052E16', borderColor: '#065F46' },
-  left: { flexDirection: 'row', alignItems: 'center', gap: 14, flex: 1 },
-  iconWrap: {
-    width: 48, height: 48, borderRadius: 24,
-    backgroundColor: '#FEF3C7', justifyContent: 'center', alignItems: 'center',
-  },
+  left:     { flexDirection: 'row', alignItems: 'center', gap: 14, flex: 1 },
+  iconWrap: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#FEF3C7', justifyContent: 'center', alignItems: 'center' },
   title:    { fontSize: 17, fontWeight: '800', color: '#065F46', marginBottom: 3 },
   subtitle: { fontSize: 13, color: '#059669', fontWeight: '500' },
 });
@@ -105,20 +98,15 @@ function Instructions({ dark }: { dark: boolean }) {
 }
 
 const instr = StyleSheet.create({
-  wrap: {
-    backgroundColor: '#FFFFFF', borderRadius: 20, padding: 20,
-    marginHorizontal: 16, marginTop: 16, borderWidth: 1, borderColor: '#F1F5F9',
-    shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06, shadowRadius: 8, elevation: 3,
-  },
-  wrapDark: { backgroundColor: '#1E293B', borderColor: '#334155' },
-  header: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 14 },
-  emoji: { fontSize: 20 },
-  title: { fontSize: 16, fontWeight: '700', color: '#1E293B' },
-  titleDark: { color: '#F8FAFC' },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
-  rowIcon: { fontSize: 16 },
-  rowText: { fontSize: 14, color: '#64748B', flex: 1, lineHeight: 20 },
+  wrap:        { backgroundColor: '#FFFFFF', borderRadius: 20, padding: 20, marginHorizontal: 16, marginTop: 16, borderWidth: 1, borderColor: '#F1F5F9', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8, elevation: 3 },
+  wrapDark:    { backgroundColor: '#1E293B', borderColor: '#334155' },
+  header:      { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 14 },
+  emoji:       { fontSize: 20 },
+  title:       { fontSize: 16, fontWeight: '700', color: '#1E293B' },
+  titleDark:   { color: '#F8FAFC' },
+  row:         { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
+  rowIcon:     { fontSize: 16 },
+  rowText:     { fontSize: 14, color: '#64748B', flex: 1, lineHeight: 20 },
   rowTextDark: { color: '#94A3B8' },
 });
 
@@ -203,55 +191,46 @@ function WazifaSettingsModal({
 }
 
 const sModal = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F8FAFC' },
-  containerDark: { backgroundColor: '#0F172A' },
-  header: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingHorizontal: 20, paddingVertical: 18,
-    borderBottomWidth: 1, borderBottomColor: '#E2E8F0',
-  },
-  headerDark: { borderBottomColor: '#334155' },
-  closeBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#F1F5F9', justifyContent: 'center', alignItems: 'center' },
-  title: { fontSize: 20, fontWeight: '800', color: '#1E293B', letterSpacing: -0.3 },
-  titleDark: { color: '#F8FAFC' },
-  scroll: { flex: 1 },
-  scrollContent: { padding: 20, paddingBottom: 40 },
-  section: { marginBottom: 20 },
-  sectionTitle: { fontSize: 18, fontWeight: '700', color: '#1E293B', marginBottom: 6 },
-  sectionTitleDark: { color: '#F8FAFC' },
-  sectionDesc: { fontSize: 14, color: '#64748B', lineHeight: 20 },
-  sectionDescDark: { color: '#94A3B8' },
-  option: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingVertical: 16, paddingHorizontal: 16, backgroundColor: '#FFFFFF',
-    borderRadius: 16, marginBottom: 12, borderWidth: 2, borderColor: '#E2E8F0',
-    shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 4, elevation: 2,
-  },
-  optionDark: { backgroundColor: '#1E293B', borderColor: '#334155' },
-  optionSelected: { borderColor: '#059669', backgroundColor: '#F0FDF4' },
-  optionContent: { flex: 1, marginRight: 12 },
-  optionTitle: { fontSize: 16, fontWeight: '700', color: '#1E293B', marginBottom: 3 },
-  optionTitleDark: { color: '#F8FAFC' },
-  optionSub: { fontSize: 13, color: '#64748B' },
-  optionSubDark: { color: '#94A3B8' },
-  radio: { width: 24, height: 24, borderRadius: 12, borderWidth: 2, borderColor: '#CBD5E1', alignItems: 'center', justifyContent: 'center' },
-  radioSelected: { borderColor: '#059669' },
-  radioInner: { width: 12, height: 12, borderRadius: 6, backgroundColor: '#059669' },
-  subOption: { backgroundColor: '#F1F5F9', borderRadius: 14, padding: 16, marginBottom: 16, marginTop: -4 },
-  subOptionDark: { backgroundColor: '#1E293B' },
-  subOptionTitle: { fontSize: 14, fontWeight: '600', color: '#1E293B', marginBottom: 12 },
+  container:          { flex: 1, backgroundColor: '#F8FAFC' },
+  containerDark:      { backgroundColor: '#0F172A' },
+  header:             { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 18, borderBottomWidth: 1, borderBottomColor: '#E2E8F0' },
+  headerDark:         { borderBottomColor: '#334155' },
+  closeBtn:           { width: 36, height: 36, borderRadius: 18, backgroundColor: '#F1F5F9', justifyContent: 'center', alignItems: 'center' },
+  title:              { fontSize: 20, fontWeight: '800', color: '#1E293B', letterSpacing: -0.3 },
+  titleDark:          { color: '#F8FAFC' },
+  scroll:             { flex: 1 },
+  scrollContent:      { padding: 20, paddingBottom: 40 },
+  section:            { marginBottom: 20 },
+  sectionTitle:       { fontSize: 18, fontWeight: '700', color: '#1E293B', marginBottom: 6 },
+  sectionTitleDark:   { color: '#F8FAFC' },
+  sectionDesc:        { fontSize: 14, color: '#64748B', lineHeight: 20 },
+  sectionDescDark:    { color: '#94A3B8' },
+  option:             { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 16, paddingHorizontal: 16, backgroundColor: '#FFFFFF', borderRadius: 16, marginBottom: 12, borderWidth: 2, borderColor: '#E2E8F0', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 4, elevation: 2 },
+  optionDark:         { backgroundColor: '#1E293B', borderColor: '#334155' },
+  optionSelected:     { borderColor: '#059669', backgroundColor: '#F0FDF4' },
+  optionContent:      { flex: 1, marginRight: 12 },
+  optionTitle:        { fontSize: 16, fontWeight: '700', color: '#1E293B', marginBottom: 3 },
+  optionTitleDark:    { color: '#F8FAFC' },
+  optionSub:          { fontSize: 13, color: '#64748B' },
+  optionSubDark:      { color: '#94A3B8' },
+  radio:              { width: 24, height: 24, borderRadius: 12, borderWidth: 2, borderColor: '#CBD5E1', alignItems: 'center', justifyContent: 'center' },
+  radioSelected:      { borderColor: '#059669' },
+  radioInner:         { width: 12, height: 12, borderRadius: 6, backgroundColor: '#059669' },
+  subOption:          { backgroundColor: '#F1F5F9', borderRadius: 14, padding: 16, marginBottom: 16, marginTop: -4 },
+  subOptionDark:      { backgroundColor: '#1E293B' },
+  subOptionTitle:     { fontSize: 14, fontWeight: '600', color: '#1E293B', marginBottom: 12 },
   subOptionTitleDark: { color: '#F8FAFC' },
-  countRow: { flexDirection: 'row', gap: 12 },
-  countBtn: { flex: 1, paddingVertical: 12, paddingHorizontal: 16, backgroundColor: '#FFFFFF', borderRadius: 12, borderWidth: 2, borderColor: '#E2E8F0', alignItems: 'center', justifyContent: 'center' },
-  countBtnDark: { backgroundColor: '#0F172A', borderColor: '#475569' },
-  countBtnSelected: { borderColor: '#059669', backgroundColor: '#F0FDF4' },
-  countBtnText: { fontSize: 16, fontWeight: '700', color: '#64748B' },
-  countBtnTextDark: { color: '#94A3B8' },
+  countRow:           { flexDirection: 'row', gap: 12 },
+  countBtn:           { flex: 1, paddingVertical: 12, paddingHorizontal: 16, backgroundColor: '#FFFFFF', borderRadius: 12, borderWidth: 2, borderColor: '#E2E8F0', alignItems: 'center', justifyContent: 'center' },
+  countBtnDark:       { backgroundColor: '#0F172A', borderColor: '#475569' },
+  countBtnSelected:   { borderColor: '#059669', backgroundColor: '#F0FDF4' },
+  countBtnText:       { fontSize: 16, fontWeight: '700', color: '#64748B' },
+  countBtnTextDark:   { color: '#94A3B8' },
   countBtnTextSelected: { color: '#059669' },
-  defaultBadge: { fontSize: 10, fontWeight: '700', color: '#059669', marginTop: 3, textTransform: 'uppercase' },
-  defaultBadgeDark: { color: '#10B981' },
-  saveBtn: { backgroundColor: '#059669', borderRadius: 16, paddingVertical: 16, alignItems: 'center', marginTop: 16, shadowColor: '#059669', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4 },
-  saveBtnText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
+  defaultBadge:       { fontSize: 10, fontWeight: '700', color: '#059669', marginTop: 3, textTransform: 'uppercase' },
+  defaultBadgeDark:   { color: '#10B981' },
+  saveBtn:            { backgroundColor: '#059669', borderRadius: 16, paddingVertical: 16, alignItems: 'center', marginTop: 16, shadowColor: '#059669', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4 },
+  saveBtnText:        { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
 });
 
 export default function WazifaScreen() {
@@ -260,6 +239,9 @@ export default function WazifaScreen() {
   const [showSettings,     setShowSettings]     = useState(false);
   const [tempUseJawhara,   setTempUseJawhara]   = useState(state.wazifaSettings.useJawhara);
   const [tempJawharaCount, setTempJawharaCount] = useState<number>(state.wazifaSettings.jawharaCount || 12);
+
+  // ── Callback back du layout ──────────────────────────────────────────────
+  const { handleBack } = useContext(LayoutActionsContext);
 
   const { darkMode, audioEnabled } = state.settings;
   const dark = darkMode;
@@ -347,7 +329,7 @@ export default function WazifaScreen() {
     setShowSettings(true);
   }, [state.wazifaSettings.useJawhara, state.wazifaSettings.jawharaCount]);
 
-  useRegisterHeaderActions('/wazifa', [
+  const menuActions = [
     {
       key: 'info', label: 'Wazīfa Information',
       icon: <Info color="#059669" size={16} strokeWidth={2} />,
@@ -356,17 +338,32 @@ export default function WazifaScreen() {
     {
       key: 'settings', label: 'Wazīfa Settings',
       icon: <Settings color="#059669" size={16} strokeWidth={2} />,
-      onPress: openSettings, dividerAfter: true,
+      onPress: openSettings,
+      dividerAfter: true,
     },
     {
       key: 'reset', label: 'Reset All Dhikr',
       icon: <RotateCcw color="#EF4444" size={16} strokeWidth={2.5} />,
-      onPress: handleResetAll, destructive: true,
+      onPress: handleResetAll,
+      destructive: true,
     },
-  ]);
+  ];
+
+  useRegisterHeaderActions('/wazifa', menuActions);
 
   return (
     <View style={[styles.root, dark && styles.rootDark]}>
+
+      {/* ── MinimalHeader rendu directement dans l'écran ── */}
+      <MinimalHeader
+        title="Wazīfa Tijāniyya"
+        subtitle="Daily spiritual practice"
+        onBackPress={handleBack}
+        showMore={true}
+        menuActions={menuActions}
+        theme="default"
+      />
+
       <ScreenBackground>
         <StatsBar dark={dark} stats={[
           { icon: <Target color="#059669" size={13} strokeWidth={2.5} />, value: `${completedCount}/4`, label: 'Completed', color: '#059669' },
@@ -461,16 +458,16 @@ export default function WazifaScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#F8FAFC' },
-  rootDark: { backgroundColor: '#0F172A' },
-  progressWrap: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 8 },
-  progressTrack: { height: 8, backgroundColor: '#E2E8F0', borderRadius: 4, overflow: 'hidden', marginBottom: 6 },
+  root:              { flex: 1, backgroundColor: '#F8FAFC' },
+  rootDark:          { backgroundColor: '#0F172A' },
+  progressWrap:      { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 8 },
+  progressTrack:     { height: 8, backgroundColor: '#E2E8F0', borderRadius: 4, overflow: 'hidden', marginBottom: 6 },
   progressTrackDark: { backgroundColor: '#334155' },
-  progressFill: { height: '100%', backgroundColor: '#D97706', borderRadius: 4 },
-  progressComplete: { backgroundColor: '#F59E0B' },
-  progressLabel: { fontSize: 13, color: '#FFFFFF', fontWeight: '600' },
+  progressFill:      { height: '100%', backgroundColor: '#D97706', borderRadius: 4 },
+  progressComplete:  { backgroundColor: '#F59E0B' },
+  progressLabel:     { fontSize: 13, color: '#FFFFFF', fontWeight: '600' },
   progressLabelDark: { color: '#64748B' },
-  scroll: { flex: 1 },
-  scrollContent: { paddingTop: 8 },
-  bottomSpace: { height: 32 },
+  scroll:            { flex: 1 },
+  scrollContent:     { paddingTop: 8 },
+  bottomSpace:       { height: 32 },
 });

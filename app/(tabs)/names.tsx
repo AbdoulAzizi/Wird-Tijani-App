@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback, useEffect, memo } from 'react';
+import React, { useState, useRef, useCallback, useEffect, memo, useMemo } from 'react';
 import {
   View, Text, StyleSheet, FlatList, Dimensions,
   TouchableOpacity, Animated, ScrollView,
@@ -15,6 +15,9 @@ import {
 import { asmaAlHusna, AsmaAlHusnaItem } from '../../data/asmaAlHusna';
 import { useApp } from '../../contexts/AppContext';
 import { useRegisterHeaderActions } from '../../contexts/HeaderActionsContext';
+import { useContext } from 'react';
+import MinimalHeader from '../../components/MinimalHeader';
+import { LayoutActionsContext } from '../../contexts/LayoutActionsContext';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const { width } = Dimensions.get('window');
@@ -389,6 +392,7 @@ const nc = StyleSheet.create({
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 export default function NamesScreen() {
   const { state } = useApp();
+  const { handleBack } = useContext(LayoutActionsContext);
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [language,     setLanguage]     = useState<Language>('english');
@@ -474,16 +478,19 @@ export default function NamesScreen() {
     ]);
   }, [scrollTo]);
 
-  // Header actions
-  useRegisterHeaderActions('/names', [
-    { key: 'counter', label: `Name ${currentIndex + 1} of ${asmaAlHusna.length}`, icon: <Hash color={GREEN_MID} size={18} strokeWidth={2} />, onPress: () => {}, dividerAfter: true },
-    { key: 'darkmode', label: isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode', icon: isDark ? <Sun color="#D97706" size={18} strokeWidth={2} /> : <Moon color="#7C3AED" size={18} strokeWidth={2} />, onPress: () => { haptic('medium'); setIsDark(d => !d); } },
-    { key: 'speed', label: `Playback Speed: ${speed}×`, icon: <Zap color="#0891B2" size={18} strokeWidth={2} />, onPress: () => { haptic(); setShowSpeed(true); } },
-    { key: 'mute', label: isMuted ? 'Unmute Audio' : 'Mute Audio', icon: isMuted ? <VolumeX color="#64748B" size={18} strokeWidth={2} /> : <Volume2 color="#64748B" size={18} strokeWidth={2} />, onPress: () => { haptic(); setIsMuted(m => !m); }, dividerAfter: true },
-    { key: 'beginning', label: 'Back to beginning', icon: <SkipBack color={GREEN_MID} size={18} strokeWidth={2} />, onPress: () => scrollTo(0) },
-    { key: 'random', label: 'Random name', icon: <Shuffle color="#7C3AED" size={18} strokeWidth={2} />, onPress: () => scrollTo(Math.floor(Math.random() * asmaAlHusna.length)), dividerAfter: true },
-    { key: 'reset', label: 'Reset all data', icon: <Settings color="#EF4444" size={18} strokeWidth={2} />, onPress: handleResetAll, destructive: true },
-  ]);
+ const menuActions = useMemo(() => [
+  { key: 'counter', label: `Name ${currentIndex + 1} of ${asmaAlHusna.length}`, icon: <Hash color={GREEN_MID} size={18} strokeWidth={2} />, onPress: () => {} , dividerAfter: true },
+  { key: 'darkmode', label: isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode', icon: isDark ? <Sun color="#D97706" size={18} strokeWidth={2} /> : <Moon color="#7C3AED" size={18} strokeWidth={2} />, onPress: () => { haptic('medium'); setIsDark(d => !d); } },
+  { key: 'speed', label: `Playback Speed: ${speed}×`, icon: <Zap color="#0891B2" size={18} strokeWidth={2} />, onPress: () => { haptic(); setShowSpeed(true); } },
+  { key: 'mute', label: isMuted ? 'Unmute Audio' : 'Mute Audio', icon: isMuted ? <VolumeX color="#64748B" size={18} strokeWidth={2} /> : <Volume2 color="#64748B" size={18} strokeWidth={2} />, onPress: () => { haptic(); setIsMuted(m => !m); }, dividerAfter: true },
+  { key: 'beginning', label: 'Back to beginning', icon: <SkipBack color={GREEN_MID} size={18} strokeWidth={2} />, onPress: () => scrollTo(0) },
+  { key: 'random', label: 'Random name', icon: <Shuffle color="#7C3AED" size={18} strokeWidth={2} />, onPress: () => scrollTo(Math.floor(Math.random() * asmaAlHusna.length)), dividerAfter: true },
+  { key: 'reset', label: 'Reset all data', icon: <Settings color="#EF4444" size={18} strokeWidth={2} />, onPress: handleResetAll, destructive: true },
+], [currentIndex, isDark, isMuted, speed, scrollTo, handleResetAll]);
+
+useRegisterHeaderActions('/names', menuActions);
+
+  useRegisterHeaderActions('/names', menuActions);
 
   // Pan responder
   const panResponder = useRef(
@@ -508,6 +515,15 @@ export default function NamesScreen() {
 
   return (
     <View style={[styles.root, { backgroundColor: bg }]}>
+
+      <MinimalHeader
+        title="Asmāʾ Al-Ḥusnā"
+        subtitle="The 99 Divine Names"
+        onBackPress={handleBack}
+        showMore={true}
+        menuActions={menuActions}
+        theme="default"
+      />
 
       {/* ── Cards ── */}
       <Animated.View style={{ flex: 1, transform: [{ scale: scaleAnim }] }}>

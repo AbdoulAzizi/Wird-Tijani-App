@@ -12,6 +12,12 @@ import { useAppVersion } from '@/hooks/useAppVersion';
 import ScreenBackground from '../../components/ScreenBackground';
 import SectionLabel from '../../components/SectionLabel';
 
+import { useContext } from 'react';
+import MinimalHeader from '../../components/MinimalHeader';
+import { LayoutActionsContext } from '../../contexts/LayoutActionsContext';
+import { useRegisterHeaderActions } from '../../contexts/HeaderActionsContext';
+
+
 // ─── Data ─────────────────────────────────────────────────────────────────────
 
 const FEATURES = [
@@ -42,8 +48,20 @@ export default function AboutScreen() {
   const { state }                    = useApp();
   const { appName, appVersion }      = useAppVersion();
 
+  const { handleBack } = useContext(LayoutActionsContext);
+
+  useRegisterHeaderActions('/about', []);
+
+
   return (
-    <View style={styles.root}>
+  <View style={styles.root}>
+      <MinimalHeader
+        title="About"
+        subtitle="Wird & Wazīfa Tijāniyya"
+        onBackPress={handleBack}
+        showMore={false}
+        theme="default"
+      />
       <ScreenBackground>
         <ScrollView
           style={styles.scroll}
