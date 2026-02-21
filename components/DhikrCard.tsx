@@ -449,13 +449,12 @@ const styles = StyleSheet.create({
   },
   audioBtnDark: { backgroundColor: '#1E3A2F', borderColor: '#065F46' },
 
-  // ── Arabic block — border + radius, but NO overflow:hidden
   arabicBlock: {
     marginHorizontal: 16,
     marginBottom: 20,
     borderRadius: 16,
     borderWidth: 1,
-    // overflow: 'hidden' deliberately removed — scroll needs touch passthrough
+    overflow: 'hidden',
   },
   arabicScroll: {
     maxHeight: ARABIC_MAX_H,
