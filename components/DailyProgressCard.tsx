@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { CheckCircle2, Circle, Flame, ChevronRight } from 'lucide-react-native';
+import { CheckCircle2, ChevronRight } from 'lucide-react-native';
 import { useApp } from '../contexts/AppContext';
 
 interface DailyProgressCardProps {
@@ -10,6 +10,81 @@ interface DailyProgressCardProps {
 
 const isFriday = () => new Date().getDay() === 5;
 
+// ─── Palette ──────────────────────────────────────────────────────────────────
+const GREEN      = '#059669';
+const GREEN_DONE = '#10B981';
+
+// ─── Mini practice row ────────────────────────────────────────────────────────
+interface PracticeRowProps {
+  label: string;
+  arabic: string;
+  done: boolean;
+  completions: number;
+  target: number;
+  color: string;
+  darkMode: boolean;
+}
+
+function PracticeRow({ label, arabic, done, completions, target, color, darkMode }: PracticeRowProps) {
+  const segments = target > 1 ? target : 1;
+  const filled   = Math.min(completions, segments);
+
+  return (
+    <View style={pr.row}>
+      {/* Labels */}
+      <View style={pr.labels}>
+        <Text style={[pr.label, darkMode && pr.labelDark, done && { color }]}>
+          {label}
+        </Text>
+        <Text style={[pr.arabic, darkMode && pr.arabicDark, done && { color: color + 'CC' }]}>
+          {arabic}
+        </Text>
+      </View>
+
+      {/* Segmented bar */}
+      <View style={pr.barWrap}>
+        {Array.from({ length: segments }).map((_, i) => (
+          <View
+            key={i}
+            style={[
+              pr.seg,
+              { backgroundColor: i < filled ? color : (darkMode ? '#1E293B' : '#E2E8F0') },
+              i === 0 && pr.segFirst,
+              i === segments - 1 && pr.segLast,
+            ]}
+          />
+        ))}
+      </View>
+
+      {/* Check */}
+      {done
+        ? <CheckCircle2 color={color} size={14} strokeWidth={2.5} />
+        : <View style={[pr.emptyCheck, { borderColor: darkMode ? '#334155' : '#CBD5E1' }]} />
+      }
+    </View>
+  );
+}
+
+const pr = StyleSheet.create({
+  row:      { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  labels:   { width: 52, gap: 1 },
+  label:    { fontSize: 11.5, fontWeight: '800', color: '#475569', letterSpacing: -0.2 },
+  labelDark:{ color: '#94A3B8' },
+  arabic:   { fontSize: 9, color: '#94A3B8', fontWeight: '500' },
+  arabicDark:{ color: '#475569' },
+
+  barWrap:  { flex: 1, flexDirection: 'row', gap: 3, height: 6 },
+  seg:      { flex: 1, height: 6, borderRadius: 0 },
+  segFirst: { borderTopLeftRadius: 3, borderBottomLeftRadius: 3 },
+  segLast:  { borderTopRightRadius: 3, borderBottomRightRadius: 3 },
+
+  emptyCheck: {
+    width: 14, height: 14, borderRadius: 7,
+    borderWidth: 2,
+  },
+});
+
+// ─── Main component ───────────────────────────────────────────────────────────
 const DailyProgressCard: React.FC<DailyProgressCardProps> = ({ onPress, darkMode = false }) => {
   const {
     state,
@@ -19,7 +94,6 @@ const DailyProgressCard: React.FC<DailyProgressCardProps> = ({ onPress, darkMode
 
   const { frequencySettings } = state;
   const friday = isFriday();
-  const streak = state.streak || 0;
 
   const practices = useMemo(() => [
     {
@@ -37,169 +111,149 @@ const DailyProgressCard: React.FC<DailyProgressCardProps> = ({ onPress, darkMode
       done: isHadraFullyDoneToday, completions: hadraCompletionsToday,
       target: frequencySettings.hadraPerDay, color: '#7C3AED', active: friday,
     },
-  ], [isWirdFullyDoneToday, isWazifaFullyDoneToday, isHadraFullyDoneToday,
-      wirdCompletionsToday, wazifaCompletionsToday, hadraCompletionsToday,
-      frequencySettings, friday]);
+  ], [
+    isWirdFullyDoneToday, isWazifaFullyDoneToday, isHadraFullyDoneToday,
+    wirdCompletionsToday, wazifaCompletionsToday, hadraCompletionsToday,
+    frequencySettings, friday,
+  ]);
 
   const active    = practices.filter(p => p.active);
   const completed = active.filter(p => p.done).length;
   const total     = active.length;
   const pct       = total > 0 ? Math.round((completed / total) * 100) : 0;
   const allDone   = completed === total && total > 0;
+  const ringColor = allDone ? GREEN_DONE : GREEN;
 
   return (
-    <TouchableOpacity activeOpacity={0.8} onPress={onPress} style={styles.wrapper}>
-      <View style={[styles.card, darkMode && styles.cardDark]}>
+    <TouchableOpacity activeOpacity={0.8} onPress={onPress} style={s.wrapper}>
+      <View style={[s.card, darkMode && s.cardDark]}>
 
-        {/* ── Left: circular % ── */}
-        <View style={[
-          styles.ring,
-          { borderColor: allDone ? '#10B981' : (darkMode ? '#334155' : '#D1FAE5') },
-        ]}>
-          <Text style={[styles.ringPct, { color: allDone ? '#10B981' : '#059669' }]}>
-            {pct}
-          </Text>
-          <Text style={styles.ringMark}>%</Text>
+        {/* Top accent line */}
+        <View style={[s.accent, { backgroundColor: ringColor }]} />
+
+        <View style={s.inner}>
+
+          {/* ── Left: circular ring ── */}
+          <View style={[s.ringWrap, { borderColor: ringColor + '30' }]}>
+            <View style={[s.ringInner, { backgroundColor: ringColor + '12' }]}>
+              <Text style={[s.ringPct, { color: ringColor }]}>{pct}</Text>
+              <Text style={[s.ringUnit, { color: ringColor + '99' }]}>%</Text>
+            </View>
+          </View>
+
+          {/* ── Center ── */}
+          <View style={s.center}>
+
+            {/* Header */}
+            <View style={s.header}>
+              <Text style={[s.title, darkMode && s.titleDark]}>
+                {allDone ? 'Completed today 🌿' : friday ? "Jumu'a Mubārak 🕌" : 'Daily Practices'}
+              </Text>
+              <Text style={[s.sub, darkMode && s.subDark]}>
+                {completed}/{total} done
+              </Text>
+            </View>
+
+            {/* Divider */}
+            <View style={[s.divider, darkMode && s.dividerDark]} />
+
+            {/* Practice rows */}
+            <View style={s.practices}>
+              {active.map(p => (
+                <PracticeRow
+                  key={p.id}
+                  label={p.label}
+                  arabic={p.arabic}
+                  done={p.done}
+                  completions={p.completions}
+                  target={p.target}
+                  color={p.color}
+                  darkMode={darkMode}
+                />
+              ))}
+            </View>
+
+          </View>
+
+          {/* ── Right: chevron ── */}
+          <ChevronRight
+            color={darkMode ? '#334155' : '#CBD5E1'}
+            size={15}
+            strokeWidth={2.5}
+            style={s.chevron}
+          />
+
         </View>
-
-        {/* ── Center: practice rows ── */}
-        <View style={styles.center}>
-          {/* Title */}
-          <View style={styles.titleRow}>
-            <Text style={[styles.title, darkMode && styles.titleDark]}>
-              {allDone ? 'All done today 🌿' : friday ? "🕌 Jumu'a Mubārak" : 'Daily Practices'}
-            </Text>
-            {streak > 0 && (
-              <View style={styles.streakBadge}>
-                <Flame color="#F97316" size={10} strokeWidth={2.5} />
-                <Text style={styles.streakNum}>{streak}</Text>
-              </View>
-            )}
-          </View>
-
-          {/* Practice items — horizontal compact row */}
-          <View style={styles.pillsRow}>
-            {practices.map(p => {
-              if (!p.active) return null;
-              const multi = p.target > 1;
-              return (
-                <View key={p.id} style={[
-                  styles.pill,
-                  darkMode && styles.pillDark,
-                  p.done && { backgroundColor: p.color + '18', borderColor: p.color + '35' },
-                ]}>
-                  {p.done
-                    ? <CheckCircle2 color={p.color} size={11} strokeWidth={3} />
-                    : <Circle color={darkMode ? '#475569' : '#CBD5E1'} size={11} strokeWidth={2} />
-                  }
-                  <Text style={[
-                    styles.pillLabel,
-                    darkMode && styles.pillLabelDark,
-                    p.done && { color: p.color },
-                  ]}>
-                    {p.label}
-                  </Text>
-                  {multi && (
-                    <Text style={[styles.pillCount, { color: p.done ? p.color : (darkMode ? '#475569' : '#CBD5E1') }]}>
-                      {Math.min(p.completions, p.target)}/{p.target}
-                    </Text>
-                  )}
-                </View>
-              );
-            })}
-          </View>
-
-          {/* Progress bar */}
-          <View style={[styles.track, darkMode && styles.trackDark]}>
-            <View style={[
-              styles.fill,
-              { width: `${pct}%`, backgroundColor: allDone ? '#10B981' : '#059669' },
-            ]} />
-          </View>
-        </View>
-
-        {/* ── Right: chevron ── */}
-        <ChevronRight
-          color={darkMode ? '#334155' : '#CBD5E1'}
-          size={16}
-          strokeWidth={2.5}
-        />
-
       </View>
     </TouchableOpacity>
   );
 };
 
-const styles = StyleSheet.create({
+// ─── Styles ───────────────────────────────────────────────────────────────────
+const s = StyleSheet.create({
   wrapper: { paddingHorizontal: 16, marginTop: 10 },
 
   card: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
     backgroundColor: '#FFFFFF',
     borderRadius: 18,
-    paddingVertical: 12,
-    paddingHorizontal: 14,
+    overflow: 'hidden',
     borderWidth: 1,
     borderColor: 'rgba(5,150,105,0.1)',
     shadowColor: '#059669',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.10,
+    shadowRadius: 14,
+    elevation: 5,
   },
   cardDark: {
     backgroundColor: '#1E293B',
-    borderColor: 'rgba(16,185,129,0.12)',
+    borderColor: 'rgba(16,185,129,0.15)',
+  },
+
+  // Thin top accent
+  accent: {
+    height: 3,
+    width: '100%',
+  },
+
+  inner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
   },
 
   // ── Ring ──
-  ring: {
-    width: 54, height: 54, borderRadius: 27,
-    borderWidth: 3,
+  ringWrap: {
+    width: 58, height: 58, borderRadius: 29,
+    borderWidth: 2,
     justifyContent: 'center', alignItems: 'center',
     flexShrink: 0,
   },
-  ringPct:  { fontSize: 17, fontWeight: '900', lineHeight: 18 },
-  ringMark: { fontSize: 8,  fontWeight: '700', color: '#94A3B8', marginTop: -2 },
+  ringInner: {
+    width: 46, height: 46, borderRadius: 23,
+    justifyContent: 'center', alignItems: 'center',
+  },
+  ringPct:  { fontSize: 16, fontWeight: '900', lineHeight: 18 },
+  ringUnit: { fontSize: 8,  fontWeight: '700', marginTop: -1 },
 
   // ── Center ──
-  center: { flex: 1, gap: 6 },
+  center: { flex: 1, gap: 8 },
 
-  titleRow:  { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  title:     { fontSize: 13, fontWeight: '800', color: '#0F172A', letterSpacing: -0.2, flex: 1 },
+  header:    { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' },
+  title:     { fontSize: 13, fontWeight: '800', color: '#0F172A', letterSpacing: -0.3 },
   titleDark: { color: '#F1F5F9' },
+  sub:       { fontSize: 11, fontWeight: '600', color: '#94A3B8' },
+  subDark:   { color: '#475569' },
 
-  streakBadge: {
-    flexDirection: 'row', alignItems: 'center', gap: 3,
-    backgroundColor: '#FFF7ED', borderRadius: 20,
-    paddingHorizontal: 6, paddingVertical: 2,
-    borderWidth: 1, borderColor: '#FED7AA',
-  },
-  streakNum: { fontSize: 10, fontWeight: '800', color: '#F97316' },
+  divider:     { height: 1, backgroundColor: '#F1F5F9' },
+  dividerDark: { backgroundColor: '#273549' },
 
-  // ── Pills row ──
-  pillsRow: { flexDirection: 'row', gap: 6 },
-  pill: {
-    flexDirection: 'row', alignItems: 'center', gap: 4,
-    backgroundColor: '#F8FAFC',
-    borderRadius: 8,
-    paddingHorizontal: 7, paddingVertical: 4,
-    borderWidth: 1, borderColor: 'transparent',
-  },
-  pillDark:  { backgroundColor: '#0F172A' },
-  pillLabel: { fontSize: 11, fontWeight: '700', color: '#64748B' },
-  pillLabelDark: { color: '#94A3B8' },
-  pillCount: { fontSize: 9, fontWeight: '700' },
+  practices: { gap: 7 },
 
-  // ── Bar ──
-  track: {
-    height: 3, backgroundColor: '#F1F5F9',
-    borderRadius: 2, overflow: 'hidden',
-  },
-  trackDark: { backgroundColor: '#273549' },
-  fill: { height: '100%', borderRadius: 2 },
+  // ── Chevron ──
+  chevron: { flexShrink: 0 },
 });
 
 export default DailyProgressCard;

@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { X, Search, Plus, Trash2, ChevronRight, Check, BookOpen, Sparkles } from 'lucide-react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import {
   AzkarItem, AzkarCategory,
   CATEGORY_LABELS, CATEGORY_ICONS, CATEGORY_COLORS, PRESET_AZKARS,
@@ -34,6 +35,126 @@ const glassDark = {
   borderColor:     'rgba(255,255,255,0.07)',
 } as const;
 
+// ─── AzkarTextBlock ───────────────────────────────────────────────────────────
+// Affiche le texte arabe + translittération + traduction dans un cadre adaptatif.
+// Si le contenu dépasse MAX_HEIGHT, une hauteur fixe est appliquée et le scroll s'active.
+// Pour les textes courts, le composant s'adapte naturellement sans scroll.
+
+const MAX_TEXT_HEIGHT = 220;
+
+function AzkarTextBlock({
+  dark,
+  accentColor,
+  arabic,
+  transliteration,
+  translation,
+  fontSize = 28,
+}: {
+  dark: boolean;
+  accentColor: string;
+  arabic: string;
+  transliteration?: string;
+  translation?: string;
+  fontSize?: number;
+}) {
+  const [contentHeight, setContentHeight] = useState(0);
+  const [showTop, setShowTop]             = useState(false);
+  const [showBottom, setShowBottom]       = useState(false);
+
+  const needsScroll = contentHeight > MAX_TEXT_HEIGHT;
+
+  const topColors: readonly [string, string] = dark
+    ? ['rgba(15,23,42,0)', 'rgba(15,23,42,0.9)']
+    : ['rgba(255,255,255,0)', 'rgba(255,255,255,0.95)'];
+
+  const bottomColors: readonly [string, string] = dark
+    ? ['rgba(15,23,42,0.9)', 'rgba(15,23,42,0)']
+    : ['rgba(255,255,255,0.95)', 'rgba(255,255,255,0)'];
+
+  const handleScroll = useCallback((e: any) => {
+    const { contentOffset, contentSize, layoutMeasurement } = e.nativeEvent;
+    setShowTop(contentOffset.y > 8);
+    setShowBottom(contentOffset.y + layoutMeasurement.height < contentSize.height - 8);
+  }, []);
+
+  return (
+    <View style={[atb.container, needsScroll && { height: MAX_TEXT_HEIGHT }]}>
+      <ScrollView
+        scrollEnabled={needsScroll}
+        nestedScrollEnabled={true}
+        showsVerticalScrollIndicator={false}
+        bounces={false}
+        scrollEventThrottle={16}
+        onScroll={handleScroll}
+        onContentSizeChange={(_w, h) => {
+          setContentHeight(h);
+          if (h > MAX_TEXT_HEIGHT) setShowBottom(true);
+        }}
+      >
+        <View style={atb.inner}>
+          <Text style={[atb.arabic, dark && atb.arabicDark, { fontSize, lineHeight: fontSize * 1.65 }]}>
+            {arabic}
+          </Text>
+          {transliteration ? (
+            <Text style={[atb.translit, { color: accentColor }]}>{transliteration}</Text>
+          ) : null}
+          {translation ? (
+            <Text style={[atb.translation, dark && atb.translationDark]}>{translation}</Text>
+          ) : null}
+        </View>
+      </ScrollView>
+
+      {showTop && (
+        <LinearGradient
+          colors={topColors}
+          start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }}
+          style={atb.gradTop}
+          pointerEvents="none"
+        />
+      )}
+      {showBottom && needsScroll && (
+        <LinearGradient
+          colors={bottomColors}
+          start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }}
+          style={atb.gradBottom}
+          pointerEvents="none"
+        />
+      )}
+    </View>
+  );
+}
+
+const atb = StyleSheet.create({
+  container: {
+    width: '100%',
+    overflow: 'hidden',
+    borderRadius: 10,
+  },
+  inner: {
+    paddingHorizontal: 8,
+    paddingVertical: 10,
+    alignItems: 'center',
+    gap: 8,
+  },
+  arabic: {
+    textAlign: 'center',
+    color: '#1E293B',
+    fontFamily: 'Amiri_400Regular',
+  },
+  arabicDark: { color: '#F1F5F9' },
+  translit: { fontSize: 13, fontStyle: 'italic', fontWeight: '600', textAlign: 'center' },
+  translation: { fontSize: 13, color: '#64748B', textAlign: 'center', lineHeight: 19 },
+  translationDark: { color: '#94A3B8' },
+  gradTop: {
+    position: 'absolute', top: 0, left: 0, right: 0, height: 32,
+    zIndex: 10,
+  },
+  gradBottom: {
+    position: 'absolute', bottom: 0, left: 0, right: 0, height: 36,
+    zIndex: 10,
+  },
+});
+
 // ─── Target Selector ──────────────────────────────────────────────────────────
 
 const QUICK_TARGETS = [3, 7, 10, 11, 12, 33, 34, 100, 300, 500, 1000];
@@ -53,7 +174,12 @@ function TargetSelector({
     <View style={tgt.wrap}>
       <Text style={[tgt.label, dark && tgt.labelDark]}>Number of recitations</Text>
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={tgt.row}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={tgt.row}
+        nestedScrollEnabled={true}
+      >
         {QUICK_TARGETS.map(n => (
           <TouchableOpacity
             key={n}
@@ -165,11 +291,13 @@ function AddCustomForm({
 
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
-
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 40 }}
+        nestedScrollEnabled={true}
+      >
         <Text style={[cf.heading, dark && cf.headingDark]}>New Custom Dhikr</Text>
 
-        {/* Name */}
         <Text style={[cf.lbl, dark && cf.lblDark]}>Name *</Text>
         <TextInput
           style={[cf.inp, { ...g }]}
@@ -178,7 +306,6 @@ function AddCustomForm({
           value={title} onChangeText={setTitle}
         />
 
-        {/* Arabic */}
         <Text style={[cf.lbl, dark && cf.lblDark]}>Arabic text</Text>
         <TextInput
           style={[cf.inp, cf.inpArabic, { ...g }]}
@@ -188,7 +315,6 @@ function AddCustomForm({
           textAlign="right" multiline
         />
 
-        {/* Transliteration */}
         <Text style={[cf.lbl, dark && cf.lblDark]}>Transliteration</Text>
         <TextInput
           style={[cf.inp, { ...g }]}
@@ -197,7 +323,6 @@ function AddCustomForm({
           value={transliteration} onChangeText={setTranslit}
         />
 
-        {/* Translation */}
         <Text style={[cf.lbl, dark && cf.lblDark]}>Translation</Text>
         <TextInput
           style={[cf.inp, { ...g }]}
@@ -206,10 +331,8 @@ function AddCustomForm({
           value={translation} onChangeText={setTranslation}
         />
 
-        {/* Target */}
         <TargetSelector value={target} onChange={setTarget} dark={dark} />
 
-        {/* Color */}
         <Text style={[cf.lbl, dark && cf.lblDark]}>Accent colour</Text>
         <View style={cf.colorRow}>
           {CUSTOM_COLORS.map(c => (
@@ -224,7 +347,6 @@ function AddCustomForm({
           ))}
         </View>
 
-        {/* Buttons */}
         <View style={cf.btnRow}>
           <TouchableOpacity
             onPress={onCancel}
@@ -296,18 +418,15 @@ function AzkarRow({
       onPress={onSelect}
       activeOpacity={0.75}
     >
-      {/* Colour dot */}
       <View style={[ar.iconWrap, { backgroundColor: item.color + '22' }]}>
         <View style={[ar.dot, { backgroundColor: item.color }]} />
       </View>
 
-      {/* Text */}
       <View style={ar.content}>
         <Text style={[ar.title, dark && ar.titleDark]} numberOfLines={1}>{item.title}</Text>
         <Text style={[ar.arabic, dark && ar.arabicDark]} numberOfLines={1}>{item.arabic}</Text>
       </View>
 
-      {/* Right */}
       <View style={ar.right}>
         <View style={[ar.countBadge, { backgroundColor: item.color + '18' }]}>
           <Text style={[ar.countText, { color: item.color }]}>{item.defaultTarget}×</Text>
@@ -367,9 +486,7 @@ function CatChip({
           : cc.chipActiveDefault),
       ]}
     >
-      {icon ? (
-        <Text style={cc.icon}>{icon}</Text>
-      ) : null}
+      {icon ? <Text style={cc.icon}>{icon}</Text> : null}
       <Text
         style={[cc.text, dark && cc.textDark, active && cc.textActive]}
         numberOfLines={1}
@@ -419,8 +536,6 @@ export default function DhikrPickerModal({
   const [selectedAzkar,  setSelectedAzkar]  = useState<AzkarItem | null>(null);
   const [target,         setTarget]         = useState(33);
   const [activeCategory, setActiveCategory] = useState<AzkarCategory | 'all'>('all');
-
-  const g = dark ? glassDark : glassLight;
 
   const filtered = useMemo(() => {
     const q    = search.toLowerCase();
@@ -479,11 +594,7 @@ export default function DhikrPickerModal({
         {/* ══ HEADER ══════════════════════════════════════════════════════════ */}
         <View style={[m.header, dark ? m.headerDark : m.headerLight]}>
           {selectedAzkar ? (
-            <TouchableOpacity
-              onPress={() => setSelectedAzkar(null)}
-              style={m.backBtn}
-              activeOpacity={0.7}
-            >
+            <TouchableOpacity onPress={() => setSelectedAzkar(null)} style={m.backBtn} activeOpacity={0.7}>
               <ChevronRight
                 color={dark ? '#94A3B8' : '#64748B'}
                 size={20} strokeWidth={2.5}
@@ -504,31 +615,40 @@ export default function DhikrPickerModal({
             <Text style={[m.headerTitle, dark && m.headerTitleDark]}>Choose a Dhikr</Text>
           )}
 
-          <TouchableOpacity onPress={handleClose} style={[m.closeBtn, dark ? m.closeBtnDark : m.closeBtnLight]} activeOpacity={0.7}>
+          <TouchableOpacity
+            onPress={handleClose}
+            style={[m.closeBtn, dark ? m.closeBtnDark : m.closeBtnLight]}
+            activeOpacity={0.7}
+          >
             <X color={dark ? '#94A3B8' : '#64748B'} size={20} strokeWidth={2.5} />
           </TouchableOpacity>
         </View>
 
         {/* ══ CONFIRMATION SCREEN ═════════════════════════════════════════════ */}
         {selectedAzkar ? (
-          <ScrollView contentContainerStyle={m.confirmPad} showsVerticalScrollIndicator={false}>
-
+          <ScrollView
+            contentContainerStyle={m.confirmPad}
+            showsVerticalScrollIndicator={false}
+            nestedScrollEnabled={true}
+          >
             <View style={[m.previewCard, dark ? m.previewCardDark : m.previewCardLight, { borderLeftColor: selectedAzkar.color }]}>
               <View style={[m.previewBadge, { backgroundColor: selectedAzkar.color + '22' }]}>
                 <Text style={[m.previewBadgeText, { color: selectedAzkar.color }]}>
                   {CATEGORY_ICONS[selectedAzkar.category]}  {CATEGORY_LABELS[selectedAzkar.category]}
                 </Text>
               </View>
+
               <Text style={[m.previewTitle, dark && m.previewTitleDark]}>{selectedAzkar.title}</Text>
-              <Text style={[m.previewArabic, dark && m.previewArabicDark]}>{selectedAzkar.arabic}</Text>
-              {selectedAzkar.transliteration ? (
-                <Text style={[m.previewTranslit, { color: selectedAzkar.color }]}>
-                  {selectedAzkar.transliteration}
-                </Text>
-              ) : null}
-              {selectedAzkar.translation ? (
-                <Text style={[m.previewTrans, dark && m.previewTransDark]}>{selectedAzkar.translation}</Text>
-              ) : null}
+
+              {/* ✅ AzkarTextBlock adaptatif — remplace les 3 Text fixes */}
+              <AzkarTextBlock
+                dark={dark}
+                accentColor={selectedAzkar.color}
+                arabic={selectedAzkar.arabic}
+                transliteration={selectedAzkar.transliteration}
+                translation={selectedAzkar.translation}
+                fontSize={28}
+              />
             </View>
 
             <TargetSelector value={target} onChange={setTarget} dark={dark} />
@@ -540,12 +660,16 @@ export default function DhikrPickerModal({
             >
               <Text style={m.confirmBtnText}>Start — {target}×</Text>
             </TouchableOpacity>
-
           </ScrollView>
 
         /* ══ ADD CUSTOM FORM ══════════════════════════════════════════════════ */
         ) : tab === 'add' ? (
-          <ScrollView style={{ flex: 1 }} contentContainerStyle={m.bodyPad} showsVerticalScrollIndicator={false}>
+          <ScrollView
+            style={{ flex: 1 }}
+            contentContainerStyle={m.bodyPad}
+            showsVerticalScrollIndicator={false}
+            nestedScrollEnabled={true}
+          >
             <AddCustomForm dark={dark} onAdd={handleAddCustom} onCancel={() => setTab('library')} />
           </ScrollView>
 
@@ -608,6 +732,7 @@ export default function DhikrPickerModal({
                   horizontal
                   showsHorizontalScrollIndicator={false}
                   contentContainerStyle={m.catRow}
+                  nestedScrollEnabled={true}
                 >
                   <CatChip
                     label="All"
@@ -636,8 +761,8 @@ export default function DhikrPickerModal({
               contentContainerStyle={m.listPad}
               keyboardShouldPersistTaps="handled"
               showsVerticalScrollIndicator={false}
+              nestedScrollEnabled={true}
             >
-              {/* Add custom button (custom tab) */}
               {tab === 'custom' && (
                 <TouchableOpacity
                   style={[m.addRow, dark ? m.addRowDark : m.addRowLight]}
@@ -654,7 +779,6 @@ export default function DhikrPickerModal({
                 </TouchableOpacity>
               )}
 
-              {/* Empty state */}
               {filtered.length === 0 ? (
                 <View style={m.empty}>
                   <Text style={m.emptyIcon}>{tab === 'custom' ? '✨' : '🔍'}</Text>
@@ -720,7 +844,6 @@ const m = StyleSheet.create({
   backText: { fontSize: 15, fontWeight: '700', color: '#64748B' },
   backTextDark: { color: '#94A3B8' },
 
-  // Tabs
   tabs: {
     flexDirection: 'row', gap: 8,
     paddingHorizontal: 14, paddingVertical: 10,
@@ -738,7 +861,6 @@ const m = StyleSheet.create({
   tabBtnTextDark: { color: '#94A3B8' },
   tabBtnTextActive: { color: '#FFFFFF' },
 
-  // Search
   searchWrap: {
     flexDirection: 'row', alignItems: 'center', gap: 10,
     marginHorizontal: 14, marginTop: 10, marginBottom: 6,
@@ -750,11 +872,7 @@ const m = StyleSheet.create({
   searchInput: { flex: 1, fontSize: 15, color: '#1E293B' },
   searchInputDark: { color: '#F8FAFC' },
 
-  // Category chips — wrapper hauteur fixe pour contraindre le ScrollView horizontal
-  catWrap: {
-    height: 44,
-    marginBottom: 6,
-  },
+  catWrap: { height: 44, marginBottom: 6 },
   catRow: {
     gap: 6,
     paddingHorizontal: 14,
@@ -762,10 +880,8 @@ const m = StyleSheet.create({
     height: 44,
   },
 
-  // List
   listPad: { paddingHorizontal: 14, paddingTop: 2, paddingBottom: 40 },
 
-  // Add custom row
   addRow: {
     flexDirection: 'row', alignItems: 'center', gap: 14,
     padding: 14, borderRadius: 16, marginBottom: 6, borderWidth: 1.5,
@@ -780,7 +896,6 @@ const m = StyleSheet.create({
   addRowSub: { fontSize: 12, color: '#64748B', fontWeight: '500' },
   addRowSubDark: { color: '#475569' },
 
-  // Empty state
   empty: { paddingVertical: 52, alignItems: 'center', gap: 10 },
   emptyIcon: { fontSize: 42 },
   emptyTitle: { fontSize: 16, fontWeight: '700', color: '#1E293B' },
@@ -788,13 +903,12 @@ const m = StyleSheet.create({
   emptySub: { fontSize: 13, color: '#94A3B8', textAlign: 'center', lineHeight: 20 },
   emptySubDark: { color: '#475569' },
 
-  // Confirm screen
   confirmPad: { padding: 18, paddingBottom: 60 },
 
   previewCard: {
     borderRadius: 22, padding: 22, marginBottom: 24,
     borderLeftWidth: 4, borderWidth: 1,
-    alignItems: 'center', gap: 8,
+    alignItems: 'center', gap: 10,
     shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 14, shadowOffset: { width: 0, height: 6 }, elevation: 5,
   },
   previewCardLight: { backgroundColor: 'rgba(255,255,255,0.88)', borderColor: 'rgba(255,255,255,0.9)' },
@@ -803,14 +917,6 @@ const m = StyleSheet.create({
   previewBadgeText: { fontSize: 12, fontWeight: '700' },
   previewTitle: { fontSize: 16, fontWeight: '800', color: '#1E293B', textAlign: 'center' },
   previewTitleDark: { color: '#F8FAFC' },
-  previewArabic: {
-    fontSize: 30, textAlign: 'center', color: '#1E293B',
-    fontFamily: 'Amiri_400Regular', lineHeight: 50,
-  },
-  previewArabicDark: { color: '#F1F5F9' },
-  previewTranslit: { fontSize: 14, fontStyle: 'italic', fontWeight: '600', textAlign: 'center' },
-  previewTrans: { fontSize: 13, color: '#64748B', textAlign: 'center', lineHeight: 20 },
-  previewTransDark: { color: '#94A3B8' },
 
   confirmBtn: {
     height: 56, borderRadius: 18,

@@ -17,7 +17,7 @@ export default function TabLayout() {
     { name: 'Wird', route: '/wird', icon: BookOpen, description: 'Prières quotidiennes' },
     { name: 'Wazifa', route: '/wazifa', icon: Star, description: 'Invocations spéciales' },
     { name: 'Hadra', route: '/hadra', icon: Heart, description: 'Séances spirituelles' },
-    { name: 'Les Noms', route: '/names', icon: Moon, description: 'Noms divins' },
+    { name: 'Les Noms', route: '/asmaa-alhusna', icon: Moon, description: 'Noms divins' },
     { name: 'Bibliothèque', route: '/library', icon: BookOpen, description: 'Ressources' },
     { name: 'Statistiques', route: '/stats', icon: BarChart3, description: 'Vos progrès' },
     { name: 'Paramètres', route: '/settings', icon: SettingsIcon, description: 'Configuration' },

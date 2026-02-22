@@ -507,7 +507,7 @@ export default function NamesScreen() {
   }, [scrollTo]);
 
   // ─── Inject actions into MinimalHeader via Context ───────────────────────
-    useRegisterHeaderActions('/names', ([
+    useRegisterHeaderActions('/asmaa-alhusna', ([
       // Counter (display only - non-destructive, tap does nothing)
       {
         key: 'counter',

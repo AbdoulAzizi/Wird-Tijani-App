@@ -563,7 +563,7 @@ export default function AsmaaAnNabiScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: dark ? '#0F172A' : '#F8FAFC' }}>
       <MinimalHeader
-        title="أَسْمَاء النَّبِيّ"
+        title="أَسْمَاء النَّبِيّ ﷺ"
         subtitle={subtitle}
         onBackPress={handleBack}
         showMore={true}

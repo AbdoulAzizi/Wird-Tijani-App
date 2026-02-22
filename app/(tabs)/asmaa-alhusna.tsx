@@ -488,9 +488,9 @@ export default function NamesScreen() {
   { key: 'reset', label: 'Reset all data', icon: <Settings color="#EF4444" size={18} strokeWidth={2} />, onPress: handleResetAll, destructive: true },
 ], [currentIndex, isDark, isMuted, speed, scrollTo, handleResetAll]);
 
-useRegisterHeaderActions('/names', menuActions);
+useRegisterHeaderActions('/asmaa-alhusna', menuActions);
 
-  useRegisterHeaderActions('/names', menuActions);
+  useRegisterHeaderActions('/asmaa-alhusna', menuActions);
 
   // Pan responder
   const panResponder = useRef(

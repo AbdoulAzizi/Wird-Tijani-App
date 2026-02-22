@@ -1,9 +1,10 @@
-import React, { useState, useCallback, useRef, useEffect,useMemo } from 'react';
+import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
   Animated, Easing, Alert, Platform, Vibration,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
 import {
   Plus, Play, Pause, Square, RotateCcw, Clock,
   Trash2, Award, CheckCircle,
@@ -17,7 +18,6 @@ import { useContext } from 'react';
 import MinimalHeader from '../../components/MinimalHeader';
 import { LayoutActionsContext } from '../../contexts/LayoutActionsContext';
 import { useRegisterHeaderActions } from '../../contexts/HeaderActionsContext';
-
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -40,8 +40,6 @@ const fmtDate = (iso: string) => {
 };
 
 // ─── Glass Card ───────────────────────────────────────────────────────────────
-// Semi-transparent frosted cards that let the Islamic pattern breathe through
-
 function GlassCard({ children, style, dark }: { children: React.ReactNode; style?: any; dark: boolean }) {
   return (
     <View style={[glass.card, dark ? glass.cardDark : glass.cardLight, style]}>
@@ -72,12 +70,10 @@ const glass = StyleSheet.create({
 });
 
 // ─── Idle / Empty State ───────────────────────────────────────────────────────
-
 function IdleView({ dark, onOpen }: { dark: boolean; onOpen: () => void }) {
   const pulse = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
-    // FIX: use Easing.sin — Easing.sine does NOT exist in React Native
     Animated.loop(
       Animated.sequence([
         Animated.timing(pulse, {
@@ -138,7 +134,6 @@ const idle = StyleSheet.create({
 });
 
 // ─── Active Counter ───────────────────────────────────────────────────────────
-
 function ActiveCounter({
   dark, active, isRunning, elapsed,
   onIncrement, onDecrement, onReset, onTogglePause, onComplete, onDiscard,
@@ -159,6 +154,10 @@ function ActiveCounter({
   const isDone      = count >= target;
   const remaining   = Math.max(target - count, 0);
   const accentColor = isDone ? '#F59E0B' : azkar.color;
+
+  // Scroll indicators
+  const [showTopGradient, setShowTopGradient] = useState(false);
+  const [showBottomGradient, setShowBottomGradient] = useState(false);
 
   const countScale     = useRef(new Animated.Value(1)).current;
   const progressAnim   = useRef(new Animated.Value(0)).current;
@@ -194,29 +193,93 @@ function ActiveCounter({
     }
   }, [isDone]);
 
+  const handleScroll = useCallback((event: any) => {
+    const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
+    const scrollY = contentOffset.y;
+    const scrollHeight = contentSize.height;
+    const viewHeight = layoutMeasurement.height;
+
+    setShowTopGradient(scrollY > 10);
+    setShowBottomGradient(scrollY + viewHeight < scrollHeight - 10);
+  }, []);
+
   const progressWidth = progressAnim.interpolate({ inputRange: [0, 100], outputRange: ['0%', '100%'] });
   const rippleScale   = tapRipple.interpolate({ inputRange: [0, 1], outputRange: [0.85, 1.18] });
   const rippleOpacity = tapRipple.interpolate({ inputRange: [0, 0.4, 1], outputRange: [0.35, 0.12, 0] });
 
-  return (
-    <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false} contentContainerStyle={ac.scroll}>
+  const topGradientColors: readonly [string, string, string] = dark
+    ? ['rgba(15, 23, 42, 0)', 'rgba(15, 23, 42, 0.9)', 'rgba(15, 23, 42, 1)']
+    : ['rgba(255, 255, 255, 0)', 'rgba(255, 255, 255, 0.9)', 'rgba(255, 255, 255, 1)'];
 
-      {/* ── Azkar info card ── */}
-      <GlassCard dark={dark} style={ac.headerCard}>
-        <View style={[ac.categoryBadge, { backgroundColor: CATEGORY_COLORS[azkar.category] + '25' }]}>
-          <Text style={[ac.categoryText, { color: CATEGORY_COLORS[azkar.category] }]}>
-            {CATEGORY_ICONS[azkar.category]}  {CATEGORY_LABELS[azkar.category]}
-          </Text>
-        </View>
-        <Text style={[ac.azkarTitle, dark && ac.azkarTitleDark]}>{azkar.title}</Text>
-        <Text style={[ac.arabic, dark && ac.arabicDark]}>{azkar.arabic}</Text>
-        {azkar.transliteration ? (
-          <Text style={[ac.translit, { color: accentColor }]}>{azkar.transliteration}</Text>
-        ) : null}
-        {azkar.translation ? (
-          <Text style={[ac.translation, dark && ac.translationDark]}>{azkar.translation}</Text>
-        ) : null}
-      </GlassCard>
+  const bottomGradientColors: readonly [string, string, string] = dark
+    ? ['rgba(15, 23, 42, 1)', 'rgba(15, 23, 42, 0.9)', 'rgba(15, 23, 42, 0)']
+    : ['rgba(255, 255, 255, 1)', 'rgba(255, 255, 255, 0.9)', 'rgba(255, 255, 255, 0)'];
+
+  return (
+    // ✅ FIX 1: nestedScrollEnabled on outer ScrollView
+    <ScrollView
+      style={{ flex: 1 }}
+      showsVerticalScrollIndicator={false}
+      contentContainerStyle={ac.scroll}
+      nestedScrollEnabled={true}
+    >
+
+      {/* ── Azkar info card WITH SCROLL ── */}
+      <View style={ac.headerCardWrapper}>
+        <GlassCard dark={dark} style={ac.headerCard}>
+          <View style={[ac.categoryBadge, { backgroundColor: CATEGORY_COLORS[azkar.category] + '25' }]}>
+            <Text style={[ac.categoryText, { color: CATEGORY_COLORS[azkar.category] }]}>
+              {CATEGORY_ICONS[azkar.category]}  {CATEGORY_LABELS[azkar.category]}
+            </Text>
+          </View>
+          <Text style={[ac.azkarTitle, dark && ac.azkarTitleDark]}>{azkar.title}</Text>
+
+          {/* ✅ Scrollable text block with gradients */}
+          <View style={ac.textWrapper}>
+            {showTopGradient && (
+              <LinearGradient
+                colors={topGradientColors}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 0, y: 1 }}
+                style={ac.topGradient}
+                pointerEvents="none"
+              />
+            )}
+
+            {/* ✅ FIX 2: nestedScrollEnabled on inner ScrollView */}
+            <ScrollView
+              style={ac.textScroll}
+              contentContainerStyle={ac.textContent}
+              showsVerticalScrollIndicator={false}
+              bounces={true}
+              scrollEventThrottle={16}
+              nestedScrollEnabled={true}
+              onScroll={handleScroll}
+              onContentSizeChange={(_width, height) => {
+                setShowBottomGradient(height > 220);
+              }}
+            >
+              <Text style={[ac.arabic, dark && ac.arabicDark]}>{azkar.arabic}</Text>
+              {azkar.transliteration ? (
+                <Text style={[ac.translit, { color: accentColor }]}>{azkar.transliteration}</Text>
+              ) : null}
+              {azkar.translation ? (
+                <Text style={[ac.translation, dark && ac.translationDark]}>{azkar.translation}</Text>
+              ) : null}
+            </ScrollView>
+
+            {showBottomGradient && (
+              <LinearGradient
+                colors={bottomGradientColors}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 0, y: 1 }}
+                style={ac.bottomGradient}
+                pointerEvents="none"
+              />
+            )}
+          </View>
+        </GlassCard>
+      </View>
 
       {/* ── Tap zone card ── */}
       <GlassCard dark={dark} style={ac.tapCard}>
@@ -347,12 +410,51 @@ function ActiveCounter({
 const ac = StyleSheet.create({
   scroll: { padding: 14, paddingBottom: 40, gap: 12 },
 
-  headerCard: { gap: 8, alignItems: 'center', paddingVertical: 18 },
+  headerCardWrapper: { marginBottom: 0 },
+  headerCard: { gap: 8, alignItems: 'center', paddingVertical: 18, paddingBottom: 14 },
   categoryBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10 },
   categoryText: { fontSize: 12, fontWeight: '700' },
   azkarTitle: { fontSize: 18, fontWeight: '800', color: '#1E293B', letterSpacing: -0.3, textAlign: 'center' },
   azkarTitleDark: { color: '#F8FAFC' },
-  arabic: { fontSize: 28, textAlign: 'center', color: '#1E293B', fontFamily: 'Amiri_400Regular', lineHeight: 46, marginTop: 4 },
+
+  // Scrollable text wrapper
+  textWrapper: {
+    width: '100%',
+    height: 220,
+    position: 'relative',
+    borderRadius: 12,
+  },
+  textScroll: {
+    height: 220,
+  },
+  textContent: {
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    alignItems: 'center',
+    gap: 8,
+  },
+  topGradient: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 30,
+    zIndex: 10,
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12,
+  },
+  bottomGradient: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 30,
+    zIndex: 10,
+    borderBottomLeftRadius: 12,
+    borderBottomRightRadius: 12,
+  },
+
+  arabic: { fontSize: 28, textAlign: 'center', color: '#1E293B', fontFamily: 'Amiri_400Regular', lineHeight: 46 },
   arabicDark: { color: '#F1F5F9' },
   translit: { fontSize: 13, fontStyle: 'italic', fontWeight: '600', textAlign: 'center' },
   translation: { fontSize: 13, color: '#64748B', textAlign: 'center', lineHeight: 19 },
@@ -428,7 +530,6 @@ const ac = StyleSheet.create({
 });
 
 // ─── History ──────────────────────────────────────────────────────────────────
-
 function HistoryView({
   dark, sessions, onDelete, onClear,
   totalCounts, todayCounts, totalSessions,
@@ -543,7 +644,6 @@ const hist = StyleSheet.create({
 });
 
 // ─── Main Screen ──────────────────────────────────────────────────────────────
-
 type ScreenTab = 'counter' | 'history';
 
 export default function DhikrCounterScreen() {
@@ -592,11 +692,9 @@ export default function DhikrCounterScreen() {
 
   useRegisterHeaderActions('/dhikr-counter', menuActions);
 
-
   return (
     <View style={styles.root}>
-
-       <MinimalHeader
+     <MinimalHeader
         title="Dhikr Counter"
         subtitle="Track your recitations"
         onBackPress={handleBack}
@@ -604,10 +702,9 @@ export default function DhikrCounterScreen() {
         menuActions={menuActions}
         theme="default"
       />
-      {/* overlayOpacity reduced so the beautiful Islamic pattern shows through */}
-      <ScreenBackground overlayOpacity={dark ? 0.45 : 0.18}>
 
-        {/* ── Tab bar — glass style matching the background ── */}
+      <ScreenBackground overlayOpacity={dark ? 0.45 : 0.18}>
+        {/* ── Tab bar ── */}
         <View style={[styles.topBar, dark ? styles.topBarDark : styles.topBarLight]}>
           <View style={styles.tabRow}>
             {([
@@ -667,7 +764,6 @@ export default function DhikrCounterScreen() {
             totalSessions={totalSessions}
           />
         )}
-
       </ScreenBackground>
 
       <DhikrPickerModal
