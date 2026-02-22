@@ -80,7 +80,7 @@ function BottomMenuSheet({
 
   const groups = [
     { label: 'Daily Practices', emoji: '🕌', items: menuItems.filter(i => ['/', '/wird', '/wazifa', '/hadra'].includes(i.route)) },
-    { label: 'Discover',        emoji: '✨', items: menuItems.filter(i => ['/names', '/library', '/dhikr-counter'].includes(i.route)) },
+    { label: 'Discover',        emoji: '✨', items: menuItems.filter(i => ['/names','/asmaa-nabi', '/library', '/dhikr-counter'].includes(i.route)) },
     { label: 'Tools',           emoji: '⚙️', items: menuItems.filter(i => ['/stats', '/notifications', '/notification-settings', '/settings', '/about'].includes(i.route)) },
   ];
 
@@ -207,16 +207,17 @@ function InnerTabLayout() {
     { name: 'Home',              route: '/',                      icon: Home,         description: 'Main dashboard',                  color: '#059669' },
     { name: 'Wird',              route: '/wird',                  icon: Heart,        description: 'Daily litany',                    color: '#DC2626' },
     { name: 'Wazifa',            route: '/wazifa',                icon: Star,         description: 'The daily collective invocation', color: '#D97706' },
-    { name: 'Haḍratu-Jumūʿa',    route: '/hadra',                 icon: Moon,         description: 'Friday sacred gathering',         color: '#7C3AED' },
-    { name: "Asmā' Al-Husnā",    route: '/names',                 icon: Sparkles,     description: 'Contemplating the Divine Names',  color: '#1E40AF', isNew: true },
-    { name: 'Dhikr Counter',     route: '/dhikr-counter',         icon: Timer,        description: 'Your dhikr counter',              color: '#0891B2', isNew: true },
-    { name: 'Library',           route: '/library',               icon: BookOpen,     description: 'Resources & sacred texts',        color: '#059669', dividerAfter: true },
-    { name: 'Statistics',        route: '/stats',                 icon: BarChart3,    description: 'Consistency & discipline',        color: '#0891B2' },
-    { name: "Today's Practices", route: '/daily-achievements',    icon: CheckCircle2, description: "Today's completed awrād",         color: '#059669' },
-    { name: 'Notifications',     route: '/notifications',         icon: Bell,         description: 'Reminders for your awrād',        color: '#059669', badge: unreadCount, isNew: true },
-    { name: 'Notif. Settings',   route: '/notification-settings', icon: Bell,         description: 'Manage notifications',            color: '#64748B' },
-    { name: 'Settings',          route: '/settings',              icon: SettingsIcon, description: 'Configuration',                  color: '#475569' },
-    { name: 'About',             route: '/about',                 icon: Info,         description: 'App information',                color: '#7C3AED' },
+    { name: 'Haḍratu-Jumūʿa',   route: '/hadra',                 icon: Moon,         description: 'Friday sacred gathering',         color: '#7C3AED' },
+    { name: "Asmā' Allāh",      route: '/names',                 icon: Sparkles,     description: 'The 99 Names of Allah',           color: '#1E40AF', isNew: true },
+    { name: "Asmā' An-Nabī",    route: '/asmaa-nabi',            icon: Star,         description: '201 Names of the Prophet ﷺ',     color: '#B45309', isNew: true },
+    { name: 'Dhikr Counter',    route: '/dhikr-counter',         icon: Timer,        description: 'Your dhikr counter',              color: '#0891B2', isNew: true },
+    { name: 'Library',          route: '/library',               icon: BookOpen,     description: 'Resources & sacred texts',        color: '#059669', dividerAfter: true },
+    { name: 'Statistics',       route: '/stats',                 icon: BarChart3,    description: 'Consistency & discipline',        color: '#0891B2' },
+    { name: "Today's Practices",route: '/daily-achievements',    icon: CheckCircle2, description: "Today's completed awrād",         color: '#059669' },
+    { name: 'Notifications',    route: '/notifications',         icon: Bell,         description: 'Reminders for your awrād',        color: '#059669', badge: unreadCount, isNew: true },
+    { name: 'Notif. Settings',  route: '/notification-settings', icon: Bell,         description: 'Manage notifications',            color: '#64748B' },
+    { name: 'Settings',         route: '/settings',              icon: SettingsIcon, description: 'Configuration',                  color: '#475569' },
+    { name: 'About',            route: '/about',                 icon: Info,         description: 'App information',                color: '#7C3AED' },
   ], [unreadCount]);
 
   // ── Haptics ─────────────────────────────────────────────────────────────────
@@ -482,7 +483,7 @@ function InnerTabLayout() {
           {[
             'names', 'dhikr-counter', 'stats', 'settings', 'about',
             'library', 'notifications', 'notification-settings',
-            'notification-test', 'daily-achievements',
+            'notification-test', 'daily-achievements','asmaa-nabi',
           ].map(name => (
             <Tabs.Screen key={name} name={name} options={{ href: null }} />
           ))}

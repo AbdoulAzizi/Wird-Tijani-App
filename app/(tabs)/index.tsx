@@ -39,13 +39,14 @@ const { width } = Dimensions.get('window');
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
 const practiceCards: PracticeCardData[] = [
-  { id: 'wird',          title: 'Wird Tijāni',           arabicTitle: 'الوِرد التجاني',            description: 'Daily spiritual practice',         icon: Heart,    color: '#DC2626', lightColor: '#FEE2E2', route: '/wird',          time: 'Morning & Evening',       priority: 'high'   },
-  { id: 'wazifa',        title: 'Wazīfa Tijāniyya',      arabicTitle: 'الوَظِيفَة التِّجَانِيَّة', description: 'Daily spiritual practice',         icon: Star,     color: '#D97706', lightColor: '#FEF3C7', route: '/wazifa',        time: 'Once or twice a day',     priority: 'medium' },
-  { id: 'hadra-jumua',   title: 'Haḍratu-Jumūʿa',        arabicTitle: 'حضرة الجمعة',               description: 'Friday spiritual gathering',       icon: Users,    color: '#7C3AED', lightColor: '#EDE9FE', route: '/hadra-jumua',   time: 'Friday evening',          priority: 'medium' },
-  { id: 'hadra-map',     title: 'Hadara Map',             arabicTitle: 'خريطة الحضرة',              description: 'Find local Zawiya & gatherings',   image: require('../../assets/images/hadara-map-logo.png'), color: '#059669', lightColor: '#D1FAE5', route: '/hadra-map', time: 'Dhikr, Prayer & Zakat', priority: 'low' },
-  { id: 'names-allah',   title: "Asmā' Al-Husnā",         arabicTitle: 'أسماء الله الحسنى',          description: 'The 99 Beautiful Names of Allah',  icon: Sparkles, color: '#1e40af', lightColor: '#dbeafe', route: '/names',         time: 'Meditation & Reflection', priority: 'high',   isNew: true },
-  { id: 'dhikr-counter', title: 'Dhikr Counter',          arabicTitle: 'عداد الذكر',                description: 'Personal dhikr counter',           icon: Clock,    color: '#0891B2', lightColor: '#E0F2FE', route: '/dhikr-counter', time: 'Anytime',                 priority: 'medium', isNew: true },
-  { id: 'library',       title: 'Spiritual Library',      arabicTitle: 'المكتبة الروحية',           description: 'Sacred texts & wisdom',            icon: BookOpen, color: '#059669', lightColor: '#D1FAE5', route: '/library',       time: 'Anytime',                 priority: 'low'   },
+  { id: 'wird',          title: 'Wird Tijāni',           arabicTitle: 'الوِرد التجاني',            description: 'Daily spiritual practice',           icon: Heart,    color: '#DC2626', lightColor: '#FEE2E2', route: '/wird',          time: 'Morning & Evening',       priority: 'high'   },
+  { id: 'wazifa',        title: 'Wazīfa Tijāniyya',      arabicTitle: 'الوَظِيفَة التِّجَانِيَّة', description: 'Daily spiritual practice',           icon: Star,     color: '#D97706', lightColor: '#FEF3C7', route: '/wazifa',        time: 'Once or twice a day',     priority: 'medium' },
+  { id: 'hadra-jumua',   title: 'Haḍratu-Jumūʿa',        arabicTitle: 'حضرة الجمعة',               description: 'Friday spiritual gathering',         icon: Users,    color: '#7C3AED', lightColor: '#EDE9FE', route: '/hadra-jumua',   time: 'Friday evening',          priority: 'medium' },
+  { id: 'hadra-map',     title: 'Hadara Map',             arabicTitle: 'خريطة الحضرة',              description: 'Find local Zawiya & gatherings',     image: require('../../assets/images/hadara-map-logo.png'), color: '#059669', lightColor: '#D1FAE5', route: '/hadra-map', time: 'Dhikr, Prayer & Zakat', priority: 'low' },
+  { id: 'names-allah',   title: "Asmā' Al-Husnā",         arabicTitle: 'أسماء الله الحسنى',          description: 'The 99 Beautiful Names of Allah',    icon: Sparkles, color: '#1e40af', lightColor: '#dbeafe', route: '/names',         time: 'Meditation & Reflection', priority: 'high',   isNew: true },
+  { id: 'names-nabi',    title: "Asmā' An-Nabī",          arabicTitle: 'أسماء النبي الشريف',         description: '201 Names of the Prophet ﷺ',         icon: Star,     color: '#B45309', lightColor: '#FEF3C7', route: '/asmaa-nabi',    time: 'Meditation & Reflection', priority: 'high',   isNew: true },
+  { id: 'dhikr-counter', title: 'Dhikr Counter',          arabicTitle: 'عداد الذكر',                description: 'Personal dhikr counter',             icon: Clock,    color: '#0891B2', lightColor: '#E0F2FE', route: '/dhikr-counter', time: 'Anytime',                 priority: 'medium', isNew: true },
+  { id: 'library',       title: 'Spiritual Library',      arabicTitle: 'المكتبة الروحية',           description: 'Sacred texts & wisdom',              icon: BookOpen, color: '#059669', lightColor: '#D1FAE5', route: '/library',       time: 'Anytime',                 priority: 'low'   },
 ];
 
 const quickActions: QuickAction[] = [
@@ -53,6 +54,7 @@ const quickActions: QuickAction[] = [
   { title: 'Dhikr Counter',     description: 'Personal dhikr counter',          icon: Clock,      color: '#0891B2', action: 'dhikr-counter'  },
   { title: "Today's Schedule",  description: 'View prayer times & practices',   icon: Clock,      color: '#7C3AED', action: 'schedule'       },
   { title: "Asmā' Al-Husnā",    description: 'The 99 Beautiful Names of Allah', icon: Sparkles,   color: '#1e40af', action: 'names'          },
+  { title: "Asmā' An-Nabī",     description: '201 Names of the Prophet ﷺ',     icon: Star,       color: '#B45309', action: 'asmaa-nabi'     },
   { title: 'Library',           description: 'Sacred formulas & wisdom',        icon: BookOpen,   color: '#059669', action: 'library-screen' },
   { title: 'Achievements',      description: 'Your spiritual milestones',       icon: Award,      color: '#D97706', action: 'achievements'   },
 ];
@@ -170,7 +172,6 @@ export default function HomeScreen() {
     wirdCompletionsToday, wazifaCompletionsToday, hadraCompletionsToday,
   } = useApp();
 
-  // ── Callbacks du layout via context ──────────────────────────────────────
   const { openDrawer, handleNotifications, unreadCount } = useContext(LayoutActionsContext);
 
   const dark = state.settings.darkMode;
@@ -203,6 +204,7 @@ export default function HomeScreen() {
       case '/wird':          router.push('/(tabs)/wird');          break;
       case '/wazifa':        router.push('/(tabs)/wazifa');        break;
       case '/names':         router.push('/(tabs)/names');         break;
+      case '/asmaa-nabi':    router.push('/(tabs)/asmaa-nabi');    break;
       case '/library':       router.push('/(tabs)/library');       break;
       case '/dhikr-counter': router.push('/(tabs)/dhikr-counter'); break;
       case '/hadra-jumua':   router.push('/(tabs)/hadra');         break;
@@ -222,6 +224,7 @@ export default function HomeScreen() {
       case 'schedule':       openHadraMap();                        break;
       case 'achievements':   router.push('/(tabs)/stats');          break;
       case 'names':          router.push('/(tabs)/names');          break;
+      case 'asmaa-nabi':     router.push('/(tabs)/asmaa-nabi');     break;
       case 'library-screen': router.push('/(tabs)/library');        break;
     }
   };
@@ -234,7 +237,6 @@ export default function HomeScreen() {
   return (
     <View style={[s.root, dark && s.rootDark]}>
 
-      {/* ── SpiritualHeader rendu directement dans l'écran ── */}
       <SpiritualHeader
         onMenuPress={openDrawer}
         currentPage="Home"
@@ -281,6 +283,7 @@ export default function HomeScreen() {
           </View>
         </View>
 
+        {/* Featured — Asmā' Al-Husnā */}
         <FeaturedCard
           gradientColors={['#1e3a8a', '#1e40af', '#2563eb']}
           icon={<Sparkles color="#FFFFFF" size={24} strokeWidth={2} />}
@@ -291,6 +294,18 @@ export default function HomeScreen() {
           shadowColor="#1e40af"
         />
 
+        {/* Featured — Asmā' An-Nabī ﷺ */}
+        <FeaturedCard
+          gradientColors={['#78350F', '#92400E', '#B45309']}
+          icon={<Star color="#FDE68A" size={24} strokeWidth={2} />}
+          arabic="أَسْمَاء النَّبِيّ الشَّرِيف"
+          title="201 Names of the Prophet ﷺ"
+          sub="Recite, reflect, and let your heart draw near"
+          onPress={() => router.push('/(tabs)/asmaa-nabi')}
+          shadowColor="#92400E"
+        />
+
+        {/* Featured — Library */}
         <FeaturedCard
           gradientColors={[GREEN_DARK, GREEN_MID, GREEN_LIGHT]}
           icon={<BookOpen color="#FFFFFF" size={22} strokeWidth={2} />}
@@ -313,7 +328,7 @@ const s = StyleSheet.create({
   root:         { flex: 1, backgroundColor: '#F8FAFC' },
   rootDark:     { backgroundColor: '#0F172A' },
   scroll:       { flex: 1 },
-  content:      { paddingBottom: 20 },
+    content:      { paddingBottom: 20 },
   quickSection: { marginTop: 18 },
   section:      { marginTop: 26, paddingHorizontal: 16 },
   grid:         { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', gap: 14 },
