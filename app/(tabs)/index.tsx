@@ -17,7 +17,7 @@ import DailyProgressCard from '../../components/DailyProgressCard';
 import SpiritualHeader from '../../components/SpiritualHeader';
 import { LayoutActionsContext } from '../../contexts/LayoutActionsContext';
 
-// ─── Palette partagée ─────────────────────────────────────────────────────────
+// ─── Palette ──────────────────────────────────────────────────────────────────
 const GREEN_DARK  = '#064E3B';
 const GREEN_MID   = '#065F46';
 const GREEN_LIGHT = '#047857';
@@ -34,19 +34,42 @@ interface QuickAction {
   title: string; description: string;
   icon: LucideIcon; color: string; action: string;
 }
+interface PracticeCategory {
+  id: string;
+  label: string;
+  arabicLabel: string;
+  emoji: string;
+  color: string;
+  cards: PracticeCardData[];
+}
 
 const { width } = Dimensions.get('window');
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
-const practiceCards: PracticeCardData[] = [
-  { id: 'wird',          title: 'Wird Tijāni',           arabicTitle: 'الوِرد التجاني',            description: 'Daily spiritual practice',           icon: Heart,    color: '#DC2626', lightColor: '#FEE2E2', route: '/wird',          time: 'Morning & Evening',       priority: 'high'   },
-  { id: 'wazifa',        title: 'Wazīfa Tijāniyya',      arabicTitle: 'الوَظِيفَة التِّجَانِيَّة', description: 'Daily spiritual practice',           icon: Star,     color: '#D97706', lightColor: '#FEF3C7', route: '/wazifa',        time: 'Once or twice a day',     priority: 'medium' },
-  { id: 'hadra-jumua',   title: 'Haḍratu-Jumūʿa',        arabicTitle: 'حضرة الجمعة',               description: 'Friday spiritual gathering',         icon: Users,    color: '#7C3AED', lightColor: '#EDE9FE', route: '/hadra-jumua',   time: 'Friday evening',          priority: 'medium' },
-  { id: 'hadra-map',     title: 'Hadara Map',             arabicTitle: 'خريطة الحضرة',              description: 'Find local Zawiya & gatherings',     image: require('../../assets/images/hadara-map-logo.png'), color: '#059669', lightColor: '#D1FAE5', route: '/hadra-map', time: 'Dhikr, Prayer & Zakat', priority: 'low' },
-  { id: 'names-allah',   title: "Asmā' Al-Husnā",         arabicTitle: 'أسماء الله الحسنى',          description: 'The 99 Beautiful Names of Allah',    icon: Sparkles, color: '#1e40af', lightColor: '#dbeafe', route: '/names',         time: 'Meditation & Reflection', priority: 'high',   isNew: true },
-  { id: 'names-nabi',    title: "Asmā' An-Nabī",          arabicTitle: 'أسماء النبي الشريف',         description: '201 Names of the Prophet ﷺ',         icon: Star,     color: '#B45309', lightColor: '#FEF3C7', route: '/asmaa-nabi',    time: 'Meditation & Reflection', priority: 'high',   isNew: true },
-  { id: 'dhikr-counter', title: 'Dhikr Counter',          arabicTitle: 'عداد الذكر',                description: 'Personal dhikr counter',             icon: Clock,    color: '#0891B2', lightColor: '#E0F2FE', route: '/dhikr-counter', time: 'Anytime',                 priority: 'medium', isNew: true },
-  { id: 'library',       title: 'Spiritual Library',      arabicTitle: 'المكتبة الروحية',           description: 'Sacred texts & wisdom',              icon: BookOpen, color: '#059669', lightColor: '#D1FAE5', route: '/library',       time: 'Anytime',                 priority: 'low'   },
+const ALL_PRACTICE_CARDS: PracticeCardData[] = [
+  { id: 'wird',          title: 'Wird Tijāni',        arabicTitle: 'الوِرد التجاني',            description: 'Daily spiritual practice',        icon: Heart,    color: '#DC2626', lightColor: '#FEE2E2', route: '/wird',          time: 'Morning & Evening',       priority: 'high'   },
+  { id: 'wazifa',        title: 'Wazīfa Tijāniyya',   arabicTitle: 'الوَظِيفَة التِّجَانِيَّة', description: 'Daily spiritual practice',        icon: Star,     color: '#D97706', lightColor: '#FEF3C7', route: '/wazifa',        time: 'Once or twice a day',     priority: 'medium' },
+  { id: 'hadra-jumua',   title: 'Haḍratu-Jumūʿa',     arabicTitle: 'حضرة الجمعة',               description: 'Friday spiritual gathering',      icon: Users,    color: '#7C3AED', lightColor: '#EDE9FE', route: '/hadra-jumua',   time: 'Friday evening',          priority: 'medium' },
+  { id: 'names-allah',   title: "Asmā' Al-Husnā",      arabicTitle: 'أسماء الله الحسنى',          description: 'The 99 Beautiful Names of Allah', icon: Sparkles, color: '#1e40af', lightColor: '#dbeafe', route: '/names',         time: 'Meditation & Reflection', priority: 'high',   isNew: true },
+  { id: 'names-nabi',    title: "Asmā' An-Nabī",        arabicTitle: 'أسماء النبي الشريف',         description: '201 Names of the Prophet ﷺ',      icon: Star,     color: '#B45309', lightColor: '#FEF3C7', route: '/asmaa-nabi',    time: 'Meditation & Reflection', priority: 'high',   isNew: true },
+  { id: 'dhikr-counter', title: 'Dhikr Counter',       arabicTitle: 'عداد الذكر',                description: 'Personal dhikr counter',          icon: Clock,    color: '#0891B2', lightColor: '#E0F2FE', route: '/dhikr-counter', time: 'Anytime',                 priority: 'medium', isNew: true },
+  { id: 'hadra-map',     title: 'Hadara Map',          arabicTitle: 'خريطة الحضرة',              description: 'Find local Zawiya & gatherings',  image: require('../../assets/images/hadara-map-logo.png'), color: '#059669', lightColor: '#D1FAE5', route: '/hadra-map', time: 'Dhikr, Prayer & Zakat', priority: 'low' },
+  { id: 'library',       title: 'Spiritual Library',   arabicTitle: 'المكتبة الروحية',           description: 'Sacred texts & wisdom',           icon: BookOpen, color: '#059669', lightColor: '#D1FAE5', route: '/library',       time: 'Anytime',                 priority: 'low'   },
+];
+
+const PRACTICE_CATEGORIES: PracticeCategory[] = [
+  {
+    id: 'awrad', label: 'Daily Awrād', arabicLabel: 'الأوراد اليومية', emoji: '🕌', color: '#DC2626',
+    cards: ALL_PRACTICE_CARDS.filter(c => ['wird', 'wazifa', 'hadra-jumua', 'dhikr-counter'].includes(c.id)),
+  },
+  {
+    id: 'resources', label: 'Resources', arabicLabel: 'الموارد', emoji: '📚', color: '#059669',
+    cards: ALL_PRACTICE_CARDS.filter(c => ['hadra-map', 'library'].includes(c.id)),
+  },
+  {
+    id: 'meditation', label: 'Meditation & Names', arabicLabel: 'التأمل والأسماء', emoji: '✨', color: '#1e40af',
+    cards: ALL_PRACTICE_CARDS.filter(c => ['names-allah', 'names-nabi'].includes(c.id)),
+  },
 ];
 
 const quickActions: QuickAction[] = [
@@ -75,7 +98,130 @@ const sl = StyleSheet.create({
   textDark: { color: '#F1F5F9' },
 });
 
-// ─── Featured card (generic) ──────────────────────────────────────────────────
+// ─── Category Header ──────────────────────────────────────────────────────────
+function CategoryHeader({
+  category,
+  dark,
+  index,
+}: {
+  category: PracticeCategory;
+  dark: boolean;
+  index: number;
+}) {
+  return (
+    <View style={[ch.wrap, index > 0 && ch.wrapSpaced]}>
+      {/* Left accent bar — hauteur fixe alignée sur la row */}
+      <View style={[ch.accentBar, { backgroundColor: category.color }]} />
+
+      {/* Main content */}
+      <View style={ch.content}>
+        <View style={ch.topRow}>
+          <View style={[ch.iconBox, { backgroundColor: category.color + '18' }]}>
+            <Text style={ch.emoji}>{category.emoji}</Text>
+          </View>
+
+          <View style={ch.labelBlock}>
+            <Text style={[ch.label, { color: category.color }]}>{category.label}</Text>
+            <Text style={[ch.arabicLabel, dark && ch.arabicLabelDark]}>{category.arabicLabel}</Text>
+          </View>
+
+          <View style={[ch.countBadge, { backgroundColor: category.color + '14', borderColor: category.color + '28' }]}>
+            <Text style={[ch.countText, { color: category.color }]}>{category.cards.length}</Text>
+            <Text style={[ch.countSub, { color: category.color + 'B0' }]}>
+              {category.cards.length === 1 ? 'practice' : 'practices'}
+            </Text>
+          </View>
+        </View>
+
+        {/* Divider line */}
+        <LinearGradient
+          colors={[category.color + 'B0', category.color + '20', 'transparent']}
+          start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+          style={ch.divider}
+        />
+      </View>
+    </View>
+  );
+}
+
+const ch = StyleSheet.create({
+  wrap: {
+    flexDirection: 'row',
+    alignItems: 'stretch',
+    marginBottom: 14,
+  },
+  wrapSpaced: {
+    marginTop: 6,
+  },
+  // Barre verticale gauche — largeur fixe, hauteur déterminée par alignItems: 'stretch'
+  accentBar: {
+    width: 3,
+    borderRadius: 2,
+    marginRight: 12,
+  },
+  content: {
+    flex: 1,
+  },
+  topRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 8,
+  },
+  iconBox: {
+    width: 38,
+    height: 38,
+    borderRadius: 11,
+    justifyContent: 'center',
+    alignItems: 'center',
+    flexShrink: 0,
+  },
+  emoji: {
+    fontSize: 18,
+  },
+  labelBlock: {
+    flex: 1,
+  },
+  label: {
+    fontSize: 15,
+    fontWeight: '800',
+    letterSpacing: -0.3,
+    marginBottom: 2,
+  },
+  arabicLabel: {
+    fontSize: 11,
+    color: '#94A3B8',
+    fontWeight: '600',
+  },
+  arabicLabelDark: {
+    color: '#64748B',
+  },
+  countBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 10,
+    borderWidth: 1,
+    alignItems: 'center',
+    flexShrink: 0,
+  },
+  countText: {
+    fontSize: 16,
+    fontWeight: '900',
+    lineHeight: 18,
+  },
+  countSub: {
+    fontSize: 8,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+  },
+  divider: {
+    height: 1.5,
+    borderRadius: 1,
+  },
+});
+
+// ─── Featured card ────────────────────────────────────────────────────────────
 function FeaturedCard({
   gradientColors, icon, arabic, title, sub, onPress, shadowColor,
 }: {
@@ -85,15 +231,8 @@ function FeaturedCard({
   onPress: () => void; shadowColor: string;
 }) {
   return (
-    <TouchableOpacity
-      style={[fc.wrap, { shadowColor }]}
-      onPress={onPress} activeOpacity={0.85}
-    >
-      <LinearGradient
-        colors={gradientColors}
-        start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-        style={fc.gradient}
-      >
+    <TouchableOpacity style={[fc.wrap, { shadowColor }]} onPress={onPress} activeOpacity={0.85}>
+      <LinearGradient colors={gradientColors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={fc.gradient}>
         <View style={fc.deco} pointerEvents="none">
           <View style={fc.c1} /><View style={fc.c2} />
         </View>
@@ -265,25 +404,35 @@ export default function HomeScreen() {
           />
         </View>
 
+        {/* ── Categorized Practice Cards ── */}
         <View style={s.section}>
           <SectionLabel dark={dark}>Spiritual Practices</SectionLabel>
-          <View style={s.grid}>
-            {practiceCards.map(card => (
-              <PracticeCard
-                key={card.id}
-                card={card}
-                progress={getCardProgress(card.id)}
-                onPress={handleCardPress}
-                darkMode={dark}
-                isCompletedToday={isCardCompletedToday(card.id)}
-                completionsToday={getCompletionsToday(card.id)}
-                targetPerDay={getTargetPerDay(card.id)}
-              />
-            ))}
-          </View>
+
+          {PRACTICE_CATEGORIES.map((category, catIndex) => (
+            <View key={category.id} style={s.categoryBlock}>
+              <CategoryHeader category={category} dark={dark} index={catIndex} />
+              <View style={s.grid}>
+                {category.cards.map(card => (
+                  <PracticeCard
+                    key={card.id}
+                    card={card}
+                    progress={getCardProgress(card.id)}
+                    onPress={handleCardPress}
+                    darkMode={dark}
+                    isCompletedToday={isCardCompletedToday(card.id)}
+                    completionsToday={getCompletionsToday(card.id)}
+                    targetPerDay={getTargetPerDay(card.id)}
+                  />
+                ))}
+              </View>
+              {catIndex < PRACTICE_CATEGORIES.length - 1 && (
+                <View style={[s.catDivider, dark && s.catDividerDark]} />
+              )}
+            </View>
+          ))}
         </View>
 
-        {/* Featured — Asmā' Al-Husnā */}
+        {/* ── Featured Cards ── */}
         <FeaturedCard
           gradientColors={['#1e3a8a', '#1e40af', '#2563eb']}
           icon={<Sparkles color="#FFFFFF" size={24} strokeWidth={2} />}
@@ -294,7 +443,6 @@ export default function HomeScreen() {
           shadowColor="#1e40af"
         />
 
-        {/* Featured — Asmā' An-Nabī ﷺ */}
         <FeaturedCard
           gradientColors={['#78350F', '#92400E', '#B45309']}
           icon={<Star color="#FDE68A" size={24} strokeWidth={2} />}
@@ -305,7 +453,6 @@ export default function HomeScreen() {
           shadowColor="#92400E"
         />
 
-        {/* Featured — Library */}
         <FeaturedCard
           gradientColors={[GREEN_DARK, GREEN_MID, GREEN_LIGHT]}
           icon={<BookOpen color="#FFFFFF" size={22} strokeWidth={2} />}
@@ -325,11 +472,14 @@ export default function HomeScreen() {
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const s = StyleSheet.create({
-  root:         { flex: 1, backgroundColor: '#F8FAFC' },
-  rootDark:     { backgroundColor: '#0F172A' },
-  scroll:       { flex: 1 },
-    content:      { paddingBottom: 20 },
-  quickSection: { marginTop: 18 },
-  section:      { marginTop: 26, paddingHorizontal: 16 },
-  grid:         { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', gap: 14 },
+  root:           { flex: 1, backgroundColor: '#F8FAFC' },
+  rootDark:       { backgroundColor: '#0F172A' },
+  scroll:         { flex: 1 },
+  content:        { paddingBottom: 20 },
+  quickSection:   { marginTop: 18 },
+  section:        { marginTop: 26, paddingHorizontal: 16 },
+  categoryBlock:  {},
+  grid:           { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', gap: 14 },
+  catDivider:     { height: 1, backgroundColor: '#E2E8F0', marginVertical: 22 },
+  catDividerDark: { backgroundColor: '#1E293B' },
 });
