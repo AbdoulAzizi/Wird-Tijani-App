@@ -10,7 +10,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import {
   Search, Heart, Bookmark, Share2, ChevronLeft, ChevronRight,
-  X, Filter, Sparkles, BookOpen, Eye,
+  X, Filter, Sparkles, BookOpen, Eye, ArrowUpDown, Shuffle, ArrowDown, ArrowUp,
 } from 'lucide-react-native';
 import { useApp } from '../../contexts/AppContext';
 import { LayoutActionsContext } from '../../contexts/LayoutActionsContext';
@@ -29,6 +29,174 @@ import {
 
 const { width, height } = Dimensions.get('window');
 const CARD_WIDTH = width - 32;
+
+// ─── Reading Order ─────────────────────────────────────────────────────────────
+
+export type ReadingOrder =
+  | 'sequential'   // 1 → 201, default
+  | 'reverse'      // 201 → 1
+  | 'random'       // shuffled
+  | 'by_category'; // grouped by category
+
+const ORDER_OPTIONS: Array<{
+  key: ReadingOrder;
+  label: string;
+  sublabel: string;
+  icon: React.ReactNode;
+  color: string;
+}> = [
+  {
+    key: 'sequential',
+    label: 'Sequential',
+    sublabel: 'Name 1 to 201, in order',
+    icon: <ArrowDown color="#059669" size={18} strokeWidth={2} />,
+    color: '#059669',
+  },
+  {
+    key: 'reverse',
+    label: 'Reverse Order',
+    sublabel: 'Name 201 down to 1',
+    icon: <ArrowUp color="#1E40AF" size={18} strokeWidth={2} />,
+    color: '#1E40AF',
+  },
+  {
+    key: 'random',
+    label: 'Random / Shuffle',
+    sublabel: 'A new order every session',
+    icon: <Shuffle color="#7C3AED" size={18} strokeWidth={2} />,
+    color: '#7C3AED',
+  },
+  {
+    key: 'by_category',
+    label: 'By Category',
+    sublabel: 'Grouped by theme',
+    icon: <ArrowUpDown color="#D97706" size={18} strokeWidth={2} />,
+    color: '#D97706',
+  },
+];
+
+function applyOrder(names: NabiName[], order: ReadingOrder): NabiName[] {
+  switch (order) {
+    case 'reverse':     return [...names].reverse();
+    case 'random':      return [...names].sort(() => Math.random() - 0.5);
+    case 'by_category': {
+      const cats: NabiNameCategory[] = ['quran', 'essence', 'honor', 'mercy', 'guidance', 'mission', 'character', 'intercession'];
+      return cats.flatMap(cat => names.filter(n => n.category === cat));
+    }
+    default:            return [...names];
+  }
+}
+
+// ─── Order Modal ───────────────────────────────────────────────────────────────
+
+const OrderModal = memo(({
+  visible, onClose, activeOrder, onSelectOrder,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  activeOrder: ReadingOrder;
+  onSelectOrder: (o: ReadingOrder) => void;
+}) => {
+  const slide = useRef(new Animated.Value(300)).current;
+  const fade  = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.spring(slide, { toValue: visible ? 0 : 300, useNativeDriver: true, damping: 20, stiffness: 180 }),
+      Animated.timing(fade,  { toValue: visible ? 1 : 0, duration: visible ? 200 : 150, useNativeDriver: true }),
+    ]).start();
+  }, [visible]);
+
+  if (!visible) return null;
+
+  return (
+    <Modal transparent visible animationType="none" onRequestClose={onClose}>
+      <Animated.View style={[om.overlay, { opacity: fade }]}>
+        <Pressable style={{ flex: 1 }} onPress={onClose} />
+      </Animated.View>
+      <Animated.View style={[om.sheet, { transform: [{ translateY: slide }] }]}>
+        {/* Accent bar */}
+        <LinearGradient
+          colors={['#7C3AED', '#1E40AF', '#059669']}
+          start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+          style={om.accent}
+        />
+        <View style={om.handle} />
+
+        <View style={om.header}>
+          <View style={om.headerLeft}>
+            <ArrowUpDown color="#7C3AED" size={18} strokeWidth={2} />
+            <Text style={om.title}>Reading Order</Text>
+          </View>
+          <TouchableOpacity onPress={onClose} style={om.closeBtn}>
+            <X color="#64748B" size={18} strokeWidth={2.5} />
+          </TouchableOpacity>
+        </View>
+
+        <Text style={om.subtitle}>
+          Choose how the 201 names are presented during your meditation session.
+        </Text>
+
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={om.scroll}
+        >
+          {ORDER_OPTIONS.map(opt => {
+            const isActive = activeOrder === opt.key;
+            return (
+              <TouchableOpacity
+                key={opt.key}
+                style={[om.item, isActive && { borderColor: opt.color, backgroundColor: opt.color + '0D' }]}
+                onPress={() => { haptic('medium'); onSelectOrder(opt.key); onClose(); }}
+                activeOpacity={0.8}
+              >
+                <View style={[om.iconWrap, { backgroundColor: opt.color + '18' }]}>
+                  {opt.icon}
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[om.itemLabel, isActive && { color: opt.color, fontWeight: '800' }]}>
+                    {opt.label}
+                  </Text>
+                  <Text style={om.itemSub}>{opt.sublabel}</Text>
+                </View>
+                {isActive && (
+                  <View style={[om.activeDot, { backgroundColor: opt.color }]} />
+                )}
+              </TouchableOpacity>
+            );
+          })}
+
+          {/* Info note */}
+          <View style={om.note}>
+            <Text style={om.noteText}>
+              ✦ Changing the order resets your current position to the first name in the new sequence.
+            </Text>
+          </View>
+        </ScrollView>
+      </Animated.View>
+    </Modal>
+  );
+});
+
+const om = StyleSheet.create({
+  overlay:    { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.45)' },
+  sheet:      { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#FFFFFF', borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingBottom: Platform.OS === 'ios' ? 36 : 24, maxHeight: height * 0.72, overflow: 'hidden' },
+  accent:     { height: 3 },
+  handle:     { width: 36, height: 4, borderRadius: 2, backgroundColor: '#D1D5DB', alignSelf: 'center', marginTop: 12, marginBottom: 4 },
+  header:     { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingTop: 10, paddingBottom: 6 },
+  headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  title:      { fontSize: 17, fontWeight: '800', color: '#1E293B' },
+  closeBtn:   { width: 32, height: 32, borderRadius: 16, backgroundColor: '#F1F5F9', justifyContent: 'center', alignItems: 'center' },
+  subtitle:   { fontSize: 12, color: '#94A3B8', paddingHorizontal: 20, marginBottom: 4, lineHeight: 18 },
+  scroll:     { padding: 16, gap: 10 },
+  item:       { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 16, borderRadius: 16, borderWidth: 1.5, borderColor: '#F1F5F9', backgroundColor: '#FAFAFA' },
+  iconWrap:   { width: 42, height: 42, borderRadius: 12, justifyContent: 'center', alignItems: 'center', flexShrink: 0 },
+  itemLabel:  { fontSize: 15, fontWeight: '700', color: '#1E293B', marginBottom: 2 },
+  itemSub:    { fontSize: 12, color: '#94A3B8', fontWeight: '500' },
+  activeDot:  { width: 10, height: 10, borderRadius: 5 },
+  note:       { backgroundColor: '#FEF9EC', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: '#FDE68A', marginTop: 4 },
+  noteText:   { fontSize: 12, color: '#92400E', lineHeight: 18, fontStyle: 'italic' },
+});
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -56,7 +224,6 @@ const OpeningBanner = memo(({ onClose }: { onClose: () => void }) => {
     <Animated.View style={[ob.overlay, { opacity: fade }]}>
       <Animated.View style={[ob.card, { transform: [{ scale }] }]}>
         <LinearGradient colors={['#064E3B', '#065F46', '#047857']} style={ob.gradient}>
-          {/* Deco circles */}
           <View style={ob.circle1} />
           <View style={ob.circle2} />
           <View style={ob.circle3} />
@@ -168,7 +335,6 @@ const NameDetailCard = memo(({
         {/* Hero card */}
         <View style={dc.heroShadow}>
           <LinearGradient colors={[g1, g2, color]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={dc.hero}>
-            {/* Deco */}
             <View style={dc.deco1} /><View style={dc.deco2} /><View style={dc.deco3} />
 
             {/* Top row */}
@@ -417,24 +583,40 @@ const fm = StyleSheet.create({
 
 // ─── Progress Bar ─────────────────────────────────────────────────────────────
 
-const NabiProgressBar = memo(({ current, total }: { current: number; total: number }) => {
-  const pct = Math.round((current / total) * 100);
+const NabiProgressBar = memo(({ current, total, order }: {
+  current: number; total: number; order: ReadingOrder;
+}) => {
+  const pct   = Math.round((current / total) * 100);
   const color = CATEGORY_COLORS[asmaaAnNabi[current - 1]?.category] ?? '#059669';
+  const orderOpt = ORDER_OPTIONS.find(o => o.key === order);
+
   return (
     <View style={pb.wrap}>
       <View style={pb.track}>
         <View style={[pb.fill, { width: `${pct}%` as any, backgroundColor: color }]} />
       </View>
-      <Text style={pb.label}>{current} / {total}</Text>
+      <View style={pb.right}>
+        <Text style={pb.label}>{current} / {total}</Text>
+        {order !== 'sequential' && (
+          <View style={[pb.orderTag, { backgroundColor: (orderOpt?.color ?? '#059669') + '18' }]}>
+            <Text style={[pb.orderTagText, { color: orderOpt?.color ?? '#059669' }]}>
+              {order === 'random' ? '🔀' : order === 'reverse' ? '↑' : '⊞'} {orderOpt?.label}
+            </Text>
+          </View>
+        )}
+      </View>
     </View>
   );
 });
 
 const pb = StyleSheet.create({
-  wrap:  { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 8 },
-  track: { flex: 1, height: 4, backgroundColor: '#E2E8F0', borderRadius: 2, overflow: 'hidden' },
-  fill:  { height: '100%', borderRadius: 2 },
-  label: { fontSize: 11, fontWeight: '700', color: '#94A3B8', minWidth: 44, textAlign: 'right' },
+  wrap:        { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 8 },
+  track:       { flex: 1, height: 4, backgroundColor: '#E2E8F0', borderRadius: 2, overflow: 'hidden' },
+  fill:        { height: '100%', borderRadius: 2 },
+  right:       { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  label:       { fontSize: 11, fontWeight: '700', color: '#94A3B8', minWidth: 44, textAlign: 'right' },
+  orderTag:    { paddingHorizontal: 7, paddingVertical: 2, borderRadius: 8 },
+  orderTagText:{ fontSize: 10, fontWeight: '700' },
 });
 
 // ─── Main Screen ──────────────────────────────────────────────────────────────
@@ -452,17 +634,17 @@ export default function AsmaaAnNabiScreen() {
   const [bookmarks,      setBookmarks]      = useState<Set<number>>(new Set());
   const [filter,         setFilter]         = useState<NabiNameCategory | 'all' | 'favorites' | 'bookmarks'>('all');
   const [searchQuery,    setSearchQuery]    = useState('');
+  const [readingOrder,   setReadingOrder]   = useState<ReadingOrder>('sequential');
   const [showOpening,    setShowOpening]    = useState(true);
   const [showFilter,     setShowFilter]     = useState(false);
+  const [showOrderModal, setShowOrderModal] = useState(false);
   const [showSearch,     setShowSearch]     = useState(false);
   const [showMeditation, setShowMeditation] = useState(false);
 
-  const scrollRef  = useRef<ScrollView>(null);   // for the meditation ScrollView
-  const flatRef    = useRef<FlatList<NabiName>>(null);  // for the list FlatList
-  const fadeAnim   = useRef(new Animated.Value(1)).current;
-  const scaleAnim  = useRef(new Animated.Value(1)).current;
+  const scrollRef    = useRef<ScrollView>(null);
+  const flatRef      = useRef<FlatList<NabiName>>(null);
 
-  // ── Filtered names ──
+  // ── Filtered + ordered names ──
   const filteredNames = useMemo(() => {
     let names = asmaaAnNabi;
     if (filter === 'favorites') names = names.filter(n => favorites.has(n.id));
@@ -476,52 +658,95 @@ export default function AsmaaAnNabiScreen() {
         n.english.toLowerCase().includes(q)
       );
     }
-    return names;
-  }, [filter, searchQuery, favorites, bookmarks]);
+    return applyOrder(names, readingOrder);
+  }, [filter, searchQuery, favorites, bookmarks, readingOrder]);
 
-  const currentName = filteredNames[currentIndex] ?? asmaaAnNabi[0];
+  // ── displayedName: the name the card shows. Lives in a ref so it can be
+  //    swapped synchronously while the overlay is opaque — zero flicker. ──
+  const displayedNameRef = useRef<NabiName>(filteredNames[0] ?? asmaaAnNabi[0]);
+  const [, forceRender]  = useState(0);
+  const displayedName    = displayedNameRef.current;
 
-  // ── Navigation ──
-  const animateTransition = useCallback((cb: () => void) => {
-    Animated.parallel([
-      Animated.timing(fadeAnim,  { toValue: 0, duration: 180, useNativeDriver: true }),
-      Animated.timing(scaleAnim, { toValue: 0.94, duration: 180, useNativeDriver: true }),
-    ]).start(() => {
-      cb();
-      Animated.parallel([
-        Animated.timing(fadeAnim,  { toValue: 1, duration: 260, useNativeDriver: true }),
-        Animated.spring(scaleAnim, { toValue: 1, tension: 60, friction: 9, useNativeDriver: true }),
-      ]).start();
+  // ── Overlay: a thin opaque layer that covers the card during the swap.
+  //    It fades in → content swaps instantly → fades out. The user only
+  //    ever sees a brief blink-free dimming, not a blank card. ──
+  const overlayOpacity  = useRef(new Animated.Value(0)).current;
+  const isBusy          = useRef(false);
+
+  // ── Fade anim kept for NameDetailCard's entrance only (first load) ──
+  const fadeAnim  = useRef(new Animated.Value(1)).current;
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+
+  // Reset displayedName when filter/order changes
+  useEffect(() => {
+    displayedNameRef.current = filteredNames[0] ?? asmaaAnNabi[0];
+    forceRender(n => n + 1);
+    scrollRef.current?.scrollTo({ y: 0, animated: false });
+  }, [filteredNames]);
+
+  // ── Handle order change ──
+  const handleOrderChange = useCallback((order: ReadingOrder) => {
+    haptic('medium');
+    setReadingOrder(order);
+    setCurrentIndex(0);
+  }, []);
+
+  // ── Core navigation: overlay fades in → swap → overlay fades out ──
+  const navigate = useCallback((nextIndex: number) => {
+    if (isBusy.current) return;
+    isBusy.current = true;
+
+    const nextName = filteredNames[nextIndex] ?? filteredNames[0] ?? asmaaAnNabi[0];
+
+    // Phase 1: fade overlay IN (covers the card)
+    Animated.timing(overlayOpacity, {
+      toValue: 1,
+      duration: 120,
+      useNativeDriver: true,
+    }).start(() => {
+      // Phase 2: swap content while overlay is fully opaque (invisible to user)
+      displayedNameRef.current = nextName;
+      setCurrentIndex(nextIndex);
+      forceRender(n => n + 1);
+      scrollRef.current?.scrollTo({ y: 0, animated: false });
+
+      // Phase 3: fade overlay OUT (reveal new content)
+      Animated.timing(overlayOpacity, {
+        toValue: 0,
+        duration: 180,
+        useNativeDriver: true,
+      }).start(() => {
+        isBusy.current = false;
+      });
     });
-  }, [fadeAnim, scaleAnim]);
+  }, [filteredNames, overlayOpacity]);
 
   const goNext = useCallback(() => {
-    if (currentIndex < filteredNames.length - 1) {
+    if (!isBusy.current && currentIndex < filteredNames.length - 1) {
       haptic('light');
-      animateTransition(() => {
-        setCurrentIndex(i => i + 1);
-        scrollRef.current?.scrollTo({ y: 0, animated: false });
-      });
+      navigate(currentIndex + 1);
     }
-  }, [currentIndex, filteredNames.length, animateTransition]);
+  }, [currentIndex, filteredNames.length, navigate]);
 
   const goPrev = useCallback(() => {
-    if (currentIndex > 0) {
+    if (!isBusy.current && currentIndex > 0) {
       haptic('light');
-      animateTransition(() => {
-        setCurrentIndex(i => i - 1);
-        scrollRef.current?.scrollTo({ y: 0, animated: false });
-      });
+      navigate(currentIndex - 1);
     }
-  }, [currentIndex, animateTransition]);
+  }, [currentIndex, navigate]);
 
-  // ── Pan responder (swipe) ──
+  // ── Pan responder ──
+  const goNextRef = useRef(goNext);
+  const goPrevRef = useRef(goPrev);
+  useEffect(() => { goNextRef.current = goNext; }, [goNext]);
+  useEffect(() => { goPrevRef.current = goPrev; }, [goPrev]);
+
   const panResponder = useRef(
     PanResponder.create({
       onMoveShouldSetPanResponder: (_, gs) => Math.abs(gs.dx) > Math.abs(gs.dy) && Math.abs(gs.dx) > 25,
       onPanResponderRelease: (_, gs) => {
-        if (gs.dx < -50) goNext();
-        else if (gs.dx > 50) goPrev();
+        if (gs.dx < -50) goNextRef.current();
+        else if (gs.dx > 50) goPrevRef.current();
       },
     })
   ).current;
@@ -545,20 +770,25 @@ export default function AsmaaAnNabiScreen() {
   }, []);
 
   // ── Header actions ──
+  const activeOrderOpt = ORDER_OPTIONS.find(o => o.key === readingOrder);
+
   const menuActions = useMemo(() => [
-    { key: 'meditation', label: 'Deep Meditation', icon: <Eye color="#7C3AED" size={16} strokeWidth={2} />, onPress: () => setShowMeditation(true) },
-    { key: 'card',       label: 'Card View',       icon: <Sparkles color="#059669" size={16} strokeWidth={2} />, onPress: () => setViewMode('meditation') },
-    { key: 'list',       label: 'List View',       icon: <BookOpen color="#059669" size={16} strokeWidth={2} />, onPress: () => setViewMode('list') },
-    { key: 'filter',     label: 'Filter Names',    icon: <Filter   color="#7C3AED" size={16} strokeWidth={2} />, onPress: () => setShowFilter(true), dividerAfter: true },
-    { key: 'fav',        label: `Favorites (${favorites.size})`, icon: <Heart color="#F87171" size={16} strokeWidth={2} />, onPress: () => { setFilter('favorites'); setViewMode('list'); } },
+    { key: 'meditation', label: 'Deep Meditation',  icon: <Eye      color="#7C3AED" size={16} strokeWidth={2} />, onPress: () => setShowMeditation(true) },
+    { key: 'card',       label: 'Card View',        icon: <Sparkles color="#059669" size={16} strokeWidth={2} />, onPress: () => setViewMode('meditation') },
+    { key: 'list',       label: 'List View',        icon: <BookOpen color="#059669" size={16} strokeWidth={2} />, onPress: () => setViewMode('list') },
+    { key: 'order',      label: `Order: ${activeOrderOpt?.label ?? 'Sequential'}`, icon: <ArrowUpDown color="#D97706" size={16} strokeWidth={2} />, onPress: () => setShowOrderModal(true) },
+    { key: 'filter',     label: 'Filter Names',     icon: <Filter   color="#7C3AED" size={16} strokeWidth={2} />, onPress: () => setShowFilter(true), dividerAfter: true },
+    { key: 'fav',        label: `Favorites (${favorites.size})`, icon: <Heart    color="#F87171" size={16} strokeWidth={2} />, onPress: () => { setFilter('favorites'); setViewMode('list'); } },
     { key: 'bkm',        label: `Bookmarks (${bookmarks.size})`, icon: <Bookmark color="#F59E0B" size={16} strokeWidth={2} />, onPress: () => { setFilter('bookmarks'); setViewMode('list'); } },
-  ], [favorites.size, bookmarks.size]);
+  ], [favorites.size, bookmarks.size, activeOrderOpt]);
 
   useRegisterHeaderActions('/asmaa-nabi', menuActions);
 
   const subtitle = viewMode === 'meditation'
     ? `${currentIndex + 1} of ${filteredNames.length}`
     : `${filteredNames.length} names`;
+
+  const orderColor = activeOrderOpt?.color ?? '#059669';
 
   return (
     <View style={{ flex: 1, backgroundColor: dark ? '#0F172A' : '#F8FAFC' }}>
@@ -608,6 +838,24 @@ export default function AsmaaAnNabiScreen() {
             <Text style={[ss.toolBtnText, viewMode === 'list' && ss.toolBtnTextActive]}>Browse</Text>
           </TouchableOpacity>
           <View style={ss.sep} />
+
+          {/* ── Reading Order button ── */}
+          <TouchableOpacity
+            style={[ss.toolBtn, { borderColor: orderColor + '60', backgroundColor: orderColor + '0D' }]}
+            onPress={() => setShowOrderModal(true)}
+          >
+            <ArrowUpDown color={orderColor} size={13} strokeWidth={2} />
+            <Text style={[ss.toolBtnText, { color: orderColor }]}>
+              {readingOrder === 'sequential' ? 'Order' :
+               readingOrder === 'reverse'   ? 'Rev.' :
+               readingOrder === 'random'    ? 'Shuffle' : 'By Cat.'}
+            </Text>
+            {readingOrder !== 'sequential' && (
+              <View style={[ss.orderActiveDot, { backgroundColor: orderColor }]} />
+            )}
+          </TouchableOpacity>
+
+          <View style={ss.sep} />
           <TouchableOpacity style={ss.toolBtn} onPress={() => setShowSearch(s => !s)}>
             <Search color="#64748B" size={13} strokeWidth={2} />
             <Text style={ss.toolBtnText}>Search</Text>
@@ -628,25 +876,40 @@ export default function AsmaaAnNabiScreen() {
 
       {viewMode === 'meditation' ? (
         <>
-          <NabiProgressBar current={currentIndex + 1} total={filteredNames.length} />
+          <NabiProgressBar
+            current={currentIndex + 1}
+            total={filteredNames.length}
+            order={readingOrder}
+          />
 
-          <ScrollView
-            ref={scrollRef}
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ paddingBottom: 140, paddingTop: 8 }}
-          >
-            <NameDetailCard
-              name={currentName}
-              isFavorite={favorites.has(currentName.id)}
-              isBookmarked={bookmarks.has(currentName.id)}
-              onFavorite={() => toggleFavorite(currentName.id)}
-              onBookmark={() => toggleBookmark(currentName.id)}
-              onShare={() => shareName(currentName)}
-              panHandlers={panResponder.panHandlers}
-              fadeAnim={fadeAnim}
-              scaleAnim={scaleAnim}
+          {/* Single card + invisible overlay.
+              Overlay fades IN → content swaps instantly → overlay fades OUT.
+              The user sees a seamless blink-free transition, never a blank card. */}
+          <View style={{ flex: 1 }}>
+            <ScrollView
+              ref={scrollRef}
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={{ paddingBottom: 140, paddingTop: 8 }}
+            >
+              <NameDetailCard
+                name={displayedName}
+                isFavorite={favorites.has(displayedName.id)}
+                isBookmarked={bookmarks.has(displayedName.id)}
+                onFavorite={() => toggleFavorite(displayedName.id)}
+                onBookmark={() => toggleBookmark(displayedName.id)}
+                onShare={() => shareName(displayedName)}
+                panHandlers={panResponder.panHandlers}
+                fadeAnim={fadeAnim}
+                scaleAnim={scaleAnim}
+              />
+            </ScrollView>
+
+            {/* Transition overlay — covers the card during content swap */}
+            <Animated.View
+              pointerEvents="none"
+              style={[styles.transitionOverlay, { opacity: overlayOpacity }]}
             />
-          </ScrollView>
+          </View>
 
           {/* Navigation controls */}
           <View style={nc.wrap}>
@@ -663,7 +926,19 @@ export default function AsmaaAnNabiScreen() {
               <View style={nc.center}>
                 <Text style={nc.centerNum}>{currentIndex + 1}</Text>
                 <Text style={nc.centerOf}>of {filteredNames.length}</Text>
-                <Text style={nc.swipeHint}>← swipe →</Text>
+                {/* Tappable order indicator in nav bar */}
+                <TouchableOpacity
+                  style={[nc.orderChip, { backgroundColor: orderColor + '18', borderColor: orderColor + '40' }]}
+                  onPress={() => setShowOrderModal(true)}
+                  activeOpacity={0.75}
+                >
+                  <ArrowUpDown color={orderColor} size={9} strokeWidth={2.5} />
+                  <Text style={[nc.orderChipText, { color: orderColor }]}>
+                    {readingOrder === 'sequential' ? 'Sequential' :
+                     readingOrder === 'reverse'   ? 'Reverse' :
+                     readingOrder === 'random'    ? 'Shuffled' : 'By Category'}
+                  </Text>
+                </TouchableOpacity>
               </View>
 
               <TouchableOpacity
@@ -690,7 +965,7 @@ export default function AsmaaAnNabiScreen() {
                 const idx = filteredNames.indexOf(item);
                 if (idx !== -1) {
                   setCurrentIndex(idx);
-                  setShowMeditation(true); // open deep meditation modal from list tap
+                  setShowMeditation(true);
                 }
               }}
             />
@@ -700,7 +975,18 @@ export default function AsmaaAnNabiScreen() {
               <Text style={{ fontSize: 22, fontWeight: '900', color: '#1E293B', marginBottom: 4 }}>
                 {filter === 'all' ? 'All 201 Names' : CATEGORY_LABELS[filter as NabiNameCategory] ?? filter}
               </Text>
-              <Text style={{ fontSize: 13, color: '#94A3B8' }}>{filteredNames.length} names found</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <Text style={{ fontSize: 13, color: '#94A3B8' }}>{filteredNames.length} names</Text>
+                {/* Order indicator in list header */}
+                <TouchableOpacity
+                  style={[ss.listOrderBadge, { backgroundColor: orderColor + '18', borderColor: orderColor + '40' }]}
+                  onPress={() => setShowOrderModal(true)}
+                  activeOpacity={0.8}
+                >
+                  <ArrowUpDown color={orderColor} size={10} strokeWidth={2.5} />
+                  <Text style={[ss.listOrderText, { color: orderColor }]}>{activeOrderOpt?.label}</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           )}
           ListEmptyComponent={(
@@ -722,10 +1008,18 @@ export default function AsmaaAnNabiScreen() {
         onSelectFilter={f => { setFilter(f); setCurrentIndex(0); }}
       />
 
+      {/* ── Reading Order Modal ── */}
+      <OrderModal
+        visible={showOrderModal}
+        onClose={() => setShowOrderModal(false)}
+        activeOrder={readingOrder}
+        onSelectOrder={handleOrderChange}
+      />
+
       {/* ── Deep Meditation Modal ── */}
       <MeditationModal
         visible={showMeditation}
-        name={currentName}
+        name={displayedName}
         dark={dark}
         onClose={() => setShowMeditation(false)}
         onPrev={goPrev}
@@ -739,18 +1033,30 @@ export default function AsmaaAnNabiScreen() {
   );
 }
 
+// ─── Transition overlay style ────────────────────────────────────────────────
+const styles = StyleSheet.create({
+  transitionOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: '#F8FAFC', // matches screen background
+    zIndex: 10,
+  },
+});
+
 // ─── Toolbar styles ───────────────────────────────────────────────────────────
 const ss = StyleSheet.create({
-  searchBar:          { flexDirection: 'row', alignItems: 'center', gap: 10, marginHorizontal: 16, marginTop: 10, backgroundColor: '#FFFFFF', borderRadius: 14, paddingHorizontal: 14, paddingVertical: 11, borderWidth: 1, borderColor: '#E2E8F0' },
-  searchInput:        { flex: 1, fontSize: 14, color: '#1E293B' },
-  toolbar:            { paddingVertical: 10 },
-  toolBtn:            { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 12, backgroundColor: '#FFFFFF', borderWidth: 1.5, borderColor: '#E2E8F0' },
-  toolBtnActive:      { backgroundColor: '#059669', borderColor: '#059669' },
-  toolBtnMeditate:    { backgroundColor: '#4C1D95', borderColor: '#4C1D95' },
-  toolBtnText:        { fontSize: 12, fontWeight: '700', color: '#64748B' },
-  toolBtnTextActive:  { color: '#FFFFFF' },
-  sep:                { width: 1, backgroundColor: '#E2E8F0', marginHorizontal: 4, alignSelf: 'stretch' },
-  filterDot:          { position: 'absolute', top: 4, right: 4, width: 7, height: 7, borderRadius: 3.5, backgroundColor: '#7C3AED' },
+  searchBar:        { flexDirection: 'row', alignItems: 'center', gap: 10, marginHorizontal: 16, marginTop: 10, backgroundColor: '#FFFFFF', borderRadius: 14, paddingHorizontal: 14, paddingVertical: 11, borderWidth: 1, borderColor: '#E2E8F0' },
+  searchInput:      { flex: 1, fontSize: 14, color: '#1E293B' },
+  toolbar:          { paddingVertical: 10 },
+  toolBtn:          { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 12, backgroundColor: '#FFFFFF', borderWidth: 1.5, borderColor: '#E2E8F0' },
+  toolBtnActive:    { backgroundColor: '#059669', borderColor: '#059669' },
+  toolBtnMeditate:  { backgroundColor: '#4C1D95', borderColor: '#4C1D95' },
+  toolBtnText:      { fontSize: 12, fontWeight: '700', color: '#64748B' },
+  toolBtnTextActive:{ color: '#FFFFFF' },
+  sep:              { width: 1, backgroundColor: '#E2E8F0', marginHorizontal: 4, alignSelf: 'stretch' },
+  filterDot:        { position: 'absolute', top: 4, right: 4, width: 7, height: 7, borderRadius: 3.5, backgroundColor: '#7C3AED' },
+  orderActiveDot:   { position: 'absolute', top: 4, right: 4, width: 7, height: 7, borderRadius: 3.5 },
+  listOrderBadge:   { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 10, borderWidth: 1 },
+  listOrderText:    { fontSize: 11, fontWeight: '700' },
 });
 
 // ─── Nav controls styles ──────────────────────────────────────────────────────
@@ -762,8 +1068,9 @@ const nc = StyleSheet.create({
   navBtnDisabled: { backgroundColor: '#F8FAFC', borderColor: '#E2E8F0' },
   navLabel:       { fontSize: 13, fontWeight: '700', color: '#059669' },
   navLabelDis:    { color: '#CBD5E1' },
-  center:         { alignItems: 'center', gap: 2 },
+  center:         { alignItems: 'center', gap: 3 },
   centerNum:      { fontSize: 22, fontWeight: '900', color: '#1E293B', lineHeight: 26 },
   centerOf:       { fontSize: 10, fontWeight: '600', color: '#94A3B8' },
-  swipeHint:      { fontSize: 9, color: '#CBD5E1', fontWeight: '500', letterSpacing: 0.5 },
+  orderChip:      { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8, borderWidth: 1 },
+  orderChipText:  { fontSize: 9, fontWeight: '700', letterSpacing: 0.3 },
 });
