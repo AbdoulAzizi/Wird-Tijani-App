@@ -16,7 +16,7 @@ import PracticeCard from '../../components/PracticeCard';
 import DailyProgressCard from '../../components/DailyProgressCard';
 import CategoryHeader, { PracticeCategory } from '../../components/CategoryHeader';
 import SpiritualHeader from '../../components/SpiritualHeader';
-import FeaturedCard from '../../components/FeaturedCard';          // ← nouveau
+import FeaturedCard from '../../components/FeaturedCard';
 import { LayoutActionsContext } from '../../contexts/LayoutActionsContext';
 
 // ─── Palette ──────────────────────────────────────────────────────────────────
@@ -66,7 +66,7 @@ const PRACTICE_CATEGORIES: PracticeCategory[] = [
   },
 ];
 
-// Featured cards — couleurs plus claires pour contraste sur fond sombre
+// ─── Featured categories ──────────────────────────────────────────────────────
 const FEATURED_CATEGORY_ASMA_ALLAH: PracticeCategory = {
   id: 'asmaalhusna', label: 'The 99 Names of Allah', arabicLabel: 'أسماء الله الحسنى',
   emoji: '✨', color: '#93C5FD', cards: [],
@@ -78,6 +78,12 @@ const FEATURED_CATEGORY_ASMA_NABI: PracticeCategory = {
 const FEATURED_CATEGORY_LIBRARY: PracticeCategory = {
   id: 'library-feat', label: 'Spiritual Library', arabicLabel: 'المكتبة الروحية',
   emoji: '📖', color: '#6EE7B7', cards: [],
+};
+
+// ── Suwar (Quran) featured category ──
+const FEATURED_CATEGORY_SUWAR: PracticeCategory = {
+  id: 'suwar', label: "Sūras of the Qur'ān", arabicLabel: 'سُوَر القُرْآن الكَرِيم',
+  emoji: '📗', color: '#FDE68A', cards: [],
 };
 
 const quickActions: QuickAction[] = [
@@ -136,6 +142,100 @@ const qc = StyleSheet.create({
   translation:     { fontSize: 13, textAlign: 'center', color: '#64748B', fontStyle: 'italic', lineHeight: 20, marginBottom: 8 },
   translationDark: { color: '#94A3B8' },
   ref:             { fontSize: 11, color: GREEN_MID, fontWeight: '700', letterSpacing: 0.3 },
+});
+
+// ─── Quran Suwar Banner ───────────────────────────────────────────────────────
+// Carte premium dédiée aux sourates — design distinct des FeaturedCard
+function SuwarBanner({ dark, onPress }: { dark: boolean; onPress: () => void }) {
+  return (
+    <TouchableOpacity onPress={onPress} activeOpacity={0.88} style={sb.wrap}>
+      <LinearGradient
+        colors={['#1E1B4B', '#312E81', '#1E3A8A']}
+        start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+        style={sb.gradient}
+      >
+        {/* Decorative circles */}
+        <View style={sb.circle1} /><View style={sb.circle2} />
+
+        {/* Gold shimmer */}
+        <LinearGradient
+          colors={['transparent', GOLD, GOLD_LIGHT, GOLD, 'transparent']}
+          start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+          style={sb.goldLine}
+        />
+
+        <View style={sb.row}>
+          {/* Left — text */}
+          <View style={sb.left}>
+            <View style={sb.badgeRow}>
+              <View style={sb.badge}>
+                <Text style={sb.badgeText}>📗 NEW</Text>
+              </View>
+            </View>
+            <Text style={sb.arabicTitle}>سُوَر القُرْآن</Text>
+            <Text style={sb.title}>Sūras of the Qur'ān</Text>
+            <Text style={sb.sub}>114 surahs · Reflect & meditate on{'\n'}the words of Allah</Text>
+
+            <View style={sb.statsRow}>
+              {[
+                { n: '114', l: 'Surahs' },
+                { n: '30',  l: 'Juz\'' },
+                { n: '6236',l: 'Verses' },
+              ].map(s => (
+                <View key={s.l} style={sb.stat}>
+                  <Text style={sb.statNum}>{s.n}</Text>
+                  <Text style={sb.statLabel}>{s.l}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+
+          {/* Right — CTA */}
+          <View style={sb.right}>
+            <View style={sb.ctaCircle}>
+              <Text style={sb.ctaEmoji}>📖</Text>
+            </View>
+            <View style={sb.ctaBtn}>
+              <Text style={sb.ctaBtnText}>Explore</Text>
+              <ChevronRight color={GOLD} size={14} strokeWidth={2.5} />
+            </View>
+          </View>
+        </View>
+
+        {/* Gold shimmer bottom */}
+        <LinearGradient
+          colors={['transparent', GOLD, GOLD_LIGHT, GOLD, 'transparent']}
+          start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+          style={sb.goldLine}
+        />
+      </LinearGradient>
+    </TouchableOpacity>
+  );
+}
+
+const sb = StyleSheet.create({
+  wrap:      { marginHorizontal: 16, marginBottom: 12, borderRadius: 22, overflow: 'hidden', shadowColor: '#1E1B4B', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.35, shadowRadius: 16, elevation: 10 },
+  gradient:  { padding: 20, gap: 12, overflow: 'hidden' },
+  circle1:   { position: 'absolute', width: 200, height: 200, borderRadius: 100, backgroundColor: 'rgba(255,255,255,0.04)', top: -70, right: -50 },
+  circle2:   { position: 'absolute', width: 100, height: 100, borderRadius: 50,  backgroundColor: 'rgba(255,255,255,0.05)', bottom: -30, left: -20 },
+  goldLine:  { height: 1.5, width: '100%', opacity: 0.55 },
+  row:       { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  left:      { flex: 1, gap: 6 },
+  badgeRow:  { flexDirection: 'row' },
+  badge:     { backgroundColor: 'rgba(245,158,11,0.25)', borderWidth: 1, borderColor: 'rgba(245,158,11,0.5)', borderRadius: 10, paddingHorizontal: 8, paddingVertical: 3 },
+  badgeText: { fontSize: 9, fontWeight: '800', color: GOLD, letterSpacing: 0.8 },
+  arabicTitle:{ fontSize: 22, color: '#FFFFFF', fontWeight: '800', lineHeight: 34 },
+  title:     { fontSize: 16, color: '#C7D2FE', fontWeight: '700', letterSpacing: 0.2 },
+  sub:       { fontSize: 11, color: 'rgba(255,255,255,0.6)', lineHeight: 17 },
+  statsRow:  { flexDirection: 'row', gap: 16, marginTop: 4 },
+  stat:      { alignItems: 'center' },
+  statNum:   { fontSize: 15, fontWeight: '900', color: GOLD },
+  statLabel: { fontSize: 9, fontWeight: '600', color: 'rgba(199,210,254,0.7)', textTransform: 'uppercase', letterSpacing: 0.6 },
+  right:     { alignItems: 'center', gap: 10 },
+  ctaCircle: { width: 64, height: 64, borderRadius: 32, backgroundColor: 'rgba(255,255,255,0.12)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)', justifyContent: 'center', alignItems: 'center' },
+  ctaEmoji:  { fontSize: 28 },
+  ctaBtn:    { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(245,158,11,0.2)', borderWidth: 1, borderColor: 'rgba(245,158,11,0.4)', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 6 },
+  ctaBtnText:{ fontSize: 12, fontWeight: '800', color: GOLD },
 });
 
 // ─── Main screen ──────────────────────────────────────────────────────────────
@@ -266,6 +366,15 @@ export default function HomeScreen() {
             </View>
           ))}
         </View>
+
+        {/* ── Quran Suwar Banner ── */}
+        <View style={s.section}>
+          <SectionLabel dark={dark}>Holy Qur'ān</SectionLabel>
+        </View>
+        <SuwarBanner
+          dark={dark}
+          onPress={() => router.push('/(tabs)/suwar')}
+        />
 
         {/* ── Featured Cards ── */}
         <View style={s.section}>

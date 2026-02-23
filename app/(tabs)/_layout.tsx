@@ -7,7 +7,7 @@ import { Tabs, useRouter, usePathname } from 'expo-router';
 import {
   Heart, BookOpen, ChartBar as BarChart3, Settings as SettingsIcon,
   Star, Moon, Home, Info, X, ChevronRight, Sparkles, Bell,
-  Grid3X3, Timer, CheckCircle2,
+  Grid3X3, Timer, CheckCircle2, BookMarked,
 } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
@@ -80,7 +80,8 @@ function BottomMenuSheet({
 
   const groups = [
     { label: 'Daily Practices', emoji: '🕌', items: menuItems.filter(i => ['/', '/wird', '/wazifa', '/hadra'].includes(i.route)) },
-    { label: 'Discover',        emoji: '✨', items: menuItems.filter(i => ['/asmaa-alhusna','/asmaa-nabi', '/library', '/dhikr-counter'].includes(i.route)) },
+    { label: 'Qur\'ān & Dhikr', emoji: '📗', items: menuItems.filter(i => ['/suwar', '/asmaa-alhusna', '/asmaa-nabi', '/dhikr-counter'].includes(i.route)) },
+    { label: 'Discover',        emoji: '✨', items: menuItems.filter(i => ['/library'].includes(i.route)) },
     { label: 'Tools',           emoji: '⚙️', items: menuItems.filter(i => ['/stats', '/notifications', '/notification-settings', '/settings', '/about'].includes(i.route)) },
   ];
 
@@ -204,20 +205,23 @@ function InnerTabLayout() {
   const isMainPage = MAIN_PAGES.includes(pathname);
 
   const menuItems: MenuItem[] = useMemo(() => [
-    { name: 'Home',              route: '/',                      icon: Home,         description: 'Main dashboard',                  color: '#059669' },
-    { name: 'Wird',              route: '/wird',                  icon: Heart,        description: 'Daily litany',                    color: '#DC2626' },
-    { name: 'Wazifa',            route: '/wazifa',                icon: Star,         description: 'The daily collective invocation', color: '#D97706' },
-    { name: 'Haḍratu-Jumūʿa',   route: '/hadra',                 icon: Moon,         description: 'Friday sacred gathering',         color: '#7C3AED' },
-    { name: "Asmā' Allāh",      route: '/asmaa-alhusna',                 icon: Sparkles,     description: 'The 99 Names of Allah',           color: '#1E40AF', isNew: true },
-    { name: "Asmā' An-Nabī",    route: '/asmaa-nabi',            icon: Star,         description: '201 Names of the Prophet ﷺ',     color: '#B45309', isNew: true },
-    { name: 'Dhikr Counter',    route: '/dhikr-counter',         icon: Timer,        description: 'Your dhikr counter',              color: '#0891B2', isNew: true },
-    { name: 'Library',          route: '/library',               icon: BookOpen,     description: 'Resources & sacred texts',        color: '#059669', dividerAfter: true },
-    { name: 'Statistics',       route: '/stats',                 icon: BarChart3,    description: 'Consistency & discipline',        color: '#0891B2' },
-    { name: "Today's Practices",route: '/daily-achievements',    icon: CheckCircle2, description: "Today's completed awrād",         color: '#059669' },
-    { name: 'Notifications',    route: '/notifications',         icon: Bell,         description: 'Reminders for your awrād',        color: '#059669', badge: unreadCount, isNew: true },
-    { name: 'Notif. Settings',  route: '/notification-settings', icon: Bell,         description: 'Manage notifications',            color: '#64748B' },
-    { name: 'Settings',         route: '/settings',              icon: SettingsIcon, description: 'Configuration',                  color: '#475569' },
-    { name: 'About',            route: '/about',                 icon: Info,         description: 'App information',                color: '#7C3AED' },
+    { name: 'Home',              route: '/',                      icon: Home,        description: 'Main dashboard',                  color: '#059669' },
+    { name: 'Wird',              route: '/wird',                  icon: Heart,       description: 'Daily litany',                    color: '#DC2626' },
+    { name: 'Wazifa',            route: '/wazifa',                icon: Star,        description: 'The daily collective invocation', color: '#D97706' },
+    { name: 'Haḍratu-Jumūʿa',   route: '/hadra',                 icon: Moon,        description: 'Friday sacred gathering',         color: '#7C3AED' },
+    // ── Qur'ān & Dhikr ──
+    { name: "Sūras of Qur'ān",  route: '/suwar',                 icon: BookMarked,  description: '114 Surahs · Reflect & meditate', color: '#1E3A8A', isNew: true },
+    { name: "Asmā' Allāh",      route: '/asmaa-alhusna',         icon: Sparkles,    description: 'The 99 Names of Allah',           color: '#1E40AF', isNew: true },
+    { name: "Asmā' An-Nabī",    route: '/asmaa-nabi',            icon: Star,        description: '201 Names of the Prophet ﷺ',     color: '#B45309', isNew: true },
+    { name: 'Dhikr Counter',    route: '/dhikr-counter',         icon: Timer,       description: 'Your dhikr counter',              color: '#0891B2', isNew: true },
+    { name: 'Library',          route: '/library',               icon: BookOpen,    description: 'Resources & sacred texts',        color: '#059669', dividerAfter: true },
+    // ── Tools ──
+    { name: 'Statistics',       route: '/stats',                 icon: BarChart3,   description: 'Consistency & discipline',        color: '#0891B2' },
+    { name: "Today's Practices",route: '/daily-achievements',    icon: CheckCircle2,description: "Today's completed awrād",         color: '#059669' },
+    { name: 'Notifications',    route: '/notifications',         icon: Bell,        description: 'Reminders for your awrād',        color: '#059669', badge: unreadCount, isNew: true },
+    { name: 'Notif. Settings',  route: '/notification-settings', icon: Bell,        description: 'Manage notifications',            color: '#64748B' },
+    { name: 'Settings',         route: '/settings',              icon: SettingsIcon,description: 'Configuration',                  color: '#475569' },
+    { name: 'About',            route: '/about',                 icon: Info,        description: 'App information',                color: '#7C3AED' },
   ], [unreadCount]);
 
   // ── Haptics ─────────────────────────────────────────────────────────────────
@@ -376,17 +380,8 @@ function InnerTabLayout() {
   }), [openDrawer, handleBack, handleNotifications, unreadCount]);
 
   return (
-    // LayoutActionsContext wraps TOUT — les écrans peuvent consommer openDrawer etc.
     <LayoutActionsContext.Provider value={layoutActions}>
       <SafeAreaView style={s.root} edges={['bottom']}>
-
-        {/* ═══════════════════════════════════════════════════════════════════
-            ZERO HEADER ICI.
-            Chaque écran rend son propre header en première ligne de son JSX.
-            SpiritualHeader → index.tsx, wird.tsx, wazifa.tsx, hadra.tsx
-            MinimalHeader   → tous les autres SAUF library.tsx
-            Header custom   → library.tsx (hero intégré dans le scroll)
-        ════════════════════════════════════════════════════════════════════ */}
 
         {/* Swipe zone — seulement pages principales */}
         {!drawerVisible && isMainPage && (
@@ -479,11 +474,12 @@ function InnerTabLayout() {
             }}
           />
 
-          {/* Routes cachées de la tab bar */}
+          {/* Routes cachées de la tab bar — suwar ajouté ici */}
           {[
+            'suwar',
             'asmaa-alhusna', 'dhikr-counter', 'stats', 'settings', 'about',
             'library', 'notifications', 'notification-settings',
-            'notification-test', 'daily-achievements','asmaa-nabi',
+            'notification-test', 'daily-achievements', 'asmaa-nabi',
           ].map(name => (
             <Tabs.Screen key={name} name={name} options={{ href: null }} />
           ))}
