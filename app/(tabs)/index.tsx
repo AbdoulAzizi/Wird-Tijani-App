@@ -79,8 +79,6 @@ const FEATURED_CATEGORY_LIBRARY: PracticeCategory = {
   id: 'library-feat', label: 'Spiritual Library', arabicLabel: 'المكتبة الروحية',
   emoji: '📖', color: '#6EE7B7', cards: [],
 };
-
-// ── Suwar (Quran) featured category ──
 const FEATURED_CATEGORY_SUWAR: PracticeCategory = {
   id: 'suwar', label: "Sūras of the Qur'ān", arabicLabel: 'سُوَر القُرْآن الكَرِيم',
   emoji: '📗', color: '#FDE68A', cards: [],
@@ -145,7 +143,6 @@ const qc = StyleSheet.create({
 });
 
 // ─── Quran Suwar Banner ───────────────────────────────────────────────────────
-// Carte premium dédiée aux sourates — design distinct des FeaturedCard
 function SuwarBanner({ dark, onPress }: { dark: boolean; onPress: () => void }) {
   return (
     <TouchableOpacity onPress={onPress} activeOpacity={0.88} style={sb.wrap}>
@@ -154,34 +151,18 @@ function SuwarBanner({ dark, onPress }: { dark: boolean; onPress: () => void }) 
         start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
         style={sb.gradient}
       >
-        {/* Decorative circles */}
         <View style={sb.circle1} /><View style={sb.circle2} />
-
-        {/* Gold shimmer */}
-        <LinearGradient
-          colors={['transparent', GOLD, GOLD_LIGHT, GOLD, 'transparent']}
-          start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-          style={sb.goldLine}
-        />
-
+        <LinearGradient colors={['transparent', GOLD, GOLD_LIGHT, GOLD, 'transparent']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={sb.goldLine} />
         <View style={sb.row}>
-          {/* Left — text */}
           <View style={sb.left}>
             <View style={sb.badgeRow}>
-              <View style={sb.badge}>
-                <Text style={sb.badgeText}>📗 NEW</Text>
-              </View>
+              <View style={sb.badge}><Text style={sb.badgeText}>📗 NEW</Text></View>
             </View>
             <Text style={sb.arabicTitle}>سُوَر القُرْآن</Text>
             <Text style={sb.title}>Sūras of the Qur'ān</Text>
             <Text style={sb.sub}>114 surahs · Reflect & meditate on{'\n'}the words of Allah</Text>
-
             <View style={sb.statsRow}>
-              {[
-                { n: '114', l: 'Surahs' },
-                { n: '30',  l: 'Juz\'' },
-                { n: '6236',l: 'Verses' },
-              ].map(s => (
+              {[{ n: '114', l: 'Surahs' }, { n: '30', l: "Juz'" }, { n: '6236', l: 'Verses' }].map(s => (
                 <View key={s.l} style={sb.stat}>
                   <Text style={sb.statNum}>{s.n}</Text>
                   <Text style={sb.statLabel}>{s.l}</Text>
@@ -189,25 +170,15 @@ function SuwarBanner({ dark, onPress }: { dark: boolean; onPress: () => void }) 
               ))}
             </View>
           </View>
-
-          {/* Right — CTA */}
           <View style={sb.right}>
-            <View style={sb.ctaCircle}>
-              <Text style={sb.ctaEmoji}>📖</Text>
-            </View>
+            <View style={sb.ctaCircle}><Text style={sb.ctaEmoji}>📖</Text></View>
             <View style={sb.ctaBtn}>
               <Text style={sb.ctaBtnText}>Explore</Text>
               <ChevronRight color={GOLD} size={14} strokeWidth={2.5} />
             </View>
           </View>
         </View>
-
-        {/* Gold shimmer bottom */}
-        <LinearGradient
-          colors={['transparent', GOLD, GOLD_LIGHT, GOLD, 'transparent']}
-          start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-          style={sb.goldLine}
-        />
+        <LinearGradient colors={['transparent', GOLD, GOLD_LIGHT, GOLD, 'transparent']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={sb.goldLine} />
       </LinearGradient>
     </TouchableOpacity>
   );
@@ -217,7 +188,7 @@ const sb = StyleSheet.create({
   wrap:      { marginHorizontal: 16, marginBottom: 12, borderRadius: 22, overflow: 'hidden', shadowColor: '#1E1B4B', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.35, shadowRadius: 16, elevation: 10 },
   gradient:  { padding: 20, gap: 12, overflow: 'hidden' },
   circle1:   { position: 'absolute', width: 200, height: 200, borderRadius: 100, backgroundColor: 'rgba(255,255,255,0.04)', top: -70, right: -50 },
-  circle2:   { position: 'absolute', width: 100, height: 100, borderRadius: 50,  backgroundColor: 'rgba(255,255,255,0.05)', bottom: -30, left: -20 },
+  circle2:   { position: 'absolute', width: 100, height: 100, borderRadius: 50, backgroundColor: 'rgba(255,255,255,0.05)', bottom: -30, left: -20 },
   goldLine:  { height: 1.5, width: '100%', opacity: 0.55 },
   row:       { flexDirection: 'row', alignItems: 'center', gap: 12 },
   left:      { flex: 1, gap: 6 },
@@ -236,6 +207,250 @@ const sb = StyleSheet.create({
   ctaEmoji:  { fontSize: 28 },
   ctaBtn:    { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(245,158,11,0.2)', borderWidth: 1, borderColor: 'rgba(245,158,11,0.4)', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 6 },
   ctaBtnText:{ fontSize: 12, fontWeight: '800', color: GOLD },
+});
+
+// ─── Al-Hadra Banner ──────────────────────────────────────────────────────────
+// Carte premium pour l'expérience méditative — Station of Presence
+// Design : void absolu (noir) + lumière dorée, distinct des autres cartes vertes
+function AlHadraBanner({ onPress }: { onPress: () => void }) {
+  return (
+    <TouchableOpacity onPress={onPress} activeOpacity={0.88} style={hb.wrap}>
+      <LinearGradient
+        colors={['#000000', '#0A0005', '#050010', '#000000']}
+        start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+        style={hb.gradient}
+      >
+        {/* Decorative radial glow */}
+        <View style={hb.glow} />
+
+        {/* Concentric rings suggestion */}
+        <View style={[hb.ring, { width: 180, height: 180, borderRadius: 90, opacity: 0.06 }]} />
+        <View style={[hb.ring, { width: 120, height: 120, borderRadius: 60, opacity: 0.09 }]} />
+        <View style={[hb.ring, { width: 70,  height: 70,  borderRadius: 35, opacity: 0.13 }]} />
+
+        {/* Top gold shimmer */}
+        <LinearGradient
+          colors={['transparent', '#C8922A', '#FDE68A', '#C8922A', 'transparent']}
+          start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+          style={hb.goldLine}
+        />
+
+        <View style={hb.inner}>
+          {/* Left — content */}
+          <View style={hb.left}>
+            {/* Badge */}
+            <View style={hb.badgeRow}>
+              <View style={hb.badge}>
+                <Text style={hb.badgeText}>✦ MÉDITATION</Text>
+              </View>
+            </View>
+
+            {/* Arabic title */}
+            <Text style={hb.arabicTitle}>الأَسْمَاءُ الحُسْنَى</Text>
+            <Text style={hb.title}>Al-Hadra</Text>
+            <Text style={hb.subtitle}>Station of Presence</Text>
+
+            <Text style={hb.desc}>
+              Entrez dans la présence des 99 Noms.{'\n'}
+              Une expérience méditative immersive.
+            </Text>
+
+            {/* Stats */}
+            <View style={hb.statsRow}>
+              {[
+                { n: '99',  l: 'Names'      },
+                { n: '5',   l: 'Dimensions' },
+                { n: '∞',   l: 'Depth'      },
+              ].map(stat => (
+                <View key={stat.l} style={hb.stat}>
+                  <Text style={hb.statNum}>{stat.n}</Text>
+                  <Text style={hb.statLabel}>{stat.l}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+
+          {/* Right — CTA */}
+          <View style={hb.right}>
+            {/* Arabic Name display */}
+            <View style={hb.arabicCircle}>
+              <Text style={hb.arabicSymbol}>الله</Text>
+            </View>
+            <View style={hb.ctaBtn}>
+              <Text style={hb.ctaBtnText}>Enter</Text>
+              <ChevronRight color="#C8922A" size={14} strokeWidth={2.5} />
+            </View>
+          </View>
+        </View>
+
+        {/* Bottom gold shimmer */}
+        <LinearGradient
+          colors={['transparent', '#C8922A', '#FDE68A', '#C8922A', 'transparent']}
+          start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+          style={hb.goldLine}
+        />
+      </LinearGradient>
+    </TouchableOpacity>
+  );
+}
+
+const hb = StyleSheet.create({
+  wrap: {
+    marginHorizontal: 16,
+    marginBottom: 12,
+    borderRadius: 22,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(200,146,42,0.25)',
+    shadowColor: '#C8922A',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.20,
+    shadowRadius: 18,
+    elevation: 12,
+  },
+  gradient: {
+    padding: 0,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  // Radial glow behind — center-left
+  glow: {
+    position: 'absolute',
+    width: 220,
+    height: 220,
+    borderRadius: 110,
+    backgroundColor: '#C8922A',
+    opacity: 0.06,
+    top: -60,
+    left: -40,
+  },
+  // Concentric ring decorations — positioned on right side
+  ring: {
+    position: 'absolute',
+    borderWidth: 1,
+    borderColor: '#C8922A',
+    right: 30,
+    top: '50%',
+    marginTop: -90, // half of largest ring
+  },
+  goldLine: {
+    height: 1.5,
+    width: '100%',
+    opacity: 0.55,
+  },
+  inner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    padding: 20,
+    paddingVertical: 18,
+  },
+  left: {
+    flex: 1,
+    gap: 5,
+  },
+  badgeRow: {
+    flexDirection: 'row',
+    marginBottom: 2,
+  },
+  badge: {
+    backgroundColor: 'rgba(200,146,42,0.18)',
+    borderWidth: 1,
+    borderColor: 'rgba(200,146,42,0.45)',
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  badgeText: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: '#C8922A',
+    letterSpacing: 1,
+  },
+  arabicTitle: {
+    fontSize: 18,
+    color: 'rgba(255,255,255,0.90)',
+    fontWeight: '400',
+    letterSpacing: 1,
+    lineHeight: 28,
+  },
+  title: {
+    fontSize: 22,
+    color: '#FFFFFF',
+    fontWeight: '800',
+    letterSpacing: -0.3,
+  },
+  subtitle: {
+    fontSize: 12,
+    color: '#C8922A',
+    fontWeight: '700',
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
+    marginBottom: 4,
+  },
+  desc: {
+    fontSize: 11,
+    color: 'rgba(255,255,255,0.50)',
+    lineHeight: 17,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    gap: 18,
+    marginTop: 8,
+  },
+  stat: {
+    alignItems: 'center',
+  },
+  statNum: {
+    fontSize: 16,
+    fontWeight: '900',
+    color: '#C8922A',
+  },
+  statLabel: {
+    fontSize: 8,
+    fontWeight: '600',
+    color: 'rgba(200,146,42,0.65)',
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+  },
+  right: {
+    alignItems: 'center',
+    gap: 10,
+  },
+  // Circle displaying Arabic calligraphy
+  arabicCircle: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: 'rgba(200,146,42,0.08)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(200,146,42,0.30)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  arabicSymbol: {
+    fontSize: 22,
+    color: 'rgba(200,146,42,0.90)',
+    fontWeight: '400',
+    letterSpacing: 1,
+  },
+  ctaBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(200,146,42,0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(200,146,42,0.40)',
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+  },
+  ctaBtnText: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#C8922A',
+    letterSpacing: 0.5,
+  },
 });
 
 // ─── Main screen ──────────────────────────────────────────────────────────────
@@ -309,7 +524,7 @@ export default function HomeScreen() {
     id === 'wird' ? wirdProgress : id === 'wazifa' ? wazifaProgress : 0;
 
   return (
-    <View style={[s.root, dark && s.rootDark]}>
+    <View style={s.root}>
 
       <SpiritualHeader
         onMenuPress={openDrawer}
@@ -374,6 +589,15 @@ export default function HomeScreen() {
         <SuwarBanner
           dark={dark}
           onPress={() => router.push('/(tabs)/suwar')}
+        />
+
+        {/* ── Al-Hadra — Station of Presence ── */}
+        {/* Section distincte : expérience méditative immersive, design void/or */}
+        <View style={s.section}>
+          <SectionLabel dark={dark}>Meditation & Presence</SectionLabel>
+        </View>
+        <AlHadraBanner
+          onPress={() => router.push('/(tabs)/hadra-station')}
         />
 
         {/* ── Featured Cards ── */}

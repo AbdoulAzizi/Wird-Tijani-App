@@ -7,7 +7,7 @@ import { Tabs, useRouter, usePathname } from 'expo-router';
 import {
   Heart, BookOpen, ChartBar as BarChart3, Settings as SettingsIcon,
   Star, Moon, Home, Info, X, ChevronRight, Sparkles, Bell,
-  Grid3X3, Timer, CheckCircle2, BookMarked,
+  Grid3X3, Timer, CheckCircle2, BookMarked, Eye,
 } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
@@ -46,7 +46,7 @@ const DRAWER_WIDTH     = 300;
 const SWIPE_THRESHOLD  = 150;
 const SWIPE_AREA_WIDTH = 30;
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
-const BOTTOM_SHEET_H   = SCREEN_HEIGHT * 0.72;
+const BOTTOM_SHEET_H   = SCREEN_HEIGHT * 0.76; // légèrement agrandi pour la nouvelle entrée
 
 // Pages principales (tab bar visible + swipe drawer)
 const MAIN_PAGES = ['/', '/wird', '/wazifa', '/hadra'];
@@ -79,11 +79,29 @@ function BottomMenuSheet({
   if (!visible) return null;
 
   const groups = [
-    { label: 'Daily Practices', emoji: '🕌', items: menuItems.filter(i => ['/', '/wird', '/wazifa', '/hadra'].includes(i.route)) },
-    { label: 'Qur\'ān & Dhikr', emoji: '📗', items: menuItems.filter(i => ['/suwar', '/asmaa-alhusna', '/asmaa-nabi', '/dhikr-counter'].includes(i.route)) },
-    { label: 'Discover',        emoji: '✨', items: menuItems.filter(i => ['/library'].includes(i.route)) },
-    { label: 'Tools',           emoji: '⚙️', items: menuItems.filter(i => ['/stats', '/notifications', '/notification-settings', '/settings', '/about'].includes(i.route)) },
-  ];
+    {
+      label: 'Daily Practices', emoji: '🕌',
+      items: menuItems.filter(i => ['/', '/wird', '/wazifa', '/hadra'].includes(i.route)),
+    },
+    {
+      label: "Qur'ān & Dhikr", emoji: '📗',
+      items: menuItems.filter(i => ['/suwar', '/asmaa-alhusna', '/asmaa-nabi', '/dhikr-counter'].includes(i.route)),
+    },
+    // ── Nouveau groupe dédié à Al-Hadra ──
+    {
+      label: 'Meditation & Presence', emoji: '✦',
+      items: menuItems.filter(i => ['/hadra-station'].includes(i.route)),
+    },
+    {
+      label: 'Discover', emoji: '✨',
+      items: menuItems.filter(i => ['/library'].includes(i.route)),
+    },
+    {
+      label: 'Tools', emoji: '⚙️',
+      items: menuItems.filter(i => ['/stats', '/notifications', '/notification-settings', '/settings', '/about'].includes(i.route)),
+    },
+  // Filtrer les groupes vides
+  ].filter(g => g.items.length > 0);
 
   return (
     <View style={bs.overlay} pointerEvents="box-none">
@@ -121,6 +139,40 @@ function BottomMenuSheet({
                   const Icon     = item.icon;
                   const isActive = pathname === item.route;
                   const color    = item.color || '#059669';
+
+                  // ── Rendu spécial pour Al-Hadra : carte pleine largeur avec design noir/or ──
+                  if (item.route === '/hadra-station') {
+                    return (
+                      <TouchableOpacity
+                        key={item.route}
+                        style={[bs.hadraCard, isActive && { borderColor: '#C8922A', borderWidth: 1.5 }]}
+                        onPress={() => onNavigate(item.route)}
+                        activeOpacity={0.78}
+                      >
+                        {/* Fond gradient sombre */}
+                        <View style={bs.hadraBg} />
+                        <View style={bs.hadraInner}>
+                          <View style={[bs.cardIcon, bs.hadraIcon]}>
+                            <Icon color="#C8922A" size={22} strokeWidth={1.8} />
+                          </View>
+                          <View style={{ flex: 1 }}>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
+                              <Text style={bs.hadraCardTitle}>{item.name}</Text>
+                              <View style={bs.hadraBadge}>
+                                <Text style={bs.hadraBadgeText}>✦ PRÉSENCE</Text>
+                              </View>
+                            </View>
+                            <Text style={bs.hadraCardDesc}>{item.description}</Text>
+                          </View>
+                          <ChevronRight color="#C8922A" size={16} strokeWidth={2} />
+                        </View>
+                        {/* Gold line bottom */}
+                        <View style={bs.hadraGoldLine} />
+                      </TouchableOpacity>
+                    );
+                  }
+
+                  // Rendu standard
                   return (
                     <TouchableOpacity
                       key={item.route}
@@ -187,6 +239,66 @@ const bs = StyleSheet.create({
   newPill:       { position: 'absolute', top: 9, right: 9, backgroundColor: '#059669', borderRadius: 6, paddingHorizontal: 5, paddingVertical: 2 },
   newTxt:        { color: '#FFFFFF', fontSize: 8, fontWeight: '800', letterSpacing: 0.6 },
   version:       { textAlign: 'center', fontSize: 11, color: '#CBD5E1', fontWeight: '500', marginTop: 6 },
+
+  // ── Al-Hadra card — pleine largeur, design sombre ──
+  hadraCard:  {
+    width: '100%',
+    backgroundColor: '#0A0A0F',
+    borderRadius: 16,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(200,146,42,0.22)',
+    position: 'relative',
+  },
+  hadraBg: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: '#000000',
+    opacity: 0.92,
+  },
+  hadraInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  hadraIcon: {
+    backgroundColor: 'rgba(200,146,42,0.10)',
+    borderWidth: 1,
+    borderColor: 'rgba(200,146,42,0.25)',
+    marginBottom: 0,
+  },
+  hadraCardTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: 0.2,
+  },
+  hadraBadge: {
+    backgroundColor: 'rgba(200,146,42,0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(200,146,42,0.35)',
+    borderRadius: 8,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  hadraBadgeText: {
+    fontSize: 8,
+    fontWeight: '800',
+    color: '#C8922A',
+    letterSpacing: 0.8,
+  },
+  hadraCardDesc: {
+    fontSize: 11,
+    color: 'rgba(255,255,255,0.40)',
+    marginTop: 2,
+    fontWeight: '400',
+  },
+  hadraGoldLine: {
+    height: 1,
+    backgroundColor: '#C8922A',
+    opacity: 0.25,
+  },
 });
 
 // ─── InnerTabLayout ───────────────────────────────────────────────────────────
@@ -215,6 +327,15 @@ function InnerTabLayout() {
     { name: "Asmā' An-Nabī",    route: '/asmaa-nabi',            icon: Star,        description: '201 Names of the Prophet ﷺ',     color: '#B45309', isNew: true },
     { name: 'Dhikr Counter',    route: '/dhikr-counter',         icon: Timer,       description: 'Your dhikr counter',              color: '#0891B2', isNew: true },
     { name: 'Library',          route: '/library',               icon: BookOpen,    description: 'Resources & sacred texts',        color: '#059669', dividerAfter: true },
+    // ── Al-Hadra — Station of Presence (nouvelle entrée méditative) ──
+    {
+      name: 'Al-Hadra',
+      route: '/hadra-station',  // route dédiée à l'expérience méditative
+      icon: Eye,
+      description: 'The Station of Presence · 99 Names',
+      color: '#C8922A',
+      isNew: true,
+    },
     // ── Tools ──
     { name: 'Statistics',       route: '/stats',                 icon: BarChart3,   description: 'Consistency & discipline',        color: '#0891B2' },
     { name: "Today's Practices",route: '/daily-achievements',    icon: CheckCircle2,description: "Today's completed awrād",         color: '#059669' },
@@ -310,6 +431,37 @@ function InnerTabLayout() {
     const Icon   = item.icon;
     const active = isActive(item.route);
     const color  = item.color || '#059669';
+
+    // ── Rendu spécial pour Al-Hadra dans le side drawer ──
+    if (item.route === '/hadra-station') {
+      return (
+        <>
+          <View style={s.sideHadraWrap}>
+            <TouchableOpacity
+              style={[s.sideHadraItem, active && { borderColor: '#C8922A', borderWidth: 1.5 }]}
+              onPress={() => handleNavigation(item.route)}
+              activeOpacity={0.75}
+            >
+              <View style={s.sideHadraIconWrap}>
+                <Icon color="#C8922A" size={20} strokeWidth={1.8} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
+                  <Text style={s.sideHadraLabel}>{item.name}</Text>
+                  <View style={s.sideHadraBadge}>
+                    <Text style={s.sideHadraBadgeText}>✦ PRÉSENCE</Text>
+                  </View>
+                </View>
+                <Text style={s.sideHadraDesc}>{item.description}</Text>
+              </View>
+              <ChevronRight color="#C8922A" size={16} strokeWidth={2.5} />
+            </TouchableOpacity>
+          </View>
+          {item.dividerAfter && <View style={s.divider} />}
+        </>
+      );
+    }
+
     return (
       <>
         <TouchableOpacity
@@ -474,9 +626,10 @@ function InnerTabLayout() {
             }}
           />
 
-          {/* Routes cachées de la tab bar — suwar ajouté ici */}
+          {/* Routes cachées — hadra-station ajouté ici */}
           {[
             'suwar',
+            'hadra-station',         // ← Al-Hadra Station of Presence
             'asmaa-alhusna', 'dhikr-counter', 'stats', 'settings', 'about',
             'library', 'notifications', 'notification-settings',
             'notification-test', 'daily-achievements', 'asmaa-nabi',
@@ -553,4 +706,57 @@ const s = StyleSheet.create({
   menuNewBadge:     { backgroundColor: '#059669', borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 },
   menuNewBadgeText: { color: '#FFFFFF', fontSize: 9, fontWeight: '800', letterSpacing: 0.6 },
   divider:          { height: 1, backgroundColor: '#F1F5F9', marginVertical: 6, marginHorizontal: 20 },
+
+  // ── Al-Hadra — side drawer ──
+  sideHadraWrap: {
+    marginHorizontal: 10,
+    marginVertical: 6,
+    borderRadius: 14,
+    overflow: 'hidden',
+  },
+  sideHadraItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 13,
+    paddingHorizontal: 16,
+    backgroundColor: '#0A0A0F',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(200,146,42,0.20)',
+  },
+  sideHadraIconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: 'rgba(200,146,42,0.10)',
+    borderWidth: 1,
+    borderColor: 'rgba(200,146,42,0.22)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  sideHadraLabel: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  sideHadraBadge: {
+    backgroundColor: 'rgba(200,146,42,0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(200,146,42,0.30)',
+    borderRadius: 7,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  sideHadraBadgeText: {
+    fontSize: 8,
+    fontWeight: '800',
+    color: '#C8922A',
+    letterSpacing: 0.8,
+  },
+  sideHadraDesc: {
+    fontSize: 11,
+    color: 'rgba(255,255,255,0.38)',
+    marginTop: 2,
+  },
 });
