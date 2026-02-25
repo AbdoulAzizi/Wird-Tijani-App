@@ -22,6 +22,7 @@ import FrequencySettingsSection from '../pages/frequency-settings';
 import { exportReport } from '../../utils/exportReport';
 import ScreenBackground from '../../components/ScreenBackground';
 import { useRouter } from 'expo-router';
+import { useAppVersion } from '@/hooks/useAppVersion';
 
 import { useContext } from 'react';
 import MinimalHeader from '../../components/MinimalHeader';
@@ -50,6 +51,8 @@ export default function SettingsScreen() {
   const [showFontSizeModal, setShowFontSizeModal] = useState(false);
   const [showResetModal, setShowResetModal] = useState(false);
   const { handleBack } = useContext(LayoutActionsContext);
+
+  const { appName, appVersion,scheme }      = useAppVersion();
   // États pour les temps de rappel
   const [reminderTimes, setReminderTimes] = useState({
     morning: new Date(new Date().getFullYear(), 0, 1, 5, 30),
@@ -96,16 +99,17 @@ export default function SettingsScreen() {
     setTimePicker(prev => ({ ...prev, show: false }));
   };
 
-  const shareApp = async () => {
-    try {
-      await Share.share({
-        message: 'Join me in this spiritual journey with Wird & Wazīfa Tijāniyya app! 🕌✨',
-        title: 'Wird & Wazīfa Tijāniyya'
-      });
-    } catch (error) {
-      console.error('Error sharing app:', error);
-    }
-  };
+ const shareApp = async () => {
+  try {
+    await Share.share({
+      message: `Join me on my spiritual journey with the ${appName} app! 🕌✨`,
+      title: appName,
+      url: `${scheme}://`, // iOS only — lien deep-link vers l'app
+    });
+  } catch (error) {
+    console.error('Error sharing app:', error);
+  }
+};
 
   // const exportData = async () => {
   //   try {
@@ -617,7 +621,7 @@ export default function SettingsScreen() {
                     Version
                   </Text>
                   <Text style={[styles.settingDescription, state.settings.darkMode && styles.settingDescriptionDark]}>
-                    Wird & Wazīfa Tijāniyya v1.0
+                    {appName} {appVersion}
                   </Text>
                 </View>
               </View>

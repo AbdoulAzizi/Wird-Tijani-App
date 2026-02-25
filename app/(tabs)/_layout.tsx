@@ -7,7 +7,8 @@ import { Tabs, useRouter, usePathname } from 'expo-router';
 import {
   Heart, BookOpen, ChartBar as BarChart3, Settings as SettingsIcon,
   Star, Moon, Home, Info, X, ChevronRight, Sparkles, Bell,
-  Grid3X3, Timer, CheckCircle2, BookMarked, Eye,
+  Grid3X3, Timer, CheckCircle2, BookMarked, Eye, MapPin,
+  Mail
 } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
@@ -94,11 +95,11 @@ function BottomMenuSheet({
     },
     {
       label: 'Discover', emoji: '✨',
-      items: menuItems.filter(i => ['/library'].includes(i.route)),
+      items: menuItems.filter(i => ['/library', '/hadra-map'].includes(i.route)),
     },
     {
       label: 'Tools', emoji: '⚙️',
-      items: menuItems.filter(i => ['/stats', '/notifications', '/notification-settings', '/settings', '/about'].includes(i.route)),
+      items: menuItems.filter(i => ['/stats', '/notifications', '/notification-settings', '/settings', '/about','/contact'].includes(i.route)),
     },
   // Filtrer les groupes vides
   ].filter(g => g.items.length > 0);
@@ -327,6 +328,7 @@ function InnerTabLayout() {
     { name: "Asmā' An-Nabī",    route: '/asmaa-nabi',            icon: Star,        description: '201 Names of the Prophet ﷺ',     color: '#B45309', isNew: true },
     { name: 'Dhikr Counter',    route: '/dhikr-counter',         icon: Timer,       description: 'Your dhikr counter',              color: '#0891B2', isNew: true },
     { name: 'Library',          route: '/library',               icon: BookOpen,    description: 'Resources & sacred texts',        color: '#059669', dividerAfter: true },
+    { name: 'Hadara Map',        route: '/hadra-map',             icon: MapPin,         description: 'Find local Zawiya & gatherings',   color: '#059669' },
     // ── Al-Hadra — Station of Presence (nouvelle entrée méditative) ──
     {
       name: 'Al-Hadra',
@@ -343,6 +345,7 @@ function InnerTabLayout() {
     { name: 'Notif. Settings',  route: '/notification-settings', icon: Bell,        description: 'Manage notifications',            color: '#64748B' },
     { name: 'Settings',         route: '/settings',              icon: SettingsIcon,description: 'Configuration',                  color: '#475569' },
     { name: 'About',            route: '/about',                 icon: Info,        description: 'App information',                color: '#7C3AED' },
+    { name: 'Contact Us',        route: '/contact',               icon: Mail,         description: 'Get in touch',                   color: '#0891B2' },
   ], [unreadCount]);
 
   // ── Haptics ─────────────────────────────────────────────────────────────────
@@ -631,8 +634,8 @@ function InnerTabLayout() {
             'suwar',
             'hadra-station',         // ← Al-Hadra Station of Presence
             'asmaa-alhusna', 'dhikr-counter', 'stats', 'settings', 'about',
-            'library', 'notifications', 'notification-settings',
-            'notification-test', 'daily-achievements', 'asmaa-nabi',
+            'library', 'notifications', 'notification-settings', 'azkars',
+            'notification-test', 'daily-achievements', 'asmaa-nabi', 'contact',
           ].map(name => (
             <Tabs.Screen key={name} name={name} options={{ href: null }} />
           ))}

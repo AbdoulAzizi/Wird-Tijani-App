@@ -37,7 +37,7 @@ const TEAM = [
 ];
 
 const CONTACT = [
-  { icon: Mail,   label: 'Email Support', value: 'support@tijaniapp.com', onPress: () => Linking.openURL('mailto:support@tijaniapp.com') },
+  { icon: Mail,   label: 'Email Support', value: 'abdoulaziz.dev@gmail.com', onPress: () => Linking.openURL('mailto:support@tijaniapp.com') },
   { icon: Globe,  label: 'Website',       value: 'tijaniapp.com',          onPress: () => Linking.openURL('https://tijaniapp.com') },
   { icon: Github, label: 'Open Source',   value: 'Contribute on GitHub',   onPress: () => {} },
 ];
@@ -78,7 +78,7 @@ export default function AboutScreen() {
             <View style={styles.heroIconRing}>
               <Heart color="#FFFFFF" size={28} fill="rgba(255,255,255,0.3)" />
             </View>
-            <Text style={styles.heroAppName}>Wird &amp; Wazīfa Tijāniyya</Text>
+            <Text style={styles.heroAppName}>{appName}</Text>
             <View style={styles.heroBadge}>
               <Text style={styles.heroBadgeText}>Version {appVersion}</Text>
             </View>

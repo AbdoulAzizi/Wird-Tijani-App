@@ -144,7 +144,7 @@ export default function AboutScreen() {
             styles.appTitle,
             state.settings.darkMode && styles.appTitleDark
           ]}>
-            Wird & Wazīfa Tijāniyya
+            {appName}
           </Text>
           <View style={styles.versionBadge}>
             <Text style={styles.versionText}>Version {appVersion}</Text>
