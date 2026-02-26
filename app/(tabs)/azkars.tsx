@@ -20,39 +20,26 @@ import {
   Platform,
   KeyboardAvoidingView,
   Alert,
+  StyleSheet,
 } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import {
-  X,
-  ChevronLeft,
-  ChevronRight,
-  Settings,
-  CheckSquare,
-  Square,
-  Plus,
-  Trash2,
-  Sun,
-  Moon,
-  RotateCcw,
-  Check,
-  ChevronDown,
-  ChevronUp,
-  Eye,
+  X, ChevronLeft, ChevronRight, Settings, CheckSquare, Square,
+  Plus, Trash2, Sun, Moon, RotateCcw, Check, ChevronDown, ChevronUp, Eye,
+  BookOpen, Sparkles,
 } from 'lucide-react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
-  AZKARS,
-  MORNING_OPENING,
-  EVENING_OPENING,
-  type Azkar,
-  type AzkarPeriod,
-  type CustomAzkar,
-  getCategoryLabel,
-  CATEGORY_COLORS,
-} from '../../data/azkars';
+  AZKARS, MORNING_OPENING, EVENING_OPENING,
+  type Azkar, type AzkarPeriod, type CustomAzkar,
+  getCategoryLabel, CATEGORY_COLORS,
+} from '../../data/azkarData';
 
 const { width: W, height: H } = Dimensions.get('window');
+
+// ─── Types ─────────────────────────────────────────────────────────────────────
 
 interface UserPrefs {
   enabledIds: Set<string>;
@@ -60,114 +47,105 @@ interface UserPrefs {
   customAzkars: CustomAzkar[];
 }
 
+// ─── Utils ─────────────────────────────────────────────────────────────────────
+
 const haptic = (type: 'light' | 'success' | 'warning') => {
   if (Platform.OS !== 'ios') return;
-  if (type === 'light') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  if (type === 'light')   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   if (type === 'success') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   if (type === 'warning') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
 };
 
-// ─── SESSION SELECTOR ─────────────────────────────────────────────────────────
+const MORNING_ACCENT = '#C8922A';
+const EVENING_ACCENT = '#5a7db5';
+const GREEN = '#3ab53a';
+
+// ─── SESSION SELECTOR ──────────────────────────────────────────────────────────
 
 const SessionSelector = memo(({ onSelect, onBack }: {
   onSelect: (p: AzkarPeriod) => void;
   onBack?: () => void;
 }) => {
-  const fade = useRef(new Animated.Value(0)).current;
-  const slideM = useRef(new Animated.Value(50)).current;
-  const slideE = useRef(new Animated.Value(50)).current;
-  const ring1 = useRef(new Animated.Value(0.15)).current;
-  const ring2 = useRef(new Animated.Value(0.15)).current;
+  const fade    = useRef(new Animated.Value(0)).current;
+  const slideM  = useRef(new Animated.Value(40)).current;
+  const slideE  = useRef(new Animated.Value(40)).current;
+  const ring1   = useRef(new Animated.Value(0.12)).current;
+  const ring2   = useRef(new Animated.Value(0.12)).current;
 
   useEffect(() => {
     const pulse = (a: Animated.Value, delay: number) =>
       Animated.loop(Animated.sequence([
-        Animated.timing(a, { toValue: 0.55, duration: 2800, delay, useNativeDriver: true }),
-        Animated.timing(a, { toValue: 0.15, duration: 2800, useNativeDriver: true }),
+        Animated.timing(a, { toValue: 0.45, duration: 3000, delay, useNativeDriver: true }),
+        Animated.timing(a, { toValue: 0.12, duration: 3000, useNativeDriver: true }),
       ])).start();
     pulse(ring1, 0);
-    pulse(ring2, 1400);
-    Animated.sequence([
-      Animated.timing(fade, { toValue: 1, duration: 600, useNativeDriver: true }),
-      Animated.parallel([Animated.spring(slideM, { toValue: 0, friction: 9, useNativeDriver: true })]),
-      Animated.spring(slideE, { toValue: 0, friction: 9, useNativeDriver: true }),
+    pulse(ring2, 1500);
+
+    Animated.parallel([
+      Animated.timing(fade,   { toValue: 1, duration: 500, useNativeDriver: true }),
+      Animated.spring(slideM, { toValue: 0, friction: 10, useNativeDriver: true }),
     ]).start();
+    setTimeout(() => {
+      Animated.spring(slideE, { toValue: 0, friction: 10, useNativeDriver: true }).start();
+    }, 80);
   }, []);
 
   const morningCount = AZKARS.filter(a => a.period.includes('morning')).length;
   const eveningCount = AZKARS.filter(a => a.period.includes('evening')).length;
 
   return (
-    <LinearGradient colors={['#050400', '#0a0900', '#050400']} style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 }}>
+    <LinearGradient colors={['#040300', '#090800', '#040300']} style={ss.root}>
       <StatusBar barStyle="light-content" />
-      {/* Bouton retour */}
+
+      {[ring1, ring2].map((a, i) => (
+        <Animated.View key={i} pointerEvents="none" style={[ss.ring, {
+          width: W * (0.9 + i * 0.5), height: W * (0.9 + i * 0.5),
+          borderRadius: W * (0.45 + i * 0.25), opacity: a,
+        }]} />
+      ))}
+
       {onBack && (
-        <TouchableOpacity
-          onPress={() => { haptic('light'); onBack(); }}
-          style={{
-            position: 'absolute',
-            top: Platform.OS === 'ios' ? 56 : 36,
-            left: 20,
-            width: 40, height: 40, borderRadius: 20,
-            alignItems: 'center', justifyContent: 'center',
-            backgroundColor: 'rgba(255,255,255,0.06)',
-            borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
-            zIndex: 10,
-          }}
-        >
-          <ChevronLeft size={22} color="rgba(255,255,255,0.6)" />
+        <TouchableOpacity onPress={() => { haptic('light'); onBack(); }} style={ss.backBtn}>
+          <ChevronLeft size={22} color="rgba(255,255,255,0.55)" />
         </TouchableOpacity>
       )}
-      {[ring1, ring2].map((a, i) => (
-        <Animated.View key={i} pointerEvents="none" style={{
-          position: 'absolute',
-          width: W * (0.85 + i * 0.45), height: W * (0.85 + i * 0.45),
-          borderRadius: W * (0.425 + i * 0.225),
-          borderWidth: 1, borderColor: '#C8922A', opacity: a,
-        }} />
-      ))}
-      <Animated.View style={{ opacity: fade, alignItems: 'center', width: '100%' }}>
-        <Text style={{ color: 'rgba(255,255,255,0.28)', fontSize: 10, letterSpacing: 6, fontWeight: '800', marginBottom: 10, textTransform: 'uppercase' }}>
-          Daily Remembrance
-        </Text>
-        <Text style={{ color: '#ffffff', fontSize: 32, fontWeight: '200', letterSpacing: 1, marginBottom: 4, textAlign: 'center' }}>Al-Azkaar</Text>
-        <Text style={{ color: '#C8922A', fontSize: 22, fontWeight: '300', textAlign: 'center', marginBottom: 6 }}>الأذكار اليومية</Text>
-        <Text style={{ color: 'rgba(255,255,255,0.28)', fontSize: 13, textAlign: 'center', lineHeight: 22, marginBottom: 44 }}>
-          Choose your session to begin
-        </Text>
 
-        <Animated.View style={{ width: '100%', transform: [{ translateY: slideM }], marginBottom: 14 }}>
-          <TouchableOpacity onPress={() => { haptic('success'); onSelect('morning'); }} activeOpacity={0.85}>
-            <LinearGradient colors={['#180d00', '#251500', '#180d00']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-              style={{ borderRadius: 22, padding: 24, borderWidth: 1.5, borderColor: '#C8922A35', flexDirection: 'row', alignItems: 'center' }}>
-              <View style={{ width: 60, height: 60, borderRadius: 30, backgroundColor: '#C8922A15', borderWidth: 1.5, borderColor: '#C8922A50', alignItems: 'center', justifyContent: 'center', marginRight: 18 }}>
-                <Sun size={28} color="#C8922A" strokeWidth={1.5} />
+      <Animated.View style={[ss.content, { opacity: fade }]}>
+        <Text style={ss.eyebrow}>Daily Remembrance</Text>
+        <Text style={ss.titleLatin}>Al-Azkaar</Text>
+        <Text style={ss.titleArabic}>الأذكار اليومية</Text>
+        <Text style={ss.subtitle}>Choose your session</Text>
+
+        <Animated.View style={{ width: '100%', transform: [{ translateY: slideM }], marginBottom: 12 }}>
+          <TouchableOpacity onPress={() => { haptic('success'); onSelect('morning'); }} activeOpacity={0.82}>
+            <LinearGradient colors={['#1a0e00', '#261600']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={ss.card}>
+              <View style={[ss.cardIcon, { borderColor: '#C8922A50', backgroundColor: '#C8922A12' }]}>
+                <Sun size={26} color={MORNING_ACCENT} strokeWidth={1.5} />
               </View>
-              <View style={{ flex: 1 }}>
-                <Text style={{ color: '#C8922A', fontSize: 10, fontWeight: '800', letterSpacing: 3, marginBottom: 4 }}>MORNING</Text>
-                <Text style={{ color: '#ffffff', fontSize: 20, fontWeight: '300', marginBottom: 2 }}>Adhkar Al-Sabah</Text>
-                <Text style={{ color: '#C8922A85', fontSize: 15, fontWeight: '300', marginBottom: 6 }}>أذكار الصباح</Text>
-                <Text style={{ color: 'rgba(255,255,255,0.28)', fontSize: 12 }}>{morningCount} adhkar</Text>
+              <View style={ss.cardText}>
+                <Text style={[ss.cardPeriod, { color: MORNING_ACCENT }]}>MORNING</Text>
+                <Text style={ss.cardTitle}>Adhkar Al-Sabah</Text>
+                <Text style={[ss.cardArabic, { color: '#C8922A70' }]}>أذكار الصباح</Text>
+                <Text style={ss.cardCount}>{morningCount} adhkar</Text>
               </View>
-              <ChevronRight size={18} color="#C8922A50" />
+              <ChevronRight size={18} color="#C8922A40" />
             </LinearGradient>
           </TouchableOpacity>
         </Animated.View>
 
         <Animated.View style={{ width: '100%', transform: [{ translateY: slideE }] }}>
-          <TouchableOpacity onPress={() => { haptic('success'); onSelect('evening'); }} activeOpacity={0.85}>
-            <LinearGradient colors={['#00020e', '#000516', '#00020e']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-              style={{ borderRadius: 22, padding: 24, borderWidth: 1.5, borderColor: '#5a7db535', flexDirection: 'row', alignItems: 'center' }}>
-              <View style={{ width: 60, height: 60, borderRadius: 30, backgroundColor: '#5a7db515', borderWidth: 1.5, borderColor: '#5a7db550', alignItems: 'center', justifyContent: 'center', marginRight: 18 }}>
-                <Moon size={26} color="#5a7db5" strokeWidth={1.5} />
+          <TouchableOpacity onPress={() => { haptic('success'); onSelect('evening'); }} activeOpacity={0.82}>
+            <LinearGradient colors={['#000310', '#000618']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[ss.card, { borderColor: '#5a7db535' }]}>
+              <View style={[ss.cardIcon, { borderColor: '#5a7db550', backgroundColor: '#5a7db512' }]}>
+                <Moon size={24} color={EVENING_ACCENT} strokeWidth={1.5} />
               </View>
-              <View style={{ flex: 1 }}>
-                <Text style={{ color: '#5a7db5', fontSize: 10, fontWeight: '800', letterSpacing: 3, marginBottom: 4 }}>EVENING</Text>
-                <Text style={{ color: '#ffffff', fontSize: 20, fontWeight: '300', marginBottom: 2 }}>Adhkar Al-Masa</Text>
-                <Text style={{ color: '#5a7db585', fontSize: 15, fontWeight: '300', marginBottom: 6 }}>أذكار المساء</Text>
-                <Text style={{ color: 'rgba(255,255,255,0.28)', fontSize: 12 }}>{eveningCount} adhkar</Text>
+              <View style={ss.cardText}>
+                <Text style={[ss.cardPeriod, { color: EVENING_ACCENT }]}>EVENING</Text>
+                <Text style={ss.cardTitle}>Adhkar Al-Masa</Text>
+                <Text style={[ss.cardArabic, { color: '#5a7db570' }]}>أذكار المساء</Text>
+                <Text style={ss.cardCount}>{eveningCount} adhkar</Text>
               </View>
-              <ChevronRight size={18} color="#5a7db550" />
+              <ChevronRight size={18} color="#5a7db540" />
             </LinearGradient>
           </TouchableOpacity>
         </Animated.View>
@@ -176,94 +154,123 @@ const SessionSelector = memo(({ onSelect, onBack }: {
   );
 });
 
-// ─── OPENING CEREMONY ─────────────────────────────────────────────────────────
+const ss = StyleSheet.create({
+  root:       { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 28 },
+  ring:       { position: 'absolute', borderWidth: 1, borderColor: MORNING_ACCENT },
+  backBtn:    { position: 'absolute', top: Platform.OS === 'ios' ? 56 : 36, left: 20, width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.06)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', zIndex: 10 },
+  content:    { alignItems: 'center', width: '100%' },
+  eyebrow:    { color: 'rgba(255,255,255,0.25)', fontSize: 10, letterSpacing: 5, fontWeight: '800', marginBottom: 10, textTransform: 'uppercase' },
+  titleLatin: { color: '#ffffff', fontSize: 34, fontWeight: '200', letterSpacing: 0.5, marginBottom: 4 },
+  titleArabic:{ color: MORNING_ACCENT, fontSize: 20, fontWeight: '300', marginBottom: 6 },
+  subtitle:   { color: 'rgba(255,255,255,0.25)', fontSize: 13, marginBottom: 40 },
+  card:       { borderRadius: 20, padding: 20, borderWidth: 1, borderColor: '#C8922A30', flexDirection: 'row', alignItems: 'center', gap: 16 },
+  cardIcon:   { width: 56, height: 56, borderRadius: 28, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
+  cardText:   { flex: 1, gap: 2 },
+  cardPeriod: { fontSize: 9, fontWeight: '800', letterSpacing: 3 },
+  cardTitle:  { color: '#ffffff', fontSize: 18, fontWeight: '300' },
+  cardArabic: { fontSize: 13, fontWeight: '300' },
+  cardCount:  { color: 'rgba(255,255,255,0.25)', fontSize: 11, marginTop: 2 },
+});
+
+// ─── OPENING CEREMONY ──────────────────────────────────────────────────────────
 
 const OpeningCeremony = memo(({ period, onEnter, onChangePeriod, onBack }: {
   period: AzkarPeriod; onEnter: () => void; onChangePeriod: () => void; onBack: () => void;
 }) => {
-  const fade = useRef(new Animated.Value(0)).current;
-  const titleScale = useRef(new Animated.Value(0.85)).current;
-  const lineWidth = useRef(new Animated.Value(0)).current;
-  const contentFade = useRef(new Animated.Value(0)).current;
-  const buttonFade = useRef(new Animated.Value(0)).current;
-  const ring1 = useRef(new Animated.Value(0.3)).current;
-  const ring2 = useRef(new Animated.Value(0.3)).current;
-  const ring3 = useRef(new Animated.Value(0.3)).current;
+  const fade      = useRef(new Animated.Value(0)).current;
+  const scale     = useRef(new Animated.Value(0.9)).current;
+  const lineW     = useRef(new Animated.Value(0)).current;
+  const btnFade   = useRef(new Animated.Value(0)).current;
+  const ring1     = useRef(new Animated.Value(0.25)).current;
+  const ring2     = useRef(new Animated.Value(0.25)).current;
+  const ring3     = useRef(new Animated.Value(0.25)).current;
 
-  const isMorning = period === 'morning';
-  const accentColor = isMorning ? '#C8922A' : '#5a7db5';
+  const isMorning  = period === 'morning';
+  const accent     = isMorning ? MORNING_ACCENT : EVENING_ACCENT;
+  const data       = isMorning ? MORNING_OPENING : EVENING_OPENING;
 
   useEffect(() => {
-    fade.setValue(0); titleScale.setValue(0.85); lineWidth.setValue(0); contentFade.setValue(0); buttonFade.setValue(0);
-    const pulse = (anim: Animated.Value, delay: number) =>
+    [fade, scale, lineW, btnFade].forEach(v => v.stopAnimation());
+    fade.setValue(0); scale.setValue(0.9); lineW.setValue(0); btnFade.setValue(0);
+
+    const pulse = (a: Animated.Value, delay: number) =>
       Animated.loop(Animated.sequence([
-        Animated.timing(anim, { toValue: 0.8, duration: 2200, delay, useNativeDriver: true }),
-        Animated.timing(anim, { toValue: 0.3, duration: 2200, useNativeDriver: true }),
+        Animated.timing(a, { toValue: 0.7, duration: 2400, delay, useNativeDriver: true }),
+        Animated.timing(a, { toValue: 0.25, duration: 2400, useNativeDriver: true }),
       ])).start();
+    pulse(ring1, 0); pulse(ring2, 800); pulse(ring3, 1600);
 
     Animated.sequence([
-      Animated.timing(fade, { toValue: 1, duration: 900, useNativeDriver: true }),
       Animated.parallel([
-        Animated.spring(titleScale, { toValue: 1, friction: 8, useNativeDriver: true }),
-        Animated.timing(lineWidth, { toValue: 1, duration: 700, useNativeDriver: false }),
+        Animated.timing(fade,  { toValue: 1, duration: 500, useNativeDriver: true }),
+        Animated.spring(scale, { toValue: 1, friction: 10, useNativeDriver: true }),
       ]),
-      Animated.timing(contentFade, { toValue: 1, duration: 600, useNativeDriver: true }),
-      Animated.timing(buttonFade, { toValue: 1, duration: 500, useNativeDriver: true }),
+      Animated.timing(lineW,   { toValue: 1, duration: 600, useNativeDriver: false }),
+      Animated.timing(btnFade, { toValue: 1, duration: 400, useNativeDriver: true }),
     ]).start();
-    pulse(ring1, 0); pulse(ring2, 600); pulse(ring3, 1200);
   }, [period]);
 
-  const data = isMorning ? MORNING_OPENING : EVENING_OPENING;
-
   return (
-    <LinearGradient colors={isMorning ? ['#0a0700', '#0f0e00', '#0a0700'] : ['#00000f', '#000a1a', '#00000f']} style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+    <LinearGradient
+      colors={isMorning ? ['#080500', '#0e0a00', '#080500'] : ['#00000e', '#000818', '#00000e']}
+      style={oc.root}
+    >
       <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
 
-      {/* Bouton retour */}
-      <TouchableOpacity
-        onPress={() => { haptic('light'); onBack(); }}
-        style={{
-          position: 'absolute',
-          top: Platform.OS === 'ios' ? 56 : 36,
-          left: 20,
-          width: 40, height: 40, borderRadius: 20,
-          alignItems: 'center', justifyContent: 'center',
-          backgroundColor: 'rgba(255,255,255,0.06)',
-          borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
-          zIndex: 10,
-        }}
-      >
-        <ChevronLeft size={22} color="rgba(255,255,255,0.6)" />
-      </TouchableOpacity>
-      {[ring1, ring2, ring3].map((anim, i) => (
-        <Animated.View key={i} pointerEvents="none" style={{ position: 'absolute', width: W * (1.0 + i * 0.3), height: W * (1.0 + i * 0.3), borderRadius: W * (0.5 + i * 0.15), borderWidth: 1, borderColor: accentColor, opacity: anim }} />
+      {[ring1, ring2, ring3].map((a, i) => (
+        <Animated.View key={i} pointerEvents="none" style={[oc.ring, {
+          width: W * (1.1 + i * 0.35), height: W * (1.1 + i * 0.35),
+          borderRadius: W * (0.55 + i * 0.175), borderColor: accent, opacity: a,
+        }]} />
       ))}
-      <Animated.View style={{ opacity: fade, alignItems: 'center', paddingHorizontal: 32, width: '100%' }}>
-        <TouchableOpacity onPress={() => { haptic('light'); onChangePeriod(); }} style={{ flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)', borderRadius: 20, paddingHorizontal: 14, paddingVertical: 7, backgroundColor: 'rgba(255,255,255,0.05)', marginBottom: 24 }}>
-          {isMorning ? <Sun size={13} color="rgba(255,255,255,0.5)" style={{ marginRight: 6 }} /> : <Moon size={13} color="rgba(255,255,255,0.5)" style={{ marginRight: 6 }} />}
-          <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12, fontWeight: '600' }}>{isMorning ? 'Morning' : 'Evening'}</Text>
-          <Text style={{ color: 'rgba(255,255,255,0.25)', fontSize: 11, marginLeft: 6 }}>▸ change</Text>
+
+      {/* Back */}
+      <TouchableOpacity onPress={() => { haptic('light'); onBack(); }} style={oc.backBtn}>
+        <ChevronLeft size={22} color="rgba(255,255,255,0.55)" />
+      </TouchableOpacity>
+
+      <Animated.View style={[oc.content, { opacity: fade }]}>
+        {/* Period toggle */}
+        <TouchableOpacity onPress={() => { haptic('light'); onChangePeriod(); }} style={oc.toggle}>
+          {isMorning
+            ? <Sun  size={12} color="rgba(255,255,255,0.45)" />
+            : <Moon size={12} color="rgba(255,255,255,0.45)" />}
+          <Text style={oc.toggleText}>{isMorning ? 'Morning' : 'Evening'}</Text>
+          <Text style={oc.toggleChange}>change ›</Text>
         </TouchableOpacity>
-        <Animated.View style={{ transform: [{ scale: titleScale }], alignItems: 'center', marginBottom: 24 }}>
-          <View style={{ width: 72, height: 72, borderRadius: 36, borderWidth: 1.5, borderColor: accentColor, alignItems: 'center', justifyContent: 'center', backgroundColor: `${accentColor}15` }}>
-            {isMorning ? <Sun size={32} color={accentColor} strokeWidth={1.5} /> : <Moon size={32} color={accentColor} strokeWidth={1.5} />}
-          </View>
+
+        {/* Icon */}
+        <Animated.View style={[oc.iconWrap, { transform: [{ scale }], borderColor: accent, backgroundColor: `${accent}14` }]}>
+          {isMorning
+            ? <Sun  size={34} color={accent} strokeWidth={1.5} />
+            : <Moon size={34} color={accent} strokeWidth={1.5} />}
         </Animated.View>
-        <Text style={{ color: accentColor, fontSize: 12, letterSpacing: 6, fontWeight: '700', marginBottom: 6, textTransform: 'uppercase' }}>{isMorning ? 'Morning' : 'Evening'}</Text>
-        <Text style={{ color: '#ffffff', fontSize: 32, fontWeight: '200', letterSpacing: 1, marginBottom: 4, textAlign: 'center' }}>{isMorning ? 'Azkaar Al-Sabah' : 'Azkaar Al-Masa'}</Text>
-        <Text style={{ color: accentColor, fontSize: 22, fontWeight: '300', textAlign: 'center', marginBottom: 20 }}>{isMorning ? 'أذكار الصباح' : 'أذكار المساء'}</Text>
-        <Animated.View style={{ width: lineWidth.interpolate({ inputRange: [0, 1], outputRange: ['0%', '60%'] }), height: 1, backgroundColor: accentColor, marginBottom: 28, opacity: 0.6 }} />
-        <Animated.View style={{ opacity: contentFade, width: '100%', marginBottom: 32 }}>
-          <View style={{ borderWidth: 1, borderColor: `${accentColor}25`, borderRadius: 16, padding: 20, backgroundColor: `${accentColor}08` }}>
-            <Text style={{ color: '#ffffff', fontSize: 17, lineHeight: 30, textAlign: 'center', fontWeight: '300', marginBottom: 12 }}>{data.arabic}</Text>
-            <Text style={{ color: `${accentColor}cc`, fontSize: 11, lineHeight: 18, textAlign: 'center', fontStyle: 'italic' }}>{data.transliteration}</Text>
-            <Text style={{ color: 'rgba(255,255,255,0.45)', fontSize: 12, lineHeight: 20, textAlign: 'center', marginTop: 8 }}>{data.translation}</Text>
-          </View>
-        </Animated.View>
-        <Animated.View style={{ opacity: buttonFade, width: '100%' }}>
-          <TouchableOpacity onPress={() => { haptic('success'); onEnter(); }} activeOpacity={0.8}>
-            <LinearGradient colors={isMorning ? ['#8a5a00', '#C8922A', '#8a5a00'] : ['#2a3d6b', '#4a6aab', '#2a3d6b']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={{ paddingVertical: 16, borderRadius: 50, alignItems: 'center' }}>
-              <Text style={{ color: '#ffffff', fontSize: 16, fontWeight: '600', letterSpacing: 2 }}>{isMorning ? 'Begin Morning Adhkar' : 'Begin Evening Adhkar'}</Text>
+
+        <Text style={[oc.period, { color: accent }]}>{isMorning ? 'MORNING' : 'EVENING'}</Text>
+        <Text style={oc.titleLatin}>{isMorning ? 'Azkaar Al-Sabah' : 'Azkaar Al-Masa'}</Text>
+        <Text style={[oc.titleArabic, { color: accent }]}>{isMorning ? 'أذكار الصباح' : 'أذكار المساء'}</Text>
+
+        <Animated.View style={[oc.line, { width: lineW.interpolate({ inputRange: [0, 1], outputRange: ['0%', '50%'] }), backgroundColor: accent }]} />
+
+        {/* Opening dua */}
+        <View style={[oc.duaCard, { borderColor: `${accent}22`, backgroundColor: `${accent}08` }]}>
+          <Text style={oc.duaArabic}>{data.arabic}</Text>
+          <Text style={[oc.duaTranslit, { color: `${accent}cc` }]}>{data.transliteration}</Text>
+          <Text style={oc.duaTrans}>{data.translation}</Text>
+        </View>
+
+        {/* CTA */}
+        <Animated.View style={{ opacity: btnFade, width: '100%' }}>
+          <TouchableOpacity onPress={() => { haptic('success'); onEnter(); }} activeOpacity={0.8} style={oc.cta}>
+            <LinearGradient
+              colors={isMorning ? ['#7a4e00', MORNING_ACCENT, '#7a4e00'] : ['#263660', EVENING_ACCENT, '#263660']}
+              start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+              style={oc.ctaGradient}
+            >
+              {isMorning
+                ? <Sun  size={16} color="#fff" style={{ marginRight: 10 }} />
+                : <Moon size={16} color="#fff" style={{ marginRight: 10 }} />}
+              <Text style={oc.ctaText}>{isMorning ? 'Begin Morning Adhkar' : 'Begin Evening Adhkar'}</Text>
             </LinearGradient>
           </TouchableOpacity>
         </Animated.View>
@@ -272,443 +279,48 @@ const OpeningCeremony = memo(({ period, onEnter, onChangePeriod, onBack }: {
   );
 });
 
-// ─── PROGRESS BAR ────────────────────────────────────────────────────────────
+const oc = StyleSheet.create({
+  root:       { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  ring:       { position: 'absolute', borderWidth: 1 },
+  backBtn:    { position: 'absolute', top: Platform.OS === 'ios' ? 56 : 36, left: 20, width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.06)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', zIndex: 10 },
+  content:    { alignItems: 'center', paddingHorizontal: 28, width: '100%' },
+  toggle:     { flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', borderRadius: 16, paddingHorizontal: 12, paddingVertical: 6, backgroundColor: 'rgba(255,255,255,0.05)', marginBottom: 28 },
+  toggleText: { color: 'rgba(255,255,255,0.45)', fontSize: 12, fontWeight: '600' },
+  toggleChange:{ color: 'rgba(255,255,255,0.2)', fontSize: 11 },
+  iconWrap:   { width: 68, height: 68, borderRadius: 34, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center', marginBottom: 20 },
+  period:     { fontSize: 10, fontWeight: '800', letterSpacing: 5, textTransform: 'uppercase', marginBottom: 6 },
+  titleLatin: { color: '#ffffff', fontSize: 30, fontWeight: '200', letterSpacing: 0.5, marginBottom: 4, textAlign: 'center' },
+  titleArabic:{ fontSize: 20, fontWeight: '300', textAlign: 'center', marginBottom: 20 },
+  line:       { height: 1, opacity: 0.55, marginBottom: 24, alignSelf: 'center' },
+  duaCard:    { width: '100%', borderWidth: 1, borderRadius: 16, padding: 18, marginBottom: 28 },
+  duaArabic:  { color: '#ffffff', fontSize: 16, lineHeight: 28, textAlign: 'center', fontWeight: '300', marginBottom: 10 },
+  duaTranslit:{ fontSize: 11, lineHeight: 17, textAlign: 'center', fontStyle: 'italic', marginBottom: 6 },
+  duaTrans:   { color: 'rgba(255,255,255,0.4)', fontSize: 12, lineHeight: 19, textAlign: 'center' },
+  cta:        { width: '100%', borderRadius: 50, overflow: 'hidden' },
+  ctaGradient:{ paddingVertical: 15, alignItems: 'center', flexDirection: 'row', justifyContent: 'center' },
+  ctaText:    { color: '#ffffff', fontSize: 15, fontWeight: '600', letterSpacing: 1.5 },
+});
+
+// ─── PROGRESS BAR ──────────────────────────────────────────────────────────────
 
 const ProgressBar = memo(({ current, total, color }: { current: number; total: number; color: string }) => {
   const progress = useRef(new Animated.Value(0)).current;
-  const pct = total > 0 ? current / total : 0;
-  useEffect(() => { Animated.spring(progress, { toValue: pct, friction: 8, useNativeDriver: false }).start(); }, [pct]);
+  const pct = total > 0 ? Math.min(current / total, 1) : 0;
+  useEffect(() => {
+    Animated.spring(progress, { toValue: pct, friction: 10, useNativeDriver: false }).start();
+  }, [pct]);
   return (
-    <View style={{ height: 3, backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 2, marginHorizontal: 24, marginBottom: 12 }}>
-      <Animated.View style={{ height: 3, borderRadius: 2, backgroundColor: color, width: progress.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }) }} />
+    <View style={pb.track}>
+      <Animated.View style={[pb.fill, { backgroundColor: color, width: progress.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }) }]} />
     </View>
   );
 });
-
-// ─── CIRCULAR COUNTER ─────────────────────────────────────────────────────────
-
-const CircularCounter = memo(({ count, target, color, glow, onTap }: {
-  count: number; target: number; color: string; glow: string; onTap: () => void;
-}) => {
-  const scaleAnim = useRef(new Animated.Value(1)).current;
-  const glowAnim = useRef(new Animated.Value(0.1)).current;
-  const pulseAnim = useRef(new Animated.Value(1)).current;
-  const isDone = count >= target;
-
-  useEffect(() => {
-    if (isDone) {
-      Animated.sequence([
-        Animated.spring(scaleAnim, { toValue: 1.12, friction: 6, useNativeDriver: true }),
-        Animated.spring(scaleAnim, { toValue: 1, friction: 6, useNativeDriver: true }),
-      ]).start();
-      haptic('success');
-    }
-  }, [isDone]);
-
-  const handleTap = useCallback(() => {
-    if (isDone) return;
-    haptic('light');
-    Animated.sequence([
-      Animated.timing(scaleAnim, { toValue: 0.93, duration: 70, useNativeDriver: true }),
-      Animated.spring(scaleAnim, { toValue: 1, friction: 6, useNativeDriver: true }),
-    ]).start();
-    Animated.sequence([
-      Animated.timing(glowAnim, { toValue: 0.6, duration: 120, useNativeDriver: true }),
-      Animated.timing(glowAnim, { toValue: 0.1, duration: 500, useNativeDriver: true }),
-    ]).start();
-    onTap();
-  }, [isDone, onTap]);
-
-  useEffect(() => {
-    Animated.loop(Animated.sequence([
-      Animated.timing(pulseAnim, { toValue: 1.05, duration: 2200, useNativeDriver: true }),
-      Animated.timing(pulseAnim, { toValue: 1, duration: 2200, useNativeDriver: true }),
-    ])).start();
-  }, []);
-
-  const size = 156;
-  return (
-    <TouchableOpacity onPress={handleTap} activeOpacity={0.9} disabled={isDone}>
-      <Animated.View style={{ transform: [{ scale: scaleAnim }], alignItems: 'center' }}>
-        <Animated.View pointerEvents="none" style={{ position: 'absolute', width: size + 40, height: size + 40, borderRadius: (size + 40) / 2, backgroundColor: glow, opacity: glowAnim }} />
-        <Animated.View pointerEvents="none" style={{ position: 'absolute', width: size + 16, height: size + 16, borderRadius: (size + 16) / 2, borderWidth: 1.5, borderColor: isDone ? '#4aab4a' : color, transform: [{ scale: pulseAnim }], opacity: 0.35 }} />
-        <LinearGradient colors={isDone ? ['#0a2a0a', '#1a4a1a', '#0a2a0a'] : [`${color}22`, `${color}0d`, `${color}22`]} style={{ width: size, height: size, borderRadius: size / 2, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: isDone ? '#4aab4a' : color }}>
-          {isDone ? (
-            <View style={{ alignItems: 'center' }}>
-              <Check size={40} color="#4aab4a" strokeWidth={2.5} />
-              <Text style={{ color: '#4aab4a', fontSize: 12, fontWeight: '700', marginTop: 4, letterSpacing: 1 }}>COMPLETE</Text>
-            </View>
-          ) : (
-            <View style={{ alignItems: 'center' }}>
-              <Text style={{ color: '#ffffff', fontSize: 46, fontWeight: '200', lineHeight: 52 }}>{count}</Text>
-              <View style={{ width: 36, height: 1, backgroundColor: `${color}80`, marginVertical: 4 }} />
-              <Text style={{ color: `${color}cc`, fontSize: 16, fontWeight: '700' }}>{target}</Text>
-            </View>
-          )}
-        </LinearGradient>
-        {!isDone && <Text style={{ color: 'rgba(255,255,255,0.3)', fontSize: 11, marginTop: 10, letterSpacing: 1 }}>{target - count} remaining</Text>}
-      </Animated.View>
-    </TouchableOpacity>
-  );
+const pb = StyleSheet.create({
+  track: { height: 2, backgroundColor: 'rgba(255,255,255,0.07)', borderRadius: 1, marginHorizontal: 20 },
+  fill:  { height: 2, borderRadius: 1 },
 });
 
-// ─── COLLAPSIBLE TEXT ─────────────────────────────────────────────────────────
-
-const CollapsibleText = memo(({ children, maxHeight = 120, color }: { children: React.ReactNode; maxHeight?: number; color: string }) => {
-  const [expanded, setExpanded] = useState(false);
-  const [contentHeight, setContentHeight] = useState(0);
-  const needsCollapse = contentHeight > maxHeight + 10;
-  return (
-    <View>
-      <ScrollView scrollEnabled={expanded || !needsCollapse} style={{ maxHeight: (expanded || !needsCollapse) ? undefined : maxHeight }} nestedScrollEnabled showsVerticalScrollIndicator={false} pointerEvents="box-none">
-        <View onLayout={e => setContentHeight(e.nativeEvent.layout.height)}>{children}</View>
-      </ScrollView>
-      {needsCollapse && (
-        <TouchableOpacity onPress={() => { setExpanded(e => !e); haptic('light'); }} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingTop: 7, paddingBottom: 2 }}>
-          {expanded ? <ChevronUp size={13} color={`${color}70`} style={{ marginRight: 4 }} /> : <ChevronDown size={13} color={`${color}70`} style={{ marginRight: 4 }} />}
-          <Text style={{ color: `${color}70`, fontSize: 10, fontWeight: '700', letterSpacing: 1 }}>{expanded ? 'SHOW LESS' : 'SHOW MORE'}</Text>
-        </TouchableOpacity>
-      )}
-    </View>
-  );
-});
-
-// ─── PRESENCE MODAL CONTENT ───────────────────────────────────────────────────
-// Affiche un seul azkar dans le modal. Utilisé par PresenceModal avec clé pour animer les transitions.
-
-const PresenceContent = memo(({ azkar, period, lineWidth }: {
-  azkar: Azkar | CustomAzkar;
-  period: AzkarPeriod;
-  lineWidth: Animated.Value;
-}) => {
-  const floatAnim = useRef(new Animated.Value(0)).current;
-  const isCustom = 'isCustom' in azkar;
-  const color = isCustom ? '#5a7db5' : (azkar as Azkar).color;
-  const glow = isCustom ? '#aac4f0' : (azkar as Azkar).glow;
-  const accent = period === 'morning' ? '#C8922A' : '#5a7db5';
-
-  useEffect(() => {
-    Animated.loop(Animated.sequence([
-      Animated.timing(floatAnim, { toValue: -12, duration: 4500, useNativeDriver: true }),
-      Animated.timing(floatAnim, { toValue: 0, duration: 4500, useNativeDriver: true }),
-    ])).start();
-  }, []);
-
-  return (
-    <ScrollView
-      contentContainerStyle={{ flexGrow: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 28, paddingTop: 100, paddingBottom: 130 }}
-      showsVerticalScrollIndicator={false}
-      bounces
-    >
-      {/* Texte arabe flottant */}
-      <Animated.Text style={{
-        color: '#ffffff', fontSize: 30, fontWeight: '300', lineHeight: 54,
-        textAlign: 'center',
-        textShadowColor: glow, textShadowRadius: 30, textShadowOffset: { width: 0, height: 0 },
-        transform: [{ translateY: floatAnim }],
-        marginBottom: 28,
-      }}>
-        {azkar.arabic}
-      </Animated.Text>
-
-      {/* Ligne */}
-      <Animated.View style={{
-        height: 1, backgroundColor: accent, opacity: 0.6, alignSelf: 'center',
-        width: lineWidth.interpolate({ inputRange: [0, 1], outputRange: ['0%', '55%'] }),
-        marginBottom: 28,
-      }} />
-
-      {/* Translitération */}
-      {!!azkar.transliteration && (
-        <Text style={{ color: `${color}ee`, fontSize: 15, lineHeight: 24, textAlign: 'center', fontStyle: 'italic', marginBottom: 14 }}>
-          {azkar.transliteration}
-        </Text>
-      )}
-
-      {/* Traduction */}
-      <Text style={{ color: 'rgba(255,255,255,0.78)', fontSize: 15, lineHeight: 26, textAlign: 'center', marginBottom: 32 }}>
-        {azkar.translation}
-      </Text>
-
-      {/* Virtue */}
-      {!isCustom && (azkar as Azkar).virtue && (
-        <View style={{ borderWidth: 1, borderColor: `${accent}30`, borderRadius: 16, padding: 18, backgroundColor: `${accent}12`, width: '100%', marginBottom: 8 }}>
-          <Text style={{ color: accent, fontSize: 10, fontWeight: '800', letterSpacing: 1.5, marginBottom: 8, textAlign: 'center' }}>✧ VIRTUE ✧</Text>
-          <Text style={{ color: 'rgba(255,255,255,0.65)', fontSize: 13, lineHeight: 22, textAlign: 'center' }}>{(azkar as Azkar).virtue}</Text>
-        </View>
-      )}
-    </ScrollView>
-  );
-});
-
-// ─── PRESENCE MODAL ──────────────────────────────────────────────────────────
-// Navigation autonome : prev/next/swipe sans fermer le modal.
-// onClose(finalIndex) → synchronise l'index de la carte principale.
-
-const PresenceModal = memo(({
-  azkars, startIndex, period, onClose,
-}: {
-  azkars: (Azkar | CustomAzkar)[];
-  startIndex: number;
-  period: AzkarPeriod;
-  onClose: (finalIndex: number) => void;
-}) => {
-  const [currentIdx, setCurrentIdx] = useState(startIndex);
-  const azkar = azkars[currentIdx];
-
-  // Animations d'entrée (une seule fois)
-  const backdropFade = useRef(new Animated.Value(0)).current;
-  const uiFade = useRef(new Animated.Value(0)).current;
-  const lineWidth = useRef(new Animated.Value(0)).current;
-
-  // Animation de transition entre azkars
-  const contentFade = useRef(new Animated.Value(1)).current;
-  const contentSlide = useRef(new Animated.Value(0)).current;
-
-  // Décorations
-  const glowBreath = useRef(new Animated.Value(0.06)).current;
-  const ring1Scale = useRef(new Animated.Value(1)).current;
-  const ring1Opacity = useRef(new Animated.Value(0)).current;
-  const ring2Scale = useRef(new Animated.Value(1)).current;
-  const ring2Opacity = useRef(new Animated.Value(0)).current;
-  const ring3Scale = useRef(new Animated.Value(1)).current;
-  const ring3Opacity = useRef(new Animated.Value(0)).current;
-
-  const particles = useRef(
-    Array.from({ length: 12 }, () => ({
-      x: new Animated.Value(Math.random() * W * 0.8 - W * 0.4),
-      y: new Animated.Value(Math.random() * H * 0.5 - H * 0.25),
-      opacity: new Animated.Value(0),
-      size: 2 + Math.random() * 3,
-    }))
-  ).current;
-
-  const isMorning = period === 'morning';
-  const isCustom = 'isCustom' in azkar;
-  const color = isCustom ? '#5a7db5' : (azkar as Azkar).color;
-  const glow = isCustom ? '#aac4f0' : (azkar as Azkar).glow;
-  const accent = isMorning ? '#C8922A' : '#5a7db5';
-  const isFirst = currentIdx === 0;
-  const isLast = currentIdx === azkars.length - 1;
-
-  // Démarrage des boucles décoratives
-  const startRingLoop = (scaleA: Animated.Value, opacityA: Animated.Value, delay: number) => {
-    Animated.loop(Animated.sequence([
-      Animated.delay(delay),
-      Animated.parallel([
-        Animated.timing(opacityA, { toValue: 0.14, duration: 300, useNativeDriver: true }),
-        Animated.timing(scaleA, { toValue: 1, duration: 0, useNativeDriver: true }),
-      ]),
-      Animated.parallel([
-        Animated.timing(scaleA, { toValue: 3.2, duration: 3600, useNativeDriver: true }),
-        Animated.timing(opacityA, { toValue: 0, duration: 3600, useNativeDriver: true }),
-      ]),
-    ])).start();
-  };
-
-  const startParticle = (p: typeof particles[0], delay: number) => {
-    const dx = (Math.random() - 0.5) * 200;
-    const dy = -60 - Math.random() * 100;
-    const dur = 5000 + Math.random() * 5000;
-    Animated.loop(Animated.sequence([
-      Animated.delay(delay),
-      Animated.parallel([
-        Animated.timing(p.opacity, { toValue: 0.3 + Math.random() * 0.3, duration: dur * 0.3, useNativeDriver: true }),
-        Animated.timing(p.x, { toValue: dx, duration: dur, useNativeDriver: true }),
-        Animated.timing(p.y, { toValue: dy, duration: dur, useNativeDriver: true }),
-      ]),
-      Animated.timing(p.opacity, { toValue: 0, duration: dur * 0.3, useNativeDriver: true }),
-      Animated.parallel([
-        Animated.timing(p.x, { toValue: Math.random() * W * 0.8 - W * 0.4, duration: 0, useNativeDriver: true }),
-        Animated.timing(p.y, { toValue: Math.random() * H * 0.5 - H * 0.25, duration: 0, useNativeDriver: true }),
-      ]),
-    ])).start();
-  };
-
-  useEffect(() => {
-    // Entrée initiale
-    Animated.sequence([
-      Animated.timing(backdropFade, { toValue: 1, duration: 500, useNativeDriver: true }),
-      Animated.parallel([
-        Animated.timing(uiFade, { toValue: 1, duration: 700, useNativeDriver: true }),
-        Animated.timing(lineWidth, { toValue: 1, duration: 600, useNativeDriver: false }),
-      ]),
-    ]).start();
-
-    // Glow
-    Animated.loop(Animated.sequence([
-      Animated.timing(glowBreath, { toValue: 0.18, duration: 4500, useNativeDriver: true }),
-      Animated.timing(glowBreath, { toValue: 0.06, duration: 4500, useNativeDriver: true }),
-    ])).start();
-
-    startRingLoop(ring1Scale, ring1Opacity, 0);
-    startRingLoop(ring2Scale, ring2Opacity, 1200);
-    startRingLoop(ring3Scale, ring3Opacity, 2400);
-    particles.forEach((p, i) => startParticle(p, i * 280));
-  }, []);
-
-  // Navigation avec transition fade+slide
-  const navigateTo = useCallback((newIdx: number, direction: 'next' | 'prev') => {
-    if (newIdx < 0 || newIdx >= azkars.length) return;
-    haptic('light');
-    const slideOut = direction === 'next' ? -30 : 30;
-    const slideIn = direction === 'next' ? 30 : -30;
-
-    Animated.parallel([
-      Animated.timing(contentFade, { toValue: 0, duration: 180, useNativeDriver: true }),
-      Animated.timing(contentSlide, { toValue: slideOut, duration: 180, useNativeDriver: true }),
-    ]).start(() => {
-      contentSlide.setValue(slideIn);
-      setCurrentIdx(newIdx);
-      // Reset lineWidth pour l'animation à l'entrée
-      lineWidth.setValue(0);
-      Animated.parallel([
-        Animated.timing(contentFade, { toValue: 1, duration: 220, useNativeDriver: true }),
-        Animated.timing(contentSlide, { toValue: 0, duration: 220, useNativeDriver: true }),
-        Animated.timing(lineWidth, { toValue: 1, duration: 500, useNativeDriver: false }),
-      ]).start();
-    });
-  }, [azkars.length]);
-
-  // Swipe gauche/droite
-  const panResponder = useMemo(() => PanResponder.create({
-    onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dx) > 40 && Math.abs(g.dy) < 40,
-    onPanResponderRelease: (_, g) => {
-      if (g.dx < -50) navigateTo(currentIdx + 1, 'next');
-      if (g.dx > 50) navigateTo(currentIdx - 1, 'prev');
-    },
-  }), [currentIdx, navigateTo]);
-
-  return (
-    <Modal visible animationType="none" transparent statusBarTranslucent>
-      <Animated.View style={{ flex: 1, opacity: backdropFade }} {...panResponder.panHandlers}>
-
-        {/* Fond noir opaque */}
-        <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: '#000000' }} />
-        <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: color, opacity: 0.04 }} />
-
-        {/* ── Décorations (non interactives) ── */}
-        {particles.map((p, i) => (
-          <Animated.View key={i} pointerEvents="none" style={{ position: 'absolute', top: H * 0.5, left: W * 0.5, width: p.size, height: p.size, borderRadius: p.size / 2, backgroundColor: glow, opacity: p.opacity, transform: [{ translateX: p.x }, { translateY: p.y }] }} />
-        ))}
-        {[{ scale: ring1Scale, opacity: ring1Opacity }, { scale: ring2Scale, opacity: ring2Opacity }, { scale: ring3Scale, opacity: ring3Opacity }].map((r, i) => (
-          <Animated.View key={i} pointerEvents="none" style={{ position: 'absolute', top: H * 0.5 - W * 0.5, left: 0, width: W, height: W, borderRadius: W / 2, borderWidth: 1.5, borderColor: color, opacity: r.opacity, transform: [{ scale: r.scale }] }} />
-        ))}
-        <Animated.View pointerEvents="none" style={{ position: 'absolute', top: H * 0.5 - W * 0.65, left: -W * 0.15, width: W * 1.3, height: W * 1.3, borderRadius: W * 0.65, backgroundColor: glow, opacity: glowBreath }} />
-
-        {/* ── Header : label + compteur + bouton fermer ── */}
-        <Animated.View style={{ position: 'absolute', top: 0, left: 0, right: 0, opacity: uiFade, zIndex: 10 }}>
-          <View style={{ paddingTop: Platform.OS === 'ios' ? 56 : 36, paddingHorizontal: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-            {/* Label gauche */}
-            <View style={{ flex: 1 }}>
-              <Text style={{ color: accent, fontSize: 10, fontWeight: '800', letterSpacing: 4, textTransform: 'uppercase' }}>
-                ✦ Station of Presence
-              </Text>
-            </View>
-
-            {/* Compteur central */}
-            <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 16, paddingHorizontal: 12, paddingVertical: 6, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
-              <Text style={{ color: accent, fontSize: 13, fontWeight: '800' }}>{currentIdx + 1}</Text>
-              <Text style={{ color: 'rgba(255,255,255,0.3)', fontSize: 12, marginHorizontal: 4 }}>/</Text>
-              <Text style={{ color: 'rgba(255,255,255,0.45)', fontSize: 12 }}>{azkars.length}</Text>
-            </View>
-
-            {/* Bouton fermer */}
-            <View style={{ flex: 1, alignItems: 'flex-end' }}>
-              <TouchableOpacity
-                onPress={() => { haptic('light'); onClose(currentIdx); }}
-                style={{ width: 40, height: 40, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)', backgroundColor: 'rgba(0,0,0,0.7)', alignItems: 'center', justifyContent: 'center' }}
-              >
-                <X size={18} color="rgba(255,255,255,0.9)" />
-              </TouchableOpacity>
-            </View>
-          </View>
-        </Animated.View>
-
-        {/* ── Contenu animé de l'azkar courant ── */}
-        <Animated.View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: contentFade, transform: [{ translateX: contentSlide }] }}>
-          <PresenceContent azkar={azkar} period={period} lineWidth={lineWidth} />
-        </Animated.View>
-
-        {/* ── Barre de navigation bas ── */}
-        <Animated.View style={{
-          position: 'absolute', bottom: 0, left: 0, right: 0,
-          paddingBottom: Platform.OS === 'ios' ? 44 : 28,
-          paddingTop: 14, paddingHorizontal: 20,
-          backgroundColor: 'rgba(0,0,0,0.75)',
-          borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.07)',
-          flexDirection: 'row', alignItems: 'center', gap: 10,
-          opacity: uiFade, zIndex: 10,
-        }}>
-          {/* Précédent */}
-          <TouchableOpacity
-            onPress={() => navigateTo(currentIdx - 1, 'prev')}
-            disabled={isFirst}
-            style={{
-              width: 48, height: 48, borderRadius: 24,
-              borderWidth: 1, borderColor: isFirst ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.18)',
-              backgroundColor: 'rgba(255,255,255,0.05)',
-              alignItems: 'center', justifyContent: 'center',
-              opacity: isFirst ? 0.25 : 1,
-            }}
-          >
-            <ChevronLeft size={22} color="#ffffff" />
-          </TouchableOpacity>
-
-          {/* Indicateur de progression (points) */}
-          <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
-            {azkars.map((_, i) => (
-              <TouchableOpacity key={i} onPress={() => navigateTo(i, i > currentIdx ? 'next' : 'prev')} hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}>
-                <View style={{
-                  width: i === currentIdx ? 18 : 6,
-                  height: 6,
-                  borderRadius: 3,
-                  backgroundColor: i === currentIdx ? accent : (i < currentIdx ? `${accent}50` : 'rgba(255,255,255,0.15)'),
-                }} />
-              </TouchableOpacity>
-            ))}
-          </View>
-
-          {/* Suivant / Terminer */}
-          {isLast ? (
-            <TouchableOpacity
-              onPress={() => { haptic('success'); onClose(currentIdx); }}
-              style={{
-                paddingHorizontal: 20, height: 48, borderRadius: 24,
-                borderWidth: 1, borderColor: '#3ab53a50',
-                backgroundColor: '#3ab53a18',
-                alignItems: 'center', justifyContent: 'center', flexDirection: 'row',
-              }}
-            >
-              <Check size={16} color="#3ab53a" style={{ marginRight: 6 }} />
-              <Text style={{ color: '#3ab53a', fontSize: 13, fontWeight: '700' }}>Terminer</Text>
-            </TouchableOpacity>
-          ) : (
-            <TouchableOpacity
-              onPress={() => navigateTo(currentIdx + 1, 'next')}
-              style={{
-                width: 48, height: 48, borderRadius: 24,
-                borderWidth: 1, borderColor: `${accent}40`,
-                backgroundColor: `${accent}18`,
-                alignItems: 'center', justifyContent: 'center',
-              }}
-            >
-              <ChevronRight size={22} color={accent} />
-            </TouchableOpacity>
-          )}
-        </Animated.View>
-
-        {/* Breath hint */}
-        <Animated.View pointerEvents="none" style={{ position: 'absolute', bottom: Platform.OS === 'ios' ? 120 : 104, left: 0, right: 0, alignItems: 'center', opacity: glowBreath }}>
-          <Text style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11, letterSpacing: 3 }}>breathe</Text>
-        </Animated.View>
-
-      </Animated.View>
-    </Modal>
-  );
-});
-
-// ─── AZKAR CARD ───────────────────────────────────────────────────────────────
+// ─── AZKAR CARD ────────────────────────────────────────────────────────────────
 
 const AzkarCard = memo(({
   azkar, userCount, completedCount, onCount, onNext, onPrev, index, total, period, allAzkars,
@@ -718,140 +330,200 @@ const AzkarCard = memo(({
   index: number; total: number; period: AzkarPeriod;
   allAzkars: (Azkar | CustomAzkar)[];
 }) => {
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(24)).current;
-  const floatAnim = useRef(new Animated.Value(0)).current;
-  // presenceStartIndex : l'index depuis lequel on ouvre le modal
-  const [presenceStartIndex, setPresenceStartIndex] = useState<number | null>(null);
+  const cardFade   = useRef(new Animated.Value(0)).current;
+  const cardSlide  = useRef(new Animated.Value(20)).current;
+  const tapScale   = useRef(new Animated.Value(1)).current;
+  const tapGlow    = useRef(new Animated.Value(0)).current;
+  const doneScale  = useRef(new Animated.Value(1)).current;
+  const [presenceIdx, setPresenceIdx] = useState<number | null>(null);
 
-  const isMorning = period === 'morning';
-  const isCustom = 'isCustom' in azkar;
-  const color = isCustom ? '#5a7db5' : (azkar as Azkar).color;
-  const glow = isCustom ? '#aac4f0' : (azkar as Azkar).glow;
-  const accentColor = isMorning ? '#C8922A' : '#5a7db5';
-  const isDone = completedCount >= userCount;
+  const isCustom   = 'isCustom' in azkar;
+  const color      = isCustom ? EVENING_ACCENT : (azkar as Azkar).color;
+  const glow       = isCustom ? '#aac4f0'      : (azkar as Azkar).glow;
+  const accent     = period === 'morning' ? MORNING_ACCENT : EVENING_ACCENT;
+  const isDone     = completedCount >= userCount;
+  const remaining  = Math.max(0, userCount - completedCount);
 
   useEffect(() => {
-    fadeAnim.setValue(0); slideAnim.setValue(24);
+    cardFade.setValue(0); cardSlide.setValue(16);
     Animated.parallel([
-      Animated.timing(fadeAnim, { toValue: 1, duration: 450, useNativeDriver: true }),
-      Animated.spring(slideAnim, { toValue: 0, friction: 10, useNativeDriver: true }),
+      Animated.timing(cardFade,  { toValue: 1, duration: 350, useNativeDriver: true }),
+      Animated.spring(cardSlide, { toValue: 0, friction: 12,  useNativeDriver: true }),
     ]).start();
-    const floatLoop = Animated.loop(Animated.sequence([
-      Animated.timing(floatAnim, { toValue: -7, duration: 3200, useNativeDriver: true }),
-      Animated.timing(floatAnim, { toValue: 0, duration: 3200, useNativeDriver: true }),
-    ]));
-    floatLoop.start();
-    return () => floatLoop.stop();
   }, [azkar.id]);
 
-  const panResponder = useMemo(() => PanResponder.create({
-    onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dx) > 40 && Math.abs(g.dy) < 30,
+  useEffect(() => {
+    if (isDone) {
+      haptic('success');
+      Animated.sequence([
+        Animated.spring(doneScale, { toValue: 1.06, friction: 5, useNativeDriver: true }),
+        Animated.spring(doneScale, { toValue: 1,    friction: 5, useNativeDriver: true }),
+      ]).start();
+    }
+  }, [isDone]);
+
+  const handleCount = useCallback(() => {
+    if (isDone) return;
+    haptic('light');
+    Animated.sequence([
+      Animated.parallel([
+        Animated.timing(tapScale, { toValue: 0.95, duration: 60,  useNativeDriver: true }),
+        Animated.timing(tapGlow,  { toValue: 1,    duration: 80,  useNativeDriver: true }),
+      ]),
+      Animated.parallel([
+        Animated.spring(tapScale, { toValue: 1,    friction: 6,   useNativeDriver: true }),
+        Animated.timing(tapGlow,  { toValue: 0,    duration: 400, useNativeDriver: true }),
+      ]),
+    ]).start();
+    onCount();
+  }, [isDone, onCount]);
+
+  const pan = useMemo(() => PanResponder.create({
+    onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dx) > 35 && Math.abs(g.dy) < 35,
     onPanResponderRelease: (_, g) => {
       if (g.dx < -50) { haptic('light'); onNext(); }
-      if (g.dx > 50) { haptic('light'); onPrev(); }
+      if (g.dx > 50)  { haptic('light'); onPrev(); }
     },
   }), [onNext, onPrev]);
 
   return (
     <>
-      {presenceStartIndex !== null && (
+      {presenceIdx !== null && (
         <PresenceModal
           azkars={allAzkars}
-          startIndex={presenceStartIndex}
+          startIndex={presenceIdx}
           period={period}
-          onClose={(finalIndex) => {
-            setPresenceStartIndex(null);
-            // Synchronise la carte principale si l'index a changé
-            const diff = finalIndex - index;
-            if (diff > 0) {
-              for (let i = 0; i < diff; i++) onNext();
-            } else if (diff < 0) {
-              for (let i = 0; i < -diff; i++) onPrev();
-            }
+          onClose={(fi) => {
+            setPresenceIdx(null);
+            const diff = fi - index;
+            if (diff > 0) for (let i = 0; i < diff;  i++) onNext();
+            else if (diff < 0) for (let i = 0; i < -diff; i++) onPrev();
           }}
         />
       )}
 
-      <Animated.View style={{ flex: 1, opacity: fadeAnim, transform: [{ translateY: slideAnim }] }} {...panResponder.panHandlers}>
-        <ScrollView contentContainerStyle={{ paddingBottom: 100 }} showsVerticalScrollIndicator={false} nestedScrollEnabled>
-
-          {/* Badge index/total + catégorie */}
-          <View style={{ alignItems: 'center', paddingTop: 14, paddingBottom: 16 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: `${accentColor}30`, borderRadius: 20, paddingHorizontal: 14, paddingVertical: 5, backgroundColor: `${accentColor}0c`, marginBottom: 10 }}>
-              <Text style={{ color: accentColor, fontSize: 12, fontWeight: '800', letterSpacing: 1 }}>{String(index + 1).padStart(2, '0')}</Text>
-              <Text style={{ color: 'rgba(255,255,255,0.25)', fontSize: 12, marginHorizontal: 6 }}>/</Text>
-              <Text style={{ color: 'rgba(255,255,255,0.45)', fontSize: 12 }}>{total}</Text>
-            </View>
+      <Animated.View
+        style={[ac.root, { opacity: cardFade, transform: [{ translateY: cardSlide }] }]}
+        {...pan.panHandlers}
+      >
+        {/* ── Text Zone ── */}
+        <ScrollView
+          style={ac.textZone}
+          contentContainerStyle={ac.textContent}
+          showsVerticalScrollIndicator={false}
+          bounces={false}
+        >
+          <View style={ac.metaRow}>
             {!isCustom && (
-              <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10, paddingVertical: 3, borderRadius: 10, backgroundColor: `${CATEGORY_COLORS[(azkar as Azkar).category]}18` }}>
-                <View style={{ width: 5, height: 5, borderRadius: 2.5, backgroundColor: CATEGORY_COLORS[(azkar as Azkar).category], marginRight: 5 }} />
-                <Text style={{ color: CATEGORY_COLORS[(azkar as Azkar).category], fontSize: 10, fontWeight: '700', letterSpacing: 1 }}>{getCategoryLabel((azkar as Azkar).category).toUpperCase()}</Text>
+              <View style={[ac.categoryPill, { backgroundColor: `${CATEGORY_COLORS[(azkar as Azkar).category]}18` }]}>
+                <View style={[ac.categoryDot, { backgroundColor: CATEGORY_COLORS[(azkar as Azkar).category] }]} />
+                <Text style={[ac.categoryLabel, { color: CATEGORY_COLORS[(azkar as Azkar).category] }]}>
+                  {getCategoryLabel((azkar as Azkar).category).toUpperCase()}
+                </Text>
               </View>
             )}
+            <TouchableOpacity
+              onPress={() => { haptic('light'); setPresenceIdx(index); }}
+              style={[ac.presenceBtn, { borderColor: `${color}60`, backgroundColor: `${color}20` }]}
+            >
+              <Sparkles size={13} color={color} />
+              <Text style={[ac.presenceBtnText, { color }]}>PRESENCE</Text>
+            </TouchableOpacity>
           </View>
 
-          {/* Bloc texte scrollable */}
-          <View style={{ maxHeight: 240, marginHorizontal: 16, marginBottom: 14, borderRadius: 18, borderWidth: 1, borderColor: `${color}22`, backgroundColor: `${color}07`, overflow: 'hidden' }}>
-            <ScrollView nestedScrollEnabled showsVerticalScrollIndicator indicatorStyle="white" contentContainerStyle={{ padding: 18, paddingBottom: 20 }}>
-              <Animated.View style={{ transform: [{ translateY: floatAnim }], marginBottom: 16 }}>
-                <Text style={{ color: '#ffffff', fontSize: 24, lineHeight: 46, textAlign: 'center', fontWeight: '300', textShadowColor: glow, textShadowRadius: 18, textShadowOffset: { width: 0, height: 0 } }}>{azkar.arabic}</Text>
-              </Animated.View>
-              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
-                <View style={{ flex: 1, height: 1, backgroundColor: `${accentColor}35` }} />
-                <Text style={{ color: accentColor, fontSize: 10, marginHorizontal: 10 }}>✦</Text>
-                <View style={{ flex: 1, height: 1, backgroundColor: `${accentColor}35` }} />
-              </View>
-              {!!azkar.transliteration && <Text style={{ color: `${color}cc`, fontSize: 13, lineHeight: 22, textAlign: 'center', fontStyle: 'italic', marginBottom: 10 }}>{azkar.transliteration}</Text>}
-              <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14, lineHeight: 24, textAlign: 'center', marginBottom: 10 }}>{azkar.translation}</Text>
-              {!isCustom && <Text style={{ color: 'rgba(255,255,255,0.2)', fontSize: 11, textAlign: 'center' }}>{(azkar as Azkar).source}</Text>}
-            </ScrollView>
-            <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 28, pointerEvents: 'none' }}>
-              <LinearGradient colors={['transparent', `${color}20`]} style={{ flex: 1, borderBottomLeftRadius: 18, borderBottomRightRadius: 18 }} />
-            </View>
+          <Text style={[ac.arabic, { textShadowColor: glow }]}>{azkar.arabic}</Text>
+
+          <View style={ac.dividerRow}>
+            <View style={[ac.dividerLine, { backgroundColor: `${accent}30` }]} />
+            <Text style={[ac.dividerDot, { color: accent }]}>✦</Text>
+            <View style={[ac.dividerLine, { backgroundColor: `${accent}30` }]} />
           </View>
 
-          {/* Virtue */}
-          {!isCustom && (azkar as Azkar).virtue && (
-            <View style={{ marginHorizontal: 16, marginBottom: 16, borderWidth: 1, borderColor: `${accentColor}20`, borderRadius: 14, padding: 14, backgroundColor: `${accentColor}08` }}>
-              <Text style={{ color: accentColor, fontSize: 10, fontWeight: '800', letterSpacing: 1.5, marginBottom: 6 }}>✧ VIRTUE</Text>
-              <CollapsibleText maxHeight={64} color={accentColor}>
-                <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12, lineHeight: 20 }}>{(azkar as Azkar).virtue}</Text>
-              </CollapsibleText>
-            </View>
+          {!!azkar.transliteration && (
+            <Text style={[ac.translit, { color: `${color}dd` }]}>{azkar.transliteration}</Text>
           )}
 
-          {/* Bouton Enter Presence */}
-          <TouchableOpacity
-            onPress={() => { haptic('light'); setPresenceStartIndex(index); }}
-            style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginHorizontal: 40, marginBottom: 20, paddingVertical: 10, borderWidth: 1, borderColor: `${color}30`, borderRadius: 30, backgroundColor: `${color}0c` }}
-          >
-            <Eye size={15} color={`${color}80`} style={{ marginRight: 8 }} />
-            <Text style={{ color: `${color}90`, fontSize: 12, fontWeight: '700', letterSpacing: 2 }}>ENTER PRESENCE</Text>
-          </TouchableOpacity>
+          <Text style={ac.translation}>{azkar.translation}</Text>
 
-          {/* Compteur */}
-          <View style={{ alignItems: 'center', marginBottom: 28 }}>
-            <CircularCounter count={completedCount} target={userCount} color={color} glow={glow} onTap={onCount} />
-            {!isDone ? (
-              <TouchableOpacity onPress={() => { haptic('light'); onCount(); }} style={{ marginTop: 18, paddingVertical: 13, paddingHorizontal: 44, borderRadius: 30, borderWidth: 1, borderColor: `${color}40`, backgroundColor: `${color}12` }}>
-                <Text style={{ color: '#ffffff', fontSize: 13, fontWeight: '600', letterSpacing: 2 }}>TAP TO COUNT</Text>
-              </TouchableOpacity>
-            ) : (
-              <TouchableOpacity onPress={() => { haptic('light'); onNext(); }} style={{ marginTop: 18, paddingVertical: 14, paddingHorizontal: 44, borderRadius: 30, backgroundColor: '#0d2a0d', borderWidth: 1, borderColor: '#3ab53a' }}>
-                <Text style={{ color: '#3ab53a', fontSize: 14, fontWeight: '700', letterSpacing: 1 }}>NEXT DHIKR  →</Text>
-              </TouchableOpacity>
-            )}
-          </View>
+          {!isCustom && (azkar as Azkar).source && (
+            <Text style={ac.source}>{(azkar as Azkar).source}</Text>
+          )}
+
+          {!isCustom && (azkar as Azkar).virtue && (
+            <View style={[ac.virtueCard, { borderColor: `${accent}20`, backgroundColor: `${accent}08` }]}>
+              <Text style={[ac.virtueLabel, { color: accent }]}>✧ VIRTUE</Text>
+              <Text style={ac.virtueText}>{(azkar as Azkar).virtue}</Text>
+            </View>
+          )}
         </ScrollView>
 
-        {/* Flèches bas */}
-        <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 18, paddingBottom: 24, paddingTop: 8 }}>
-          <TouchableOpacity onPress={() => { haptic('light'); onPrev(); }} disabled={index === 0} style={{ opacity: index === 0 ? 0.15 : 0.65, padding: 11, borderRadius: 22, borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)', backgroundColor: 'rgba(0,0,0,0.6)' }}>
+        {/* ── Counter Zone ── */}
+        <TouchableOpacity
+          onPress={isDone ? onNext : handleCount}
+          activeOpacity={0.92}
+          style={ac.counterZone}
+          disabled={false}
+        >
+          <Animated.View pointerEvents="none" style={[ac.tapGlow, { backgroundColor: glow, opacity: tapGlow }]} />
+
+          <Animated.View style={{ transform: [{ scale: isDone ? doneScale : tapScale }], alignItems: 'center' }}>
+            {isDone ? (
+              <View style={ac.doneState}>
+                <View style={[ac.doneCircle, { borderColor: GREEN }]}>
+                  <Check size={32} color={GREEN} strokeWidth={2.5} />
+                </View>
+                <Text style={ac.doneLabel}>Completed</Text>
+                <Text style={[ac.doneNext, { color: GREEN }]}>Next dhikr →</Text>
+              </View>
+            ) : (
+              <View style={ac.countState}>
+                <View style={[ac.countCircle, { borderColor: `${color}60`, backgroundColor: `${color}0c` }]}>
+                  <Text style={[ac.countNum, { color: '#ffffff' }]}>{completedCount}</Text>
+                  <View style={[ac.countSep, { backgroundColor: `${color}50` }]} />
+                  <Text style={[ac.countTarget, { color: `${color}cc` }]}>{userCount}</Text>
+                </View>
+                <Text style={[ac.remainingText, { color: `${color}80` }]}>
+                  {remaining === userCount ? 'Tap to count' : `${remaining} remaining`}
+                </Text>
+              </View>
+            )}
+          </Animated.View>
+        </TouchableOpacity>
+
+        {/* ── Bottom Nav ── */}
+        <View style={ac.navBar}>
+          <TouchableOpacity
+            onPress={() => { haptic('light'); onPrev(); }}
+            disabled={index === 0}
+            style={[ac.navBtn, { opacity: index === 0 ? 0.18 : 0.7 }]}
+          >
             <ChevronLeft size={22} color="#ffffff" />
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => { haptic('light'); onNext(); }} style={{ opacity: 0.65, padding: 11, borderRadius: 22, borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)', backgroundColor: 'rgba(0,0,0,0.6)' }}>
-            <ChevronRight size={22} color="#ffffff" />
+
+          <View style={ac.dots}>
+            {allAzkars.length <= 20 ? (
+              allAzkars.map((_, i) => (
+                <View key={i} style={[
+                  ac.dot,
+                  i === index
+                    ? { width: 20, backgroundColor: accent }
+                    : i < index
+                      ? { backgroundColor: `${accent}50` }
+                      : { backgroundColor: 'rgba(255,255,255,0.15)' },
+                ]} />
+              ))
+            ) : (
+              <Text style={[ac.dotsCount, { color: `${accent}cc` }]}>
+                {index + 1}<Text style={{ color: 'rgba(255,255,255,0.3)' }}> / {allAzkars.length}</Text>
+              </Text>
+            )}
+          </View>
+
+          <TouchableOpacity
+            onPress={() => { haptic('light'); onNext(); }}
+            style={[ac.navBtn, ac.navBtnAccent, { borderColor: `${accent}40`, backgroundColor: `${accent}18` }]}
+          >
+            <ChevronRight size={22} color={accent} />
           </TouchableOpacity>
         </View>
       </Animated.View>
@@ -859,7 +531,324 @@ const AzkarCard = memo(({
   );
 });
 
-// ─── CUSTOMIZATION PAGE ───────────────────────────────────────────────────────
+const ac = StyleSheet.create({
+  root:           { flex: 1 },
+  textZone:       { flex: 1 },
+  textContent:    { paddingHorizontal: 24, paddingTop: 8, paddingBottom: 16 },
+  metaRow:        { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 },
+  categoryPill:   { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 12, gap: 6 },
+  categoryDot:    { width: 5, height: 5, borderRadius: 2.5 },
+  categoryLabel:  { fontSize: 9, fontWeight: '800', letterSpacing: 1 },
+  presenceBtn:    { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 14, borderWidth: 1.5 },
+  presenceBtnText:{ fontSize: 9, fontWeight: '900', letterSpacing: 1.5 },
+  arabic:         { color: '#ffffff', fontSize: 26, fontWeight: '300', lineHeight: 50, textAlign: 'center', textShadowRadius: 20, textShadowOffset: { width: 0, height: 0 }, marginBottom: 18 },
+  dividerRow:     { flexDirection: 'row', alignItems: 'center', marginBottom: 16, gap: 10 },
+  dividerLine:    { flex: 1, height: 1 },
+  dividerDot:     { fontSize: 10 },
+  translit:       { fontSize: 13, lineHeight: 22, textAlign: 'center', fontStyle: 'italic', marginBottom: 10 },
+  translation:    { color: 'rgba(255,255,255,0.65)', fontSize: 14, lineHeight: 24, textAlign: 'center', marginBottom: 10 },
+  source:         { color: 'rgba(255,255,255,0.18)', fontSize: 11, textAlign: 'center', marginBottom: 12 },
+  virtueCard:     { borderWidth: 1, borderRadius: 14, padding: 14, marginTop: 4 },
+  virtueLabel:    { fontSize: 9, fontWeight: '800', letterSpacing: 2, marginBottom: 6 },
+  virtueText:     { color: 'rgba(255,255,255,0.5)', fontSize: 12, lineHeight: 19 },
+  counterZone:    { marginHorizontal: 20, marginBottom: 12, borderRadius: 20, paddingVertical: 24, alignItems: 'center', justifyContent: 'center', overflow: 'hidden', position: 'relative', minHeight: 140, backgroundColor: 'rgba(255,255,255,0.03)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)' },
+  tapGlow:        { position: 'absolute', top: -40, left: -40, right: -40, bottom: -40, borderRadius: 20 },
+  doneState:      { alignItems: 'center', gap: 6 },
+  doneCircle:     { width: 64, height: 64, borderRadius: 32, borderWidth: 2, backgroundColor: `${GREEN}12`, alignItems: 'center', justifyContent: 'center', marginBottom: 4 },
+  doneLabel:      { color: GREEN, fontSize: 13, fontWeight: '700', letterSpacing: 1 },
+  doneNext:       { fontSize: 12, fontWeight: '600', marginTop: 2 },
+  countState:     { alignItems: 'center', gap: 8 },
+  countCircle:    { width: 100, height: 100, borderRadius: 50, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
+  countNum:       { fontSize: 38, fontWeight: '200', lineHeight: 42 },
+  countSep:       { width: 30, height: 1, marginVertical: 3 },
+  countTarget:    { fontSize: 14, fontWeight: '700' },
+  remainingText:  { fontSize: 12, fontWeight: '500', letterSpacing: 0.5 },
+  navBar:         { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingBottom: Platform.OS === 'ios' ? 28 : 16, paddingTop: 8, gap: 12 },
+  navBtn:         { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)', backgroundColor: 'rgba(255,255,255,0.05)' },
+  navBtnAccent:   {},
+  dots:           { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, flexWrap: 'wrap' },
+  dot:            { height: 6, width: 6, borderRadius: 3 },
+  dotsCount:      { fontSize: 16, fontWeight: '700' },
+});
+
+// ─── PRESENCE CONTENT ──────────────────────────────────────────────────────────
+
+const PresenceContent = memo(({ azkar, period, lineWidth }: {
+  azkar: Azkar | CustomAzkar; period: AzkarPeriod; lineWidth: Animated.Value;
+}) => {
+  const floatAnim = useRef(new Animated.Value(0)).current;
+  const isCustom = 'isCustom' in azkar;
+  const color  = isCustom ? EVENING_ACCENT : (azkar as Azkar).color;
+  const glow   = isCustom ? '#aac4f0'      : (azkar as Azkar).glow;
+  const accent = period === 'morning' ? MORNING_ACCENT : EVENING_ACCENT;
+
+  useEffect(() => {
+    Animated.loop(Animated.sequence([
+      Animated.timing(floatAnim, { toValue: -10, duration: 4000, useNativeDriver: true }),
+      Animated.timing(floatAnim, { toValue: 0,   duration: 4000, useNativeDriver: true }),
+    ])).start();
+  }, []);
+
+  return (
+    <ScrollView
+      contentContainerStyle={pc.content}
+      showsVerticalScrollIndicator={false}
+      bounces
+    >
+      <Animated.Text style={[pc.arabic, {
+        textShadowColor: glow,
+        transform: [{ translateY: floatAnim }],
+      }]}>
+        {azkar.arabic}
+      </Animated.Text>
+
+      <Animated.View style={[pc.line, {
+        backgroundColor: accent,
+        width: lineWidth.interpolate({ inputRange: [0, 1], outputRange: ['0%', '50%'] }),
+      }]} />
+
+      {!!azkar.transliteration && (
+        <Text style={[pc.translit, { color: `${color}ee` }]}>{azkar.transliteration}</Text>
+      )}
+
+      <Text style={pc.translation}>{azkar.translation}</Text>
+
+      {!isCustom && (azkar as Azkar).virtue && (
+        <View style={[pc.virtue, { borderColor: `${accent}28`, backgroundColor: `${accent}10` }]}>
+          <Text style={[pc.virtueLabel, { color: accent }]}>✧ VIRTUE ✧</Text>
+          <Text style={pc.virtueText}>{(azkar as Azkar).virtue}</Text>
+        </View>
+      )}
+    </ScrollView>
+  );
+});
+
+const pc = StyleSheet.create({
+  content:    { flexGrow: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 28, paddingTop: 110, paddingBottom: 160 },
+  arabic:     { color: '#ffffff', fontSize: 30, fontWeight: '300', lineHeight: 54, textAlign: 'center', textShadowRadius: 28, textShadowOffset: { width: 0, height: 0 }, marginBottom: 26 },
+  line:       { height: 1, opacity: 0.55, alignSelf: 'center', marginBottom: 26 },
+  translit:   { fontSize: 15, lineHeight: 24, textAlign: 'center', fontStyle: 'italic', marginBottom: 12 },
+  translation:{ color: 'rgba(255,255,255,0.75)', fontSize: 15, lineHeight: 26, textAlign: 'center', marginBottom: 30 },
+  virtue:     { width: '100%', borderWidth: 1, borderRadius: 16, padding: 16 },
+  virtueLabel:{ fontSize: 10, fontWeight: '800', letterSpacing: 2, marginBottom: 8, textAlign: 'center' },
+  virtueText: { color: 'rgba(255,255,255,0.62)', fontSize: 13, lineHeight: 21, textAlign: 'center' },
+});
+
+// ─── PRESENCE MODAL ────────────────────────────────────────────────────────────
+
+const PresenceModal = memo(({ azkars, startIndex, period, onClose }: {
+  azkars: (Azkar | CustomAzkar)[];
+  startIndex: number;
+  period: AzkarPeriod;
+  onClose: (finalIndex: number) => void;
+}) => {
+  const [currentIdx, setCurrentIdx] = useState(startIndex);
+  const azkar = azkars[currentIdx];
+  const insets = useSafeAreaInsets();
+
+  const backdropFade  = useRef(new Animated.Value(0)).current;
+  const uiFade        = useRef(new Animated.Value(0)).current;
+  const lineWidth     = useRef(new Animated.Value(0)).current;
+  const contentFade   = useRef(new Animated.Value(1)).current;
+  const contentSlide  = useRef(new Animated.Value(0)).current;
+  const glowBreath    = useRef(new Animated.Value(0.05)).current;
+  const ring1Scale    = useRef(new Animated.Value(1)).current;
+  const ring1Opacity  = useRef(new Animated.Value(0)).current;
+  const ring2Scale    = useRef(new Animated.Value(1)).current;
+  const ring2Opacity  = useRef(new Animated.Value(0)).current;
+  const ring3Scale    = useRef(new Animated.Value(1)).current;
+  const ring3Opacity  = useRef(new Animated.Value(0)).current;
+
+  const particles = useRef(
+    Array.from({ length: 10 }, () => ({
+      x: new Animated.Value(Math.random() * W * 0.8 - W * 0.4),
+      y: new Animated.Value(Math.random() * H * 0.5 - H * 0.25),
+      opacity: new Animated.Value(0),
+      size: 2 + Math.random() * 3,
+    }))
+  ).current;
+
+  const isCustom = 'isCustom' in azkar;
+  const color    = isCustom ? EVENING_ACCENT : (azkar as Azkar).color;
+  const glow     = isCustom ? '#aac4f0'      : (azkar as Azkar).glow;
+  const accent   = period === 'morning' ? MORNING_ACCENT : EVENING_ACCENT;
+  const isFirst  = currentIdx === 0;
+  const isLast   = currentIdx === azkars.length - 1;
+
+  const startRingLoop = (sA: Animated.Value, oA: Animated.Value, delay: number) => {
+    Animated.loop(Animated.sequence([
+      Animated.delay(delay),
+      Animated.parallel([
+        Animated.timing(oA, { toValue: 0.13, duration: 300, useNativeDriver: true }),
+        Animated.timing(sA, { toValue: 1,    duration: 0,   useNativeDriver: true }),
+      ]),
+      Animated.parallel([
+        Animated.timing(sA, { toValue: 3.0,  duration: 3600, useNativeDriver: true }),
+        Animated.timing(oA, { toValue: 0,    duration: 3600, useNativeDriver: true }),
+      ]),
+    ])).start();
+  };
+
+  const startParticle = (p: typeof particles[0], delay: number) => {
+    Animated.loop(Animated.sequence([
+      Animated.delay(delay),
+      Animated.parallel([
+        Animated.timing(p.opacity, { toValue: 0.25 + Math.random() * 0.3, duration: 4000, useNativeDriver: true }),
+        Animated.timing(p.x,       { toValue: (Math.random() - 0.5) * 180, duration: 6000, useNativeDriver: true }),
+        Animated.timing(p.y,       { toValue: -50 - Math.random() * 80,   duration: 6000, useNativeDriver: true }),
+      ]),
+      Animated.timing(p.opacity,   { toValue: 0, duration: 1500, useNativeDriver: true }),
+      Animated.parallel([
+        Animated.timing(p.x, { toValue: Math.random() * W * 0.8 - W * 0.4, duration: 0, useNativeDriver: true }),
+        Animated.timing(p.y, { toValue: Math.random() * H * 0.5 - H * 0.25, duration: 0, useNativeDriver: true }),
+      ]),
+    ])).start();
+  };
+
+  useEffect(() => {
+    Animated.sequence([
+      Animated.timing(backdropFade, { toValue: 1, duration: 400, useNativeDriver: true }),
+      Animated.parallel([
+        Animated.timing(uiFade,    { toValue: 1, duration: 500, useNativeDriver: true }),
+        Animated.timing(lineWidth, { toValue: 1, duration: 500, useNativeDriver: false }),
+      ]),
+    ]).start();
+    Animated.loop(Animated.sequence([
+      Animated.timing(glowBreath, { toValue: 0.16, duration: 4500, useNativeDriver: true }),
+      Animated.timing(glowBreath, { toValue: 0.05, duration: 4500, useNativeDriver: true }),
+    ])).start();
+    startRingLoop(ring1Scale, ring1Opacity, 0);
+    startRingLoop(ring2Scale, ring2Opacity, 1200);
+    startRingLoop(ring3Scale, ring3Opacity, 2400);
+    particles.forEach((p, i) => startParticle(p, i * 300));
+  }, []);
+
+  const navigateTo = useCallback((newIdx: number, dir: 'next' | 'prev') => {
+    if (newIdx < 0 || newIdx >= azkars.length) return;
+    haptic('light');
+    Animated.parallel([
+      Animated.timing(contentFade,  { toValue: 0, duration: 150, useNativeDriver: true }),
+      Animated.timing(contentSlide, { toValue: dir === 'next' ? -24 : 24, duration: 150, useNativeDriver: true }),
+    ]).start(() => {
+      contentSlide.setValue(dir === 'next' ? 24 : -24);
+      lineWidth.setValue(0);
+      setCurrentIdx(newIdx);
+      Animated.parallel([
+        Animated.timing(contentFade,  { toValue: 1, duration: 200, useNativeDriver: true }),
+        Animated.timing(contentSlide, { toValue: 0, duration: 200, useNativeDriver: true }),
+        Animated.timing(lineWidth,    { toValue: 1, duration: 450, useNativeDriver: false }),
+      ]).start();
+    });
+  }, [azkars.length]);
+
+  const pan = useMemo(() => PanResponder.create({
+    onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dx) > 40 && Math.abs(g.dy) < 40,
+    onPanResponderRelease: (_, g) => {
+      if (g.dx < -50) navigateTo(currentIdx + 1, 'next');
+      if (g.dx > 50)  navigateTo(currentIdx - 1, 'prev');
+    },
+  }), [currentIdx, navigateTo]);
+
+  return (
+    <Modal visible animationType="none" transparent statusBarTranslucent>
+      <Animated.View style={{ flex: 1, opacity: backdropFade }} {...pan.panHandlers}>
+        <View style={pm.backdrop} />
+        <View pointerEvents="none" style={[pm.backdropTint, { backgroundColor: color }]} />
+
+        {particles.map((p, i) => (
+          <Animated.View key={i} pointerEvents="none" style={[pm.particle, { width: p.size, height: p.size, borderRadius: p.size / 2, backgroundColor: glow, opacity: p.opacity, transform: [{ translateX: p.x }, { translateY: p.y }] }]} />
+        ))}
+        {[{ s: ring1Scale, o: ring1Opacity }, { s: ring2Scale, o: ring2Opacity }, { s: ring3Scale, o: ring3Opacity }].map((r, i) => (
+          <Animated.View key={i} pointerEvents="none" style={[pm.ring, { borderColor: color, opacity: r.o, transform: [{ scale: r.s }] }]} />
+        ))}
+        <Animated.View pointerEvents="none" style={[pm.glowCore, { backgroundColor: glow, opacity: glowBreath }]} />
+
+        {/* Header */}
+        <Animated.View style={[pm.header, { opacity: uiFade }]}>
+          <Text style={[pm.headerLabel, { color: accent }]}>✦  Presence Station  ✦</Text>
+          <View style={pm.headerCenter}>
+            <Text style={[pm.headerIdx, { color: accent }]}>{currentIdx + 1}</Text>
+            <Text style={pm.headerSep}> / </Text>
+            <Text style={pm.headerTotal}>{azkars.length}</Text>
+          </View>
+          <TouchableOpacity onPress={() => { haptic('light'); onClose(currentIdx); }} style={pm.closeBtn}>
+            <X size={18} color="rgba(255,255,255,0.9)" />
+          </TouchableOpacity>
+        </Animated.View>
+
+        {/* Content */}
+        <Animated.View style={[pm.contentWrap, { opacity: contentFade, transform: [{ translateX: contentSlide }] }]}>
+          <PresenceContent azkar={azkar} period={period} lineWidth={lineWidth} />
+        </Animated.View>
+
+        {/* Bottom nav */}
+        <Animated.View style={[pm.navBar, { opacity: uiFade, paddingBottom: Math.max(insets.bottom, 16) }]}>
+          <TouchableOpacity
+            onPress={() => navigateTo(currentIdx - 1, 'prev')}
+            disabled={isFirst}
+            style={[pm.navBtn, { opacity: isFirst ? 0.2 : 0.75 }]}
+          >
+            <ChevronLeft size={22} color="#fff" />
+          </TouchableOpacity>
+
+          <View style={pm.dots}>
+            {azkars.map((_, i) => (
+              <TouchableOpacity key={i} onPress={() => navigateTo(i, i > currentIdx ? 'next' : 'prev')} hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}>
+                <View style={[pm.dot, {
+                  width: i === currentIdx ? 20 : 6,
+                  backgroundColor: i === currentIdx ? accent : i < currentIdx ? `${accent}55` : 'rgba(255,255,255,0.18)',
+                }]} />
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {isLast ? (
+            <TouchableOpacity onPress={() => { haptic('success'); onClose(currentIdx); }} style={[pm.navBtnDone, { borderColor: `${GREEN}50`, backgroundColor: `${GREEN}18` }]}>
+              <Check size={16} color={GREEN} />
+              <Text style={[pm.navBtnDoneText, { color: GREEN }]}>Done</Text>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity onPress={() => navigateTo(currentIdx + 1, 'next')} style={[pm.navBtn, pm.navBtnNext, { borderColor: `${accent}40`, backgroundColor: `${accent}18` }]}>
+              <ChevronRight size={22} color={accent} />
+            </TouchableOpacity>
+          )}
+        </Animated.View>
+
+        {/* Breathe hint */}
+        <Animated.View pointerEvents="none" style={[pm.breathe, { opacity: glowBreath }]}>
+          <Text style={pm.breatheText}>breathe</Text>
+        </Animated.View>
+      </Animated.View>
+    </Modal>
+  );
+});
+
+const pm = StyleSheet.create({
+  backdrop:     { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: '#000' },
+  backdropTint: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0.04 },
+  particle:     { position: 'absolute', top: H * 0.5, left: W * 0.5 },
+  ring:         { position: 'absolute', top: H * 0.5 - W * 0.5, left: 0, width: W, height: W, borderRadius: W / 2, borderWidth: 1.5 },
+  glowCore:     { position: 'absolute', top: H * 0.5 - W * 0.6, left: -W * 0.1, width: W * 1.2, height: W * 1.2, borderRadius: W * 0.6 },
+  header:       { position: 'absolute', top: 0, left: 0, right: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: Platform.OS === 'ios' ? 54 : 34, paddingHorizontal: 20, paddingBottom: 12, zIndex: 10 },
+  headerLabel:  { flex: 1, fontSize: 9, fontWeight: '800', letterSpacing: 3 },
+  headerCenter: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.07)', borderRadius: 14, paddingHorizontal: 12, paddingVertical: 5, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  headerIdx:    { fontSize: 13, fontWeight: '800' },
+  headerSep:    { color: 'rgba(255,255,255,0.25)', fontSize: 12 },
+  headerTotal:  { color: 'rgba(255,255,255,0.45)', fontSize: 12 },
+  closeBtn:     { flex: 1, alignItems: 'flex-end' },
+  contentWrap:  { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 },
+  navBar:       { position: 'absolute', bottom: 0, left: 0, right: 0, flexDirection: 'row', alignItems: 'center', paddingBottom: 16, paddingTop: 14, paddingHorizontal: 20, backgroundColor: 'rgba(0,0,0,0.75)', borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.08)', gap: 12, zIndex: 10, minHeight: 80 },
+  navBtn:       { width: 46, height: 46, borderRadius: 23, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)', backgroundColor: 'rgba(255,255,255,0.05)' },
+  navBtnNext:   {},
+  navBtnDone:   { paddingHorizontal: 16, height: 46, borderRadius: 23, flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: 1 },
+  navBtnDoneText:{ fontSize: 13, fontWeight: '700' },
+  dots:         { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, flexWrap: 'wrap' },
+  dot:          { height: 6, borderRadius: 3 },
+  breathe:      { position: 'absolute', bottom: 96, left: 0, right: 0, alignItems: 'center' },
+  breatheText:  { color: 'rgba(255,255,255,0.35)', fontSize: 10, letterSpacing: 4 },
+});
+
+// ─── CUSTOMIZATION PAGE ────────────────────────────────────────────────────────
 
 const CustomizationPage = memo(({ prefs, onUpdate, onClose, period }: {
   prefs: UserPrefs; onUpdate: (p: UserPrefs) => void; onClose: () => void; period: AzkarPeriod;
@@ -869,164 +858,209 @@ const CustomizationPage = memo(({ prefs, onUpdate, onClose, period }: {
     customCounts: { ...prefs.customCounts },
     customAzkars: [...prefs.customAzkars],
   });
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editingValue, setEditingValue] = useState<string>('');
-  const [showAddCustom, setShowAddCustom] = useState(false);
-  const [newAzkar, setNewAzkar] = useState({ arabic: '', transliteration: '', translation: '', count: '3' });
+  const [editingId, setEditingId]   = useState<string | null>(null);
+  const [editingValue, setEditingValue] = useState('');
+  const [showAdd, setShowAdd]       = useState(false);
+  const [newAzkar, setNewAzkar]     = useState({ arabic: '', transliteration: '', translation: '', count: '3' });
 
-  const isMorning = period === 'morning';
-  const accentColor = isMorning ? '#C8922A' : '#5a7db5';
-  const filteredAzkars = AZKARS.filter(a => a.period.includes(period));
+  const isMorning    = period === 'morning';
+  const accent       = isMorning ? MORNING_ACCENT : EVENING_ACCENT;
+  const filtered     = AZKARS.filter(a => a.period.includes(period));
 
-  const toggleEnabled = (id: string) => {
-    const next = new Set(localPrefs.enabledIds);
-    if (next.has(id)) next.delete(id); else next.add(id);
-    setLocalPrefs({ ...localPrefs, enabledIds: next });
+  const toggle = (id: string) => {
+    const s = new Set(localPrefs.enabledIds);
+    s.has(id) ? s.delete(id) : s.add(id);
+    setLocalPrefs({ ...localPrefs, enabledIds: s });
     haptic('light');
   };
 
-  const startEdit = (id: string, current: number) => { setEditingId(id); setEditingValue(String(current)); };
   const commitEdit = (id: string) => {
     const n = parseInt(editingValue, 10);
     if (!isNaN(n) && n >= 1) setLocalPrefs(p => ({ ...p, customCounts: { ...p.customCounts, [id]: n } }));
     setEditingId(null);
   };
 
-  const addCustomAzkar = () => {
-    if (!newAzkar.arabic.trim() || !newAzkar.translation.trim()) { Alert.alert('Required Fields', 'Arabic text and translation are required.'); return; }
+  const addCustom = () => {
+    if (!newAzkar.arabic.trim() || !newAzkar.translation.trim()) {
+      Alert.alert('Required fields', 'Arabic text and translation are required.');
+      return;
+    }
     const id = `custom_${Date.now()}`;
-    const custom: CustomAzkar = { id, arabic: newAzkar.arabic.trim(), transliteration: newAzkar.transliteration.trim(), translation: newAzkar.translation.trim(), count: parseInt(newAzkar.count, 10) || 3, period: [period], isCustom: true };
-    setLocalPrefs(p => ({ ...p, customAzkars: [...p.customAzkars, custom], enabledIds: new Set([...p.enabledIds, id]) }));
+    const c: CustomAzkar = {
+      id, arabic: newAzkar.arabic.trim(), transliteration: newAzkar.transliteration.trim(),
+      translation: newAzkar.translation.trim(), count: parseInt(newAzkar.count, 10) || 3,
+      period: [period], isCustom: true,
+    };
+    setLocalPrefs(p => ({ ...p, customAzkars: [...p.customAzkars, c], enabledIds: new Set([...p.enabledIds, id]) }));
     setNewAzkar({ arabic: '', transliteration: '', translation: '', count: '3' });
-    setShowAddCustom(false);
+    setShowAdd(false);
     haptic('success');
   };
 
   const deleteCustom = (id: string) => {
-    const nextEnabled = new Set(localPrefs.enabledIds);
-    nextEnabled.delete(id);
-    setLocalPrefs(p => ({ ...p, customAzkars: p.customAzkars.filter(c => c.id !== id), enabledIds: nextEnabled }));
+    const s = new Set(localPrefs.enabledIds); s.delete(id);
+    setLocalPrefs(p => ({ ...p, customAzkars: p.customAzkars.filter(c => c.id !== id), enabledIds: s }));
     haptic('warning');
   };
 
   const save = () => { onUpdate(localPrefs); haptic('success'); onClose(); };
 
+  const customsForPeriod = localPrefs.customAzkars.filter(c => c.period.includes(period));
+
+  // ── Field definitions with explicit type to avoid TS narrowing issues ──
+  type FieldDef = {
+    label: string;
+    key: 'arabic' | 'transliteration' | 'translation';
+    placeholder: string;
+    multiline: boolean;
+    rtl?: boolean;
+    italic?: boolean;
+  };
+
+  const fieldDefs: FieldDef[] = [
+    { label: 'Arabic text *',   key: 'arabic',          placeholder: 'Enter Arabic text...',   multiline: true,  rtl: true  },
+    { label: 'Transliteration', key: 'transliteration', placeholder: 'Transliteration...',      multiline: false, italic: true },
+    { label: 'Translation *',   key: 'translation',     placeholder: 'Meaning in English...',  multiline: true              },
+  ];
+
   return (
-    <View style={{ flex: 1, backgroundColor: '#050508' }}>
+    <View style={cp.root}>
       <StatusBar barStyle="light-content" />
-      <LinearGradient colors={['#0a0a14', '#050508']} style={{ paddingTop: 56, paddingBottom: 16, paddingHorizontal: 20, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.06)' }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-          <TouchableOpacity onPress={onClose} style={{ padding: 8 }}><X size={22} color="rgba(255,255,255,0.5)" /></TouchableOpacity>
-          <View style={{ alignItems: 'center' }}>
-            <Text style={{ color: '#ffffff', fontSize: 17, fontWeight: '600' }}>Personalize Adhkar</Text>
-            <Text style={{ color: accentColor, fontSize: 12, marginTop: 2 }}>{isMorning ? 'Morning Session' : 'Evening Session'}</Text>
-          </View>
-          <TouchableOpacity onPress={save} style={{ paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: `${accentColor}20`, borderWidth: 1, borderColor: `${accentColor}40` }}>
-            <Text style={{ color: accentColor, fontSize: 14, fontWeight: '700' }}>Save</Text>
-          </TouchableOpacity>
+      <LinearGradient colors={['#0a0a12', '#050508']} style={cp.header}>
+        <TouchableOpacity onPress={onClose} style={cp.headerBack}><X size={21} color="rgba(255,255,255,0.5)" /></TouchableOpacity>
+        <View style={cp.headerCenter}>
+          <Text style={cp.headerTitle}>Customize</Text>
+          <Text style={[cp.headerSub, { color: accent }]}>{isMorning ? 'Morning Adhkar' : 'Evening Adhkar'}</Text>
         </View>
+        <TouchableOpacity onPress={save} style={[cp.saveBtn, { borderColor: `${accent}40`, backgroundColor: `${accent}18` }]}>
+          <Text style={[cp.saveBtnText, { color: accent }]}>Save</Text>
+        </TouchableOpacity>
       </LinearGradient>
 
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
-        <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 60 }} showsVerticalScrollIndicator={false}>
-          <View style={{ flexDirection: 'row', gap: 10, marginBottom: 22 }}>
-            <TouchableOpacity onPress={() => setLocalPrefs(p => ({ ...p, enabledIds: new Set([...filteredAzkars.map(a => a.id), ...p.customAzkars.filter(c => c.period.includes(period)).map(c => c.id)]) }))} style={{ flex: 1, paddingVertical: 10, borderRadius: 20, borderWidth: 1, borderColor: `${accentColor}40`, alignItems: 'center', backgroundColor: `${accentColor}10` }}>
-              <Text style={{ color: accentColor, fontSize: 13, fontWeight: '700' }}>Select All</Text>
+        <ScrollView contentContainerStyle={cp.scroll} showsVerticalScrollIndicator={false}>
+
+          {/* Global buttons */}
+          <View style={cp.bulkRow}>
+            <TouchableOpacity onPress={() => setLocalPrefs(p => ({ ...p, enabledIds: new Set([...filtered.map(a => a.id), ...customsForPeriod.map(c => c.id)]) }))} style={[cp.bulkBtn, { borderColor: `${accent}40`, backgroundColor: `${accent}10` }]}>
+              <Text style={[cp.bulkBtnText, { color: accent }]}>Select all</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => setLocalPrefs(p => ({ ...p, enabledIds: new Set() }))} style={{ flex: 1, paddingVertical: 10, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', alignItems: 'center' }}>
-              <Text style={{ color: 'rgba(255,255,255,0.45)', fontSize: 13, fontWeight: '700' }}>Select None</Text>
+            <TouchableOpacity onPress={() => setLocalPrefs(p => ({ ...p, enabledIds: new Set() }))} style={[cp.bulkBtn, { borderColor: 'rgba(255,255,255,0.1)' }]}>
+              <Text style={[cp.bulkBtnText, { color: 'rgba(255,255,255,0.4)' }]}>Deselect all</Text>
             </TouchableOpacity>
           </View>
 
-          <Text style={{ color: 'rgba(255,255,255,0.3)', fontSize: 10, fontWeight: '800', letterSpacing: 2.5, marginBottom: 14 }}>STANDARD ADHKAR  ({filteredAzkars.length})</Text>
+          <Text style={cp.sectionTitle}>STANDARD ADHKAR  ({filtered.length})</Text>
 
-          {filteredAzkars.map((azkar) => {
-            const isEnabled = localPrefs.enabledIds.has(azkar.id);
-            const currentCount = localPrefs.customCounts[azkar.id] ?? azkar.defaultCount;
-            const isEditing = editingId === azkar.id;
+          {filtered.map(azkar => {
+            const enabled = localPrefs.enabledIds.has(azkar.id);
+            const count   = localPrefs.customCounts[azkar.id] ?? azkar.defaultCount;
+            const editing = editingId === azkar.id;
             return (
-              <View key={azkar.id} style={{ marginBottom: 10, borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: isEnabled ? `${azkar.color}35` : 'rgba(255,255,255,0.06)', backgroundColor: isEnabled ? `${azkar.color}0a` : 'rgba(255,255,255,0.02)' }}>
-                <View style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 3, backgroundColor: isEnabled ? azkar.color : 'transparent' }} />
-                <View style={{ flexDirection: 'row', alignItems: 'center', padding: 14, paddingLeft: 18 }}>
-                  <TouchableOpacity onPress={() => toggleEnabled(azkar.id)} style={{ marginRight: 12 }}>
-                    {isEnabled ? <CheckSquare size={21} color={azkar.color} strokeWidth={2} /> : <Square size={21} color="rgba(255,255,255,0.25)" strokeWidth={1.5} />}
-                  </TouchableOpacity>
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ color: '#ffffff', fontSize: 16, fontWeight: '300', lineHeight: 26, marginBottom: 2 }} numberOfLines={2}>{azkar.arabic}</Text>
-                    <Text style={{ color: 'rgba(255,255,255,0.35)', fontSize: 11 }} numberOfLines={1}>{azkar.transliteration}</Text>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
-                      <View style={{ width: 5, height: 5, borderRadius: 2.5, backgroundColor: CATEGORY_COLORS[azkar.category], marginRight: 5 }} />
-                      <Text style={{ color: CATEGORY_COLORS[azkar.category], fontSize: 10, fontWeight: '700', letterSpacing: 0.5 }}>{getCategoryLabel(azkar.category)}</Text>
-                    </View>
+              <View key={azkar.id} style={[cp.row, { borderColor: enabled ? `${azkar.color}30` : 'rgba(255,255,255,0.05)', backgroundColor: enabled ? `${azkar.color}08` : 'rgba(255,255,255,0.02)' }]}>
+                <View style={[cp.rowAccent, { backgroundColor: enabled ? azkar.color : 'transparent' }]} />
+                <TouchableOpacity onPress={() => toggle(azkar.id)} style={cp.rowCheck}>
+                  {enabled
+                    ? <CheckSquare size={20} color={azkar.color} strokeWidth={2} />
+                    : <Square      size={20} color="rgba(255,255,255,0.22)" strokeWidth={1.5} />}
+                </TouchableOpacity>
+                <View style={cp.rowText}>
+                  <Text style={cp.rowArabic} numberOfLines={2}>{azkar.arabic}</Text>
+                  <Text style={cp.rowTranslit} numberOfLines={1}>{azkar.transliteration}</Text>
+                  <View style={cp.rowMeta}>
+                    <View style={[cp.rowDot, { backgroundColor: CATEGORY_COLORS[azkar.category] }]} />
+                    <Text style={[cp.rowCategory, { color: CATEGORY_COLORS[azkar.category] }]}>{getCategoryLabel(azkar.category)}</Text>
                   </View>
-                  {isEditing ? (
-                    <TextInput value={editingValue} onChangeText={setEditingValue} keyboardType="number-pad" style={{ color: '#ffffff', fontSize: 20, fontWeight: '700', backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 10, padding: 8, width: 64, textAlign: 'center', borderWidth: 1.5, borderColor: `${azkar.color}60` }} autoFocus onBlur={() => commitEdit(azkar.id)} onSubmitEditing={() => commitEdit(azkar.id)} />
-                  ) : (
-                    <TouchableOpacity onPress={() => startEdit(azkar.id, currentCount)} style={{ alignItems: 'center', justifyContent: 'center', width: 52, height: 52, borderRadius: 26, borderWidth: 1.5, borderColor: `${azkar.color}45`, backgroundColor: `${azkar.color}14` }}>
-                      <Text style={{ color: azkar.color, fontSize: 20, fontWeight: '700' }}>{currentCount}</Text>
-                      <Text style={{ color: 'rgba(255,255,255,0.2)', fontSize: 8 }}>times</Text>
-                    </TouchableOpacity>
-                  )}
                 </View>
+                {editing ? (
+                  <TextInput
+                    value={editingValue}
+                    onChangeText={setEditingValue}
+                    keyboardType="number-pad"
+                    style={[cp.countInput, { borderColor: `${azkar.color}60` }]}
+                    autoFocus
+                    onBlur={() => commitEdit(azkar.id)}
+                    onSubmitEditing={() => commitEdit(azkar.id)}
+                  />
+                ) : (
+                  <TouchableOpacity onPress={() => { setEditingId(azkar.id); setEditingValue(String(count)); }} style={[cp.countBtn, { borderColor: `${azkar.color}40`, backgroundColor: `${azkar.color}12` }]}>
+                    <Text style={[cp.countBtnNum, { color: azkar.color }]}>{count}</Text>
+                    <Text style={cp.countBtnLabel}>×</Text>
+                  </TouchableOpacity>
+                )}
               </View>
             );
           })}
 
-          {localPrefs.customAzkars.filter(c => c.period.includes(period)).length > 0 && (
+          {customsForPeriod.length > 0 && (
             <>
-              <Text style={{ color: 'rgba(255,255,255,0.3)', fontSize: 10, fontWeight: '800', letterSpacing: 2.5, marginTop: 24, marginBottom: 14 }}>MY CUSTOM ADHKAR  ({localPrefs.customAzkars.filter(c => c.period.includes(period)).length})</Text>
-              {localPrefs.customAzkars.filter(c => c.period.includes(period)).map((custom) => {
-                const isEnabled = localPrefs.enabledIds.has(custom.id);
+              <Text style={[cp.sectionTitle, { marginTop: 24 }]}>MY CUSTOM DHIKR  ({customsForPeriod.length})</Text>
+              {customsForPeriod.map(c => {
+                const enabled = localPrefs.enabledIds.has(c.id);
                 return (
-                  <View key={custom.id} style={{ marginBottom: 10, borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: isEnabled ? '#5a7db550' : 'rgba(255,255,255,0.06)', backgroundColor: isEnabled ? '#5a7db514' : 'rgba(255,255,255,0.02)' }}>
-                    <View style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 3, backgroundColor: isEnabled ? '#5a7db5' : 'transparent' }} />
-                    <View style={{ flexDirection: 'row', alignItems: 'center', padding: 14, paddingLeft: 18 }}>
-                      <TouchableOpacity onPress={() => toggleEnabled(custom.id)} style={{ marginRight: 12 }}>
-                        {isEnabled ? <CheckSquare size={21} color="#5a7db5" strokeWidth={2} /> : <Square size={21} color="rgba(255,255,255,0.25)" strokeWidth={1.5} />}
-                      </TouchableOpacity>
-                      <View style={{ flex: 1 }}>
-                        <Text style={{ color: '#ffffff', fontSize: 16, fontWeight: '300', lineHeight: 26 }} numberOfLines={2}>{custom.arabic}</Text>
-                        <Text style={{ color: 'rgba(255,255,255,0.35)', fontSize: 11, marginTop: 2 }} numberOfLines={1}>{custom.translation}</Text>
-                      </View>
-                      <View style={{ alignItems: 'center', marginHorizontal: 8 }}>
-                        <Text style={{ color: '#5a7db5', fontSize: 18, fontWeight: '700' }}>{custom.count}</Text>
-                        <Text style={{ color: 'rgba(255,255,255,0.2)', fontSize: 9 }}>times</Text>
-                      </View>
-                      <TouchableOpacity onPress={() => deleteCustom(custom.id)} style={{ padding: 8 }}><Trash2 size={17} color="#b54a4a" /></TouchableOpacity>
+                  <View key={c.id} style={[cp.row, { borderColor: enabled ? '#5a7db540' : 'rgba(255,255,255,0.05)', backgroundColor: enabled ? '#5a7db510' : 'rgba(255,255,255,0.02)' }]}>
+                    <View style={[cp.rowAccent, { backgroundColor: enabled ? EVENING_ACCENT : 'transparent' }]} />
+                    <TouchableOpacity onPress={() => toggle(c.id)} style={cp.rowCheck}>
+                      {enabled
+                        ? <CheckSquare size={20} color={EVENING_ACCENT} strokeWidth={2} />
+                        : <Square      size={20} color="rgba(255,255,255,0.22)" strokeWidth={1.5} />}
+                    </TouchableOpacity>
+                    <View style={cp.rowText}>
+                      <Text style={cp.rowArabic} numberOfLines={2}>{c.arabic}</Text>
+                      <Text style={cp.rowTranslit} numberOfLines={1}>{c.translation}</Text>
                     </View>
+                    <Text style={[cp.countBtnNum, { color: EVENING_ACCENT, marginRight: 8 }]}>{c.count}×</Text>
+                    <TouchableOpacity onPress={() => deleteCustom(c.id)} style={cp.deleteBtn}>
+                      <Trash2 size={16} color="#b54a4a" />
+                    </TouchableOpacity>
                   </View>
                 );
               })}
             </>
           )}
 
-          <View style={{ marginTop: 26 }}>
-            {!showAddCustom ? (
-              <TouchableOpacity onPress={() => setShowAddCustom(true)} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 16, borderRadius: 20, borderWidth: 1.5, borderColor: `${accentColor}35`, borderStyle: 'dashed', backgroundColor: `${accentColor}08` }}>
-                <Plus size={18} color={accentColor} style={{ marginRight: 8 }} />
-                <Text style={{ color: accentColor, fontSize: 15, fontWeight: '700' }}>Add Custom Dhikr</Text>
+          {/* Add custom dhikr */}
+          <View style={{ marginTop: 24 }}>
+            {!showAdd ? (
+              <TouchableOpacity onPress={() => setShowAdd(true)} style={[cp.addBtn, { borderColor: `${accent}35` }]}>
+                <Plus size={17} color={accent} />
+                <Text style={[cp.addBtnText, { color: accent }]}>Add a custom dhikr</Text>
               </TouchableOpacity>
             ) : (
-              <View style={{ borderRadius: 20, borderWidth: 1, borderColor: `${accentColor}28`, backgroundColor: `${accentColor}07`, padding: 20 }}>
-                <Text style={{ color: '#ffffff', fontSize: 16, fontWeight: '700', marginBottom: 18 }}>New Custom Dhikr</Text>
-                {[
-                  { label: 'Arabic Text *', key: 'arabic', placeholder: 'أدخل النص العربي...', multiline: true, rtl: true },
-                  { label: 'Transliteration', key: 'transliteration', placeholder: 'transliteration...', multiline: false, italic: true },
-                  { label: 'Translation *', key: 'translation', placeholder: 'English meaning...', multiline: true },
-                ].map(f => (
+              <View style={[cp.addForm, { borderColor: `${accent}25`, backgroundColor: `${accent}06` }]}>
+                <Text style={cp.addFormTitle}>New dhikr</Text>
+
+                {fieldDefs.map(f => (
                   <View key={f.key}>
-                    <Text style={{ color: 'rgba(255,255,255,0.45)', fontSize: 12, marginBottom: 6 }}>{f.label}</Text>
-                    <TextInput value={(newAzkar as any)[f.key]} onChangeText={v => setNewAzkar(p => ({ ...p, [f.key]: v }))} multiline={f.multiline} placeholder={f.placeholder} placeholderTextColor="rgba(255,255,255,0.18)" style={[{ color: '#ffffff', fontSize: 14, lineHeight: 22, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', borderRadius: 12, padding: 12, marginBottom: 14, backgroundColor: 'rgba(255,255,255,0.04)' }, (f as any).rtl && { textAlign: 'right', fontSize: 18, lineHeight: 30, fontWeight: '300' }, (f as any).italic && { fontStyle: 'italic' }]} />
+                    <Text style={cp.fieldLabel}>{f.label}</Text>
+                    <TextInput
+                      value={newAzkar[f.key]}
+                      onChangeText={v => setNewAzkar(p => ({ ...p, [f.key]: v }))}
+                      multiline={f.multiline}
+                      placeholder={f.placeholder}
+                      placeholderTextColor="rgba(255,255,255,0.18)"
+                      style={[
+                        cp.fieldInput,
+                        f.rtl    && { textAlign: 'right', fontSize: 18 },
+                        f.italic && { fontStyle: 'italic' },
+                      ]}
+                    />
                   </View>
                 ))}
-                <Text style={{ color: 'rgba(255,255,255,0.45)', fontSize: 12, marginBottom: 6 }}>Count</Text>
-                <TextInput value={newAzkar.count} onChangeText={v => setNewAzkar(p => ({ ...p, count: v }))} keyboardType="number-pad" placeholder="3" placeholderTextColor="rgba(255,255,255,0.18)" style={{ color: '#ffffff', fontSize: 22, fontWeight: '700', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', borderRadius: 12, padding: 12, marginBottom: 20, backgroundColor: 'rgba(255,255,255,0.04)', width: 110, textAlign: 'center' }} />
-                <View style={{ flexDirection: 'row', gap: 10 }}>
-                  <TouchableOpacity onPress={() => setShowAddCustom(false)} style={{ flex: 1, paddingVertical: 14, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)', alignItems: 'center' }}>
-                    <Text style={{ color: 'rgba(255,255,255,0.4)', fontSize: 14 }}>Cancel</Text>
+
+                <Text style={cp.fieldLabel}>Number of repetitions</Text>
+                <TextInput
+                  value={newAzkar.count}
+                  onChangeText={v => setNewAzkar(p => ({ ...p, count: v }))}
+                  keyboardType="number-pad"
+                  style={[cp.fieldInput, { width: 90, textAlign: 'center', fontSize: 20, fontWeight: '700', marginBottom: 20 }]}
+                />
+                <View style={cp.addFormBtns}>
+                  <TouchableOpacity onPress={() => setShowAdd(false)} style={cp.cancelBtn}>
+                    <Text style={cp.cancelBtnText}>Cancel</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity onPress={addCustomAzkar} style={{ flex: 2, paddingVertical: 14, borderRadius: 20, backgroundColor: `${accentColor}28`, borderWidth: 1, borderColor: `${accentColor}45`, alignItems: 'center' }}>
-                    <Text style={{ color: accentColor, fontSize: 14, fontWeight: '700' }}>Add Dhikr</Text>
+                  <TouchableOpacity onPress={addCustom} style={[cp.confirmBtn, { backgroundColor: `${accent}25`, borderColor: `${accent}45` }]}>
+                    <Text style={[cp.confirmBtnText, { color: accent }]}>Add</Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -1038,68 +1072,197 @@ const CustomizationPage = memo(({ prefs, onUpdate, onClose, period }: {
   );
 });
 
-// ─── COMPLETION SCREEN ────────────────────────────────────────────────────────
+const cp = StyleSheet.create({
+  root:          { flex: 1, backgroundColor: '#050508' },
+  header:        { paddingTop: Platform.OS === 'ios' ? 54 : 34, paddingBottom: 14, paddingHorizontal: 20, flexDirection: 'row', alignItems: 'center', borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.05)' },
+  headerBack:    { padding: 4 },
+  headerCenter:  { flex: 1, alignItems: 'center' },
+  headerTitle:   { color: '#ffffff', fontSize: 16, fontWeight: '700' },
+  headerSub:     { fontSize: 11, marginTop: 2, fontWeight: '600' },
+  saveBtn:       { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 18, borderWidth: 1 },
+  saveBtnText:   { fontSize: 13, fontWeight: '700' },
+  scroll:        { padding: 20, paddingBottom: 60 },
+  bulkRow:       { flexDirection: 'row', gap: 10, marginBottom: 20 },
+  bulkBtn:       { flex: 1, paddingVertical: 10, borderRadius: 18, borderWidth: 1, alignItems: 'center' },
+  bulkBtnText:   { fontSize: 12, fontWeight: '700' },
+  sectionTitle:  { color: 'rgba(255,255,255,0.28)', fontSize: 10, fontWeight: '800', letterSpacing: 2.5, marginBottom: 12 },
+  row:           { flexDirection: 'row', alignItems: 'center', marginBottom: 8, borderRadius: 14, overflow: 'hidden', borderWidth: 1 },
+  rowAccent:     { width: 3, alignSelf: 'stretch' },
+  rowCheck:      { paddingHorizontal: 12, paddingVertical: 14 },
+  rowText:       { flex: 1, paddingVertical: 12, paddingRight: 8, gap: 3 },
+  rowArabic:     { color: '#ffffff', fontSize: 15, fontWeight: '300', lineHeight: 24 },
+  rowTranslit:   { color: 'rgba(255,255,255,0.32)', fontSize: 11 },
+  rowMeta:       { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 2 },
+  rowDot:        { width: 5, height: 5, borderRadius: 2.5 },
+  rowCategory:   { fontSize: 9, fontWeight: '700', letterSpacing: 0.5 },
+  countBtn:      { alignItems: 'center', justifyContent: 'center', width: 50, height: 50, borderRadius: 25, borderWidth: 1.5, marginRight: 12 },
+  countBtnNum:   { fontSize: 18, fontWeight: '700' },
+  countBtnLabel: { color: 'rgba(255,255,255,0.2)', fontSize: 9 },
+  countInput:    { color: '#ffffff', fontSize: 18, fontWeight: '700', backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 10, padding: 8, width: 56, textAlign: 'center', borderWidth: 1.5, marginRight: 12 },
+  deleteBtn:     { padding: 12 },
+  addBtn:        { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 15, borderRadius: 18, borderWidth: 1.5, borderStyle: 'dashed', backgroundColor: 'rgba(255,255,255,0.02)' },
+  addBtnText:    { fontSize: 14, fontWeight: '700' },
+  addForm:       { borderRadius: 18, borderWidth: 1, padding: 18 },
+  addFormTitle:  { color: '#ffffff', fontSize: 15, fontWeight: '700', marginBottom: 16 },
+  fieldLabel:    { color: 'rgba(255,255,255,0.4)', fontSize: 11, marginBottom: 6 },
+  fieldInput:    { color: '#ffffff', fontSize: 14, lineHeight: 22, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', borderRadius: 10, padding: 11, marginBottom: 12, backgroundColor: 'rgba(255,255,255,0.04)' },
+  addFormBtns:   { flexDirection: 'row', gap: 10, marginTop: 4 },
+  cancelBtn:     { flex: 1, paddingVertical: 13, borderRadius: 18, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', alignItems: 'center' },
+  cancelBtnText: { color: 'rgba(255,255,255,0.38)', fontSize: 13 },
+  confirmBtn:    { flex: 2, paddingVertical: 13, borderRadius: 18, borderWidth: 1, alignItems: 'center' },
+  confirmBtnText:{ fontSize: 13, fontWeight: '700' },
+});
 
-const CompletionScreen = memo(({ period, count, onRestart, onChangeSession }: { period: AzkarPeriod; count: number; onRestart: () => void; onChangeSession: () => void }) => {
-  const scaleAnim = useRef(new Animated.Value(0)).current;
-  const fadeAnim = useRef(new Animated.Value(0)).current;
+// ─── COMPLETION SCREEN ─────────────────────────────────────────────────────────
+
+const CompletionScreen = memo(({ period, count, total, onRestart, onChangeSession, onBack }: {
+  period: AzkarPeriod; count: number; total: number;
+  onRestart: () => void; onChangeSession: () => void; onBack: () => void;
+}) => {
+  const ring1  = useRef(new Animated.Value(0)).current;
+  const ring2  = useRef(new Animated.Value(0)).current;
+  const fade   = useRef(new Animated.Value(0)).current;
+  const scale  = useRef(new Animated.Value(0.7)).current;
+  const btnFade= useRef(new Animated.Value(0)).current;
+
   const isMorning = period === 'morning';
-  const accentColor = isMorning ? '#C8922A' : '#5a7db5';
+  const accent    = isMorning ? MORNING_ACCENT : EVENING_ACCENT;
+  const pct       = total > 0 ? Math.round((count / total) * 100) : 0;
 
   useEffect(() => {
     haptic('success');
     Animated.sequence([
-      Animated.spring(scaleAnim, { toValue: 1, friction: 7, useNativeDriver: true }),
-      Animated.timing(fadeAnim, { toValue: 1, duration: 400, useNativeDriver: true }),
+      Animated.parallel([
+        Animated.spring(scale, { toValue: 1, friction: 7,  useNativeDriver: true }),
+        Animated.timing(fade,  { toValue: 1, duration: 500, useNativeDriver: true }),
+      ]),
+      Animated.timing(btnFade, { toValue: 1, duration: 400, useNativeDriver: true }),
     ]).start();
+    Animated.loop(Animated.sequence([
+      Animated.timing(ring1, { toValue: 0.45, duration: 2800, useNativeDriver: true }),
+      Animated.timing(ring1, { toValue: 0.1,  duration: 2800, useNativeDriver: true }),
+    ])).start();
+    Animated.loop(Animated.sequence([
+      Animated.timing(ring2, { toValue: 0.3,  duration: 2800, delay: 1400, useNativeDriver: true }),
+      Animated.timing(ring2, { toValue: 0.08, duration: 2800, useNativeDriver: true }),
+    ])).start();
   }, []);
 
   return (
-    <LinearGradient colors={isMorning ? ['#0a0700', '#0f0e00', '#0a0700'] : ['#00000f', '#000a1a', '#00000f']} style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 }}>
-      <Animated.View style={{ alignItems: 'center', transform: [{ scale: scaleAnim }] }}>
-        <View style={{ width: 96, height: 96, borderRadius: 48, backgroundColor: '#0a2a0a', borderWidth: 2, borderColor: '#3ab53a', alignItems: 'center', justifyContent: 'center', marginBottom: 28 }}>
-          <Check size={44} color="#3ab53a" strokeWidth={2} />
-        </View>
-        <Text style={{ color: accentColor, fontSize: 12, fontWeight: '800', letterSpacing: 5, textTransform: 'uppercase', marginBottom: 10 }}>Alhamdulillah</Text>
-        <Text style={{ color: '#ffffff', fontSize: 28, fontWeight: '200', marginBottom: 10, textAlign: 'center' }}>{isMorning ? 'Morning Adhkar\nComplete' : 'Evening Adhkar\nComplete'}</Text>
-        <Text style={{ color: 'rgba(255,255,255,0.4)', fontSize: 14, textAlign: 'center', lineHeight: 24, marginBottom: 40 }}>You completed {count} adhkar.{'\n'}May Allah accept your remembrance.</Text>
-      </Animated.View>
-      <Animated.View style={{ opacity: fadeAnim, width: '100%' }}>
-        <TouchableOpacity onPress={onRestart} style={{ paddingVertical: 16, borderRadius: 50, borderWidth: 1, borderColor: `${accentColor}40`, backgroundColor: `${accentColor}14`, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', marginBottom: 12 }}>
-          <RotateCcw size={16} color={accentColor} style={{ marginRight: 8 }} />
-          <Text style={{ color: accentColor, fontSize: 15, fontWeight: '700' }}>Repeat Adhkar</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={onChangeSession} style={{ paddingVertical: 16, borderRadius: 50, borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)', backgroundColor: 'rgba(255,255,255,0.04)', alignItems: 'center', flexDirection: 'row', justifyContent: 'center' }}>
-          {isMorning ? <Moon size={16} color="#5a7db5" style={{ marginRight: 8 }} /> : <Sun size={16} color="#C8922A" style={{ marginRight: 8 }} />}
-          <Text style={{ color: 'rgba(255,255,255,0.55)', fontSize: 15, fontWeight: '600' }}>Switch to {isMorning ? 'Evening' : 'Morning'} Adhkar</Text>
-        </TouchableOpacity>
-      </Animated.View>
+    <LinearGradient
+      colors={isMorning ? ['#060400', '#0c0900', '#060400'] : ['#00000e', '#000916', '#00000e']}
+      style={{ flex: 1 }}
+    >
+      <StatusBar barStyle="light-content" />
+
+      {[ring1, ring2].map((a, i) => (
+        <Animated.View key={i} pointerEvents="none" style={{
+          position: 'absolute',
+          width: W * (0.8 + i * 0.5), height: W * (0.8 + i * 0.5),
+          borderRadius: W * (0.4 + i * 0.25),
+          borderWidth: 1, borderColor: GREEN,
+          top: H * 0.5 - W * (0.4 + i * 0.25),
+          left: W * 0.5 - W * (0.4 + i * 0.25),
+          opacity: a,
+        }} />
+      ))}
+
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 }}>
+        <Animated.View style={{ alignItems: 'center', opacity: fade, transform: [{ scale }] }}>
+          <View style={{ width: 90, height: 90, borderRadius: 45, backgroundColor: '#0a2a0a', borderWidth: 2, borderColor: GREEN, alignItems: 'center', justifyContent: 'center', marginBottom: 24 }}>
+            <Check size={40} color={GREEN} strokeWidth={2} />
+          </View>
+
+          <Text style={{ color: accent, fontSize: 10, fontWeight: '800', letterSpacing: 6, textTransform: 'uppercase', marginBottom: 8 }}>
+            الحمد لله
+          </Text>
+          <Text style={{ color: '#ffffff', fontSize: 26, fontWeight: '200', textAlign: 'center', marginBottom: 6, lineHeight: 36 }}>
+            {isMorning ? 'Morning Adhkar\ncompleted' : 'Evening Adhkar\ncompleted'}
+          </Text>
+          <Text style={{ color: 'rgba(255,255,255,0.38)', fontSize: 13, textAlign: 'center', lineHeight: 22, marginBottom: 32 }}>
+            May Allah accept your dhikr.
+          </Text>
+
+          <View style={{ flexDirection: 'row', gap: 24, marginBottom: 40 }}>
+            {[
+              { n: String(count),  l: 'completed' },
+              { n: `${pct}%`,      l: 'success'   },
+              { n: String(total),  l: 'total'      },
+            ].map(s => (
+              <View key={s.l} style={{ alignItems: 'center', gap: 4 }}>
+                <Text style={{ color: accent, fontSize: 22, fontWeight: '700' }}>{s.n}</Text>
+                <Text style={{ color: 'rgba(255,255,255,0.28)', fontSize: 10, letterSpacing: 1 }}>{s.l.toUpperCase()}</Text>
+              </View>
+            ))}
+          </View>
+        </Animated.View>
+
+        <Animated.View style={{ opacity: btnFade, width: '100%', gap: 10 }}>
+          <TouchableOpacity onPress={onRestart} style={{ paddingVertical: 15, borderRadius: 50, borderWidth: 1, borderColor: `${accent}40`, backgroundColor: `${accent}14`, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 8 }}>
+            <RotateCcw size={15} color={accent} />
+            <Text style={{ color: accent, fontSize: 14, fontWeight: '700' }}>Restart</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={onChangeSession} style={{ paddingVertical: 15, borderRadius: 50, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', backgroundColor: 'rgba(255,255,255,0.04)', alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 8 }}>
+            {isMorning ? <Moon size={15} color={EVENING_ACCENT} /> : <Sun size={15} color={MORNING_ACCENT} />}
+            <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: 14, fontWeight: '600' }}>
+              {isMorning ? 'Evening Adhkar' : 'Morning Adhkar'}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={onBack} style={{ paddingVertical: 12, alignItems: 'center' }}>
+            <Text style={{ color: 'rgba(255,255,255,0.2)', fontSize: 13 }}>Back to home</Text>
+          </TouchableOpacity>
+        </Animated.View>
+      </View>
     </LinearGradient>
   );
 });
 
-// ─── MAIN SCREEN ──────────────────────────────────────────────────────────────
+// ─── MAIN SCREEN ───────────────────────────────────────────────────────────────
 
 export default function AzkarsScreen() {
   const router = useRouter();
   const { period: periodParam } = useLocalSearchParams<{ period?: AzkarPeriod }>();
-  const routePeriod: AzkarPeriod | undefined = periodParam === 'morning' || periodParam === 'evening' ? periodParam : undefined;
+  const routePeriod: AzkarPeriod | undefined =
+    periodParam === 'morning' || periodParam === 'evening' ? periodParam : undefined;
+
   const [selectedPeriod, setSelectedPeriod] = useState<AzkarPeriod>(routePeriod ?? 'morning');
-  const period = selectedPeriod;
+  const period    = selectedPeriod;
   const isMorning = period === 'morning';
-  const accentColor = isMorning ? '#C8922A' : '#5a7db5';
+  const accent    = isMorning ? MORNING_ACCENT : EVENING_ACCENT;
 
-  const allStandardIds = useMemo(() => new Set(AZKARS.filter(a => a.period.includes(period)).map(a => a.id)), [period]);
-
-  const [prefs, setPrefs] = useState<UserPrefs>({ enabledIds: new Set(allStandardIds), customCounts: {}, customAzkars: [] });
-  const [phase, setPhase] = useState<'selector' | 'opening' | 'session' | 'complete'>(routePeriod ? 'opening' : 'selector');
+  const [phase, setPhase] = useState<'selector' | 'opening' | 'session' | 'complete'>(
+    () => (periodParam === 'morning' || periodParam === 'evening' ? 'opening' : 'selector')
+  );
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [counts, setCounts] = useState<Record<string, number>>({});
+
+  const isMounted = useRef(false);
+  useFocusEffect(
+    useCallback(() => {
+      if (!isMounted.current) { isMounted.current = true; return; }
+      if (periodParam === 'morning' || periodParam === 'evening') {
+        setSelectedPeriod(periodParam);
+        setPhase('opening');
+        setCurrentIndex(0);
+      }
+    }, [periodParam])
+  );
+
+  const allStandardIds = useMemo(
+    () => new Set(AZKARS.filter(a => a.period.includes(period)).map(a => a.id)),
+    [period]
+  );
+
+  const [prefs, setPrefs] = useState<UserPrefs>({
+    enabledIds: new Set(allStandardIds),
+    customCounts: {},
+    customAzkars: [],
+  });
+  const [counts, setCounts]           = useState<Record<string, number>>({});
   const [showCustomize, setShowCustomize] = useState(false);
 
   const activeAzkars = useMemo(() => {
     const standard = AZKARS.filter(a => a.period.includes(period) && prefs.enabledIds.has(a.id));
-    const custom = prefs.customAzkars.filter(c => c.period.includes(period) && prefs.enabledIds.has(c.id));
+    const custom   = prefs.customAzkars.filter(c => c.period.includes(period) && prefs.enabledIds.has(c.id));
     return [...standard, ...custom];
   }, [period, prefs]);
 
@@ -1111,8 +1274,8 @@ export default function AzkarsScreen() {
 
   useEffect(() => { resetCounts(); }, [activeAzkars]);
 
-  const currentAzkar = activeAzkars[currentIndex] ?? null;
-  const userCount = currentAzkar
+  const currentAzkar  = activeAzkars[currentIndex] ?? null;
+  const userCount     = currentAzkar
     ? (prefs.customCounts[currentAzkar.id] ?? ('isCustom' in currentAzkar ? (currentAzkar as CustomAzkar).count : (currentAzkar as Azkar).defaultCount))
     : 1;
   const completedCount = currentAzkar ? (counts[currentAzkar.id] ?? 0) : 0;
@@ -1131,78 +1294,105 @@ export default function AzkarsScreen() {
     if (currentIndex > 0) setCurrentIndex(i => i - 1);
   }, [currentIndex]);
 
-  const handleRestart = useCallback(() => { resetCounts(); setCurrentIndex(0); setPhase('opening'); }, [resetCounts]);
+  const handleRestart = useCallback(() => {
+    resetCounts(); setCurrentIndex(0); setPhase('opening');
+  }, [resetCounts]);
 
   const handleReset = useCallback(() => {
     Alert.alert(
-      'Réinitialiser la session',
-      'Remettre tous les compteurs à zéro et revenir au premier dhikr ?',
+      'Reset session',
+      'Reset all counters and return to the first dhikr?',
       [
-        { text: 'Annuler', style: 'cancel' },
-        {
-          text: 'Réinitialiser',
-          style: 'destructive',
-          onPress: () => {
-            haptic('warning');
-            resetCounts();
-            setCurrentIndex(0);
-          },
-        },
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Reset', style: 'destructive', onPress: () => { haptic('warning'); resetCounts(); setCurrentIndex(0); } },
       ]
     );
   }, [resetCounts]);
 
-  const completedInSession = activeAzkars.filter((azkar) => {
-    const target = prefs.customCounts[azkar.id] ?? ('isCustom' in azkar ? (azkar as CustomAzkar).count : (azkar as Azkar).defaultCount);
-    return (counts[azkar.id] ?? 0) >= target;
-  }).length;
+  const completedInSession = useMemo(() => activeAzkars.filter(a => {
+    const target = prefs.customCounts[a.id] ?? ('isCustom' in a ? (a as CustomAzkar).count : (a as Azkar).defaultCount);
+    return (counts[a.id] ?? 0) >= target;
+  }).length, [activeAzkars, counts, prefs.customCounts]);
 
-  if (phase === 'selector') return <SessionSelector onSelect={(p) => { setSelectedPeriod(p); setPhase('opening'); }} onBack={() => router.back()} />;
+  // ── Phases ──
+  if (phase === 'selector') {
+    return <SessionSelector onSelect={(p) => { setSelectedPeriod(p); setPhase('opening'); }} onBack={() => router.back()} />;
+  }
 
-  if (showCustomize) return (
-    <Modal visible animationType="slide" presentationStyle="fullScreen">
-      <CustomizationPage prefs={prefs} period={period} onUpdate={(p) => { setPrefs(p); resetCounts(); setCurrentIndex(0); }} onClose={() => setShowCustomize(false)} />
-    </Modal>
-  );
+  if (showCustomize) {
+    return (
+      <Modal visible animationType="slide" presentationStyle="fullScreen">
+        <CustomizationPage
+          prefs={prefs} period={period}
+          onUpdate={(p) => { setPrefs(p); resetCounts(); setCurrentIndex(0); }}
+          onClose={() => setShowCustomize(false)}
+        />
+      </Modal>
+    );
+  }
 
-  if (phase === 'opening') return <OpeningCeremony period={period} onEnter={() => setPhase('session')} onChangePeriod={() => setPhase('selector')} onBack={() => setPhase('selector')} />;
-  if (phase === 'complete') return <CompletionScreen period={period} count={completedInSession} onRestart={handleRestart} onChangeSession={() => setPhase('selector')} />;
+  if (phase === 'opening') {
+    return (
+      <OpeningCeremony
+        period={period}
+        onEnter={() => setPhase('session')}
+        onChangePeriod={() => setPhase('selector')}
+        onBack={() => setPhase('selector')}
+      />
+    );
+  }
 
+  if (phase === 'complete') {
+    return (
+      <CompletionScreen
+        period={period}
+        count={completedInSession}
+        total={activeAzkars.length}
+        onRestart={handleRestart}
+        onChangeSession={() => { setPhase('selector'); }}
+        onBack={() => router.back()}
+      />
+    );
+  }
+
+  // ── Session ──
   return (
-    <LinearGradient colors={isMorning ? ['#050400', '#0b0900', '#050400'] : ['#020209', '#05050f', '#020209']} style={{ flex: 1 }}>
+    <LinearGradient
+      colors={isMorning ? ['#040300', '#090800', '#040300'] : ['#020208', '#04040e', '#020208']}
+      style={{ flex: 1 }}
+    >
       <StatusBar barStyle="light-content" />
 
-      {/* Header */}
-      <View style={{ paddingTop: 56, paddingHorizontal: 16, paddingBottom: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.05)' }}>
-        <TouchableOpacity onPress={() => setPhase('opening')} style={{ padding: 8 }}>
-          <ChevronLeft size={22} color="rgba(255,255,255,0.55)" />
+      {/* ── Header ── */}
+      <View style={ms.header}>
+        <TouchableOpacity onPress={() => setPhase('opening')} style={ms.headerBtn}>
+          <ChevronLeft size={22} color="rgba(255,255,255,0.5)" />
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => { haptic('light'); setPhase('selector'); }} style={{ alignItems: 'center', flexDirection: 'row', gap: 6 }}>
-          {isMorning ? <Sun size={13} color={accentColor} /> : <Moon size={13} color={accentColor} />}
-          <View style={{ alignItems: 'center' }}>
-            <Text style={{ color: accentColor, fontSize: 11, fontWeight: '800', letterSpacing: 3, textTransform: 'uppercase' }}>{isMorning ? 'Al-Sabah' : 'Al-Masa'}</Text>
-            <Text style={{ color: 'rgba(255,255,255,0.35)', fontSize: 10, marginTop: 1 }}>{currentIndex + 1} / {activeAzkars.length}</Text>
-          </View>
+
+        <TouchableOpacity onPress={() => { haptic('light'); setPhase('selector'); }} style={ms.headerCenter}>
+          {isMorning ? <Sun size={12} color={accent} /> : <Moon size={12} color={accent} />}
+          <Text style={[ms.headerSession, { color: accent }]}>{isMorning ? 'Al-Sabah' : 'Al-Masa'}</Text>
+          <Text style={ms.headerProgress}>{currentIndex + 1} / {activeAzkars.length}</Text>
         </TouchableOpacity>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
-          <TouchableOpacity
-            onPress={handleReset}
-            style={{ padding: 8 }}
-          >
-            <RotateCcw size={18} color="rgba(255,255,255,0.38)" />
+
+        <View style={ms.headerRight}>
+          <TouchableOpacity onPress={handleReset} style={ms.headerBtn}>
+            <RotateCcw size={17} color="rgba(255,255,255,0.35)" />
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => setShowCustomize(true)} style={{ padding: 8 }}>
-            <Settings size={20} color="rgba(255,255,255,0.45)" />
+          <TouchableOpacity onPress={() => setShowCustomize(true)} style={ms.headerBtn}>
+            <Settings size={19} color="rgba(255,255,255,0.45)" />
           </TouchableOpacity>
         </View>
       </View>
 
-      {/* Progress */}
-      <View style={{ paddingTop: 10 }}>
-        <ProgressBar current={currentIndex + (completedCount >= userCount ? 1 : 0)} total={activeAzkars.length} color={accentColor} />
-      </View>
+      {/* ── Progress bar ── */}
+      <ProgressBar
+        current={completedInSession}
+        total={activeAzkars.length}
+        color={accent}
+      />
 
-      {/* Azkar Card */}
+      {/* ── Azkar Card ── */}
       {currentAzkar && (
         <AzkarCard
           key={currentAzkar.id}
@@ -1221,3 +1411,12 @@ export default function AzkarsScreen() {
     </LinearGradient>
   );
 }
+
+const ms = StyleSheet.create({
+  header:        { paddingTop: Platform.OS === 'ios' ? 54 : 34, paddingHorizontal: 12, paddingBottom: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.05)' },
+  headerBtn:     { width: 38, height: 38, alignItems: 'center', justifyContent: 'center', borderRadius: 19 },
+  headerCenter:  { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 6, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.05)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.07)' },
+  headerSession: { fontSize: 12, fontWeight: '800', letterSpacing: 2 },
+  headerProgress:{ color: 'rgba(255,255,255,0.3)', fontSize: 11, marginLeft: 4 },
+  headerRight:   { flexDirection: 'row', gap: 0 },
+});
