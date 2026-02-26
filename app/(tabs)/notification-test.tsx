@@ -1,19 +1,22 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Switch, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Bell, Zap, Flame, Star, Info, Clock, Calendar, Trash2, RefreshCw } from 'lucide-react-native';
 import { useNotifications, NotificationType } from '@/contexts/NotificationContext';
-import ReminderService from '@/contexts/ReminderService';
+import ReminderService, {
+  DEFAULT_REMINDER_CONFIG,
+  DEFAULT_PREFERENCES,
+} from '@/contexts/ReminderService';
 import * as Notifications from 'expo-notifications';
 
 export default function NotificationTestScreen() {
-  const { 
-    notifications, 
-    unreadCount, 
-    addNotification, 
-    markAllAsRead, 
+  const {
+    notifications,
+    unreadCount,
+    addNotification,
+    markAllAsRead,
     clearAll,
-    requestPermissions 
+    requestPermissions,
   } = useNotifications();
 
   const [permissionsGranted, setPermissionsGranted] = useState(false);
@@ -26,19 +29,11 @@ export default function NotificationTestScreen() {
   const handleRequestPermissions = async () => {
     const granted = await requestPermissions();
     setPermissionsGranted(granted);
-    
+
     if (granted) {
-      Alert.alert(
-        'Permissions Granted! ✅',
-        'You can now test notifications.',
-        [{ text: 'OK' }]
-      );
+      Alert.alert('Permissions Granted! ✅', 'You can now test notifications.', [{ text: 'OK' }]);
     } else {
-      Alert.alert(
-        'Permissions Denied ❌',
-        'Please enable notifications in settings.',
-        [{ text: 'OK' }]
-      );
+      Alert.alert('Permissions Denied ❌', 'Please enable notifications in settings.', [{ text: 'OK' }]);
     }
   };
 
@@ -51,7 +46,7 @@ export default function NotificationTestScreen() {
       type: 'completion',
       title: 'Test: Wird Completed! 🎉',
       message: 'This is a test completion notification.',
-      metadata: { practice: 'wird' }
+      metadata: { practice: 'wird' },
     });
   };
 
@@ -60,7 +55,7 @@ export default function NotificationTestScreen() {
       type: 'streak',
       title: 'Test: 7 Day Streak! 🔥',
       message: 'This is a test streak notification.',
-      metadata: { count: 7 }
+      metadata: { count: 7 },
     });
   };
 
@@ -108,7 +103,6 @@ export default function NotificationTestScreen() {
         },
         trigger: null, // Immediately
       });
-      
       Alert.alert('Success', 'Native notification sent!');
     } catch (error) {
       Alert.alert('Error', `Failed to send: ${error}`);
@@ -134,12 +128,7 @@ export default function NotificationTestScreen() {
           repeats: false,
         } as Notifications.TimeIntervalTriggerInput,
       });
-      
-      Alert.alert(
-        'Scheduled! ⏰',
-        'Notification will appear in 10 seconds',
-        [{ text: 'OK' }]
-      );
+      Alert.alert('Scheduled! ⏰', 'Notification will appear in 10 seconds', [{ text: 'OK' }]);
     } catch (error) {
       Alert.alert('Error', `Failed to schedule: ${error}`);
     }
@@ -156,13 +145,12 @@ export default function NotificationTestScreen() {
     }
 
     try {
-      await ReminderService.scheduleWirdReminders('06:00', '18:00');
-      await updateScheduledCount();
-      Alert.alert(
-        'Success! ✅',
-        'Wird reminders scheduled for 6:00 AM and 6:00 PM daily',
-        [{ text: 'OK' }]
+      await ReminderService.scheduleAllReminders(
+        { ...DEFAULT_REMINDER_CONFIG, morning: '06:00', evening: '18:00' },
+        { ...DEFAULT_PREFERENCES, wirdMorning: true, wirdEvening: true, wazifa: false, hadra: false, encouragement: false },
       );
+      await updateScheduledCount();
+      Alert.alert('Success! ✅', 'Wird reminders scheduled for 6:00 AM and 6:00 PM daily', [{ text: 'OK' }]);
     } catch (error) {
       Alert.alert('Error', `Failed: ${error}`);
     }
@@ -175,13 +163,12 @@ export default function NotificationTestScreen() {
     }
 
     try {
-      await ReminderService.scheduleWazifaReminder();
-      await updateScheduledCount();
-      Alert.alert(
-        'Success! ✅',
-        'Wazifa reminder scheduled for 3:30 PM daily',
-        [{ text: 'OK' }]
+      await ReminderService.scheduleAllReminders(
+        { ...DEFAULT_REMINDER_CONFIG, wazifa: '15:30' },
+        { ...DEFAULT_PREFERENCES, wirdMorning: false, wirdEvening: false, wazifa: true, hadra: false, encouragement: false },
       );
+      await updateScheduledCount();
+      Alert.alert('Success! ✅', 'Wazifa reminder scheduled for 3:30 PM daily', [{ text: 'OK' }]);
     } catch (error) {
       Alert.alert('Error', `Failed: ${error}`);
     }
@@ -194,13 +181,12 @@ export default function NotificationTestScreen() {
     }
 
     try {
-      await ReminderService.scheduleHadraReminder('19:30');
-      await updateScheduledCount();
-      Alert.alert(
-        'Success! ✅',
-        'Hadra reminder scheduled for Fridays at 7:30 PM',
-        [{ text: 'OK' }]
+      await ReminderService.scheduleAllReminders(
+        { ...DEFAULT_REMINDER_CONFIG, friday: '19:30' },
+        { ...DEFAULT_PREFERENCES, wirdMorning: false, wirdEvening: false, wazifa: false, hadra: true, encouragement: false },
       );
+      await updateScheduledCount();
+      Alert.alert('Success! ✅', 'Hadra reminder scheduled for Fridays at 7:30 PM', [{ text: 'OK' }]);
     } catch (error) {
       Alert.alert('Error', `Failed: ${error}`);
     }
@@ -213,18 +199,12 @@ export default function NotificationTestScreen() {
     }
 
     try {
-      await ReminderService.scheduleAllReminders({
-        morning: '06:00',
-        evening: '18:00',
-        friday: '19:30'
-      });
-      await ReminderService.scheduleEncouragementNotifications();
-      await updateScheduledCount();
-      Alert.alert(
-        'Success! ✅',
-        'All reminders scheduled (Wird, Wazifa, Hadra, Encouragement)',
-        [{ text: 'OK' }]
+      await ReminderService.scheduleAllReminders(
+        { morning: '06:00', evening: '18:00', wazifa: '15:30', friday: '19:30', encouragement: '14:00' },
+        { wirdMorning: true, wirdEvening: true, wazifa: true, hadra: true, encouragement: true },
       );
+      await updateScheduledCount();
+      Alert.alert('Success! ✅', 'All reminders scheduled (Wird, Wazifa, Hadra, Encouragement)', [{ text: 'OK' }]);
     } catch (error) {
       Alert.alert('Error', `Failed: ${error}`);
     }
@@ -246,7 +226,7 @@ export default function NotificationTestScreen() {
   const viewScheduledNotifications = async () => {
     try {
       const scheduled = await ReminderService.getScheduledNotifications();
-      
+
       if (scheduled.length === 0) {
         Alert.alert('No Scheduled Notifications', 'There are no scheduled notifications.');
         return;
@@ -255,16 +235,16 @@ export default function NotificationTestScreen() {
       const list = scheduled.map((notif, index) => {
         const trigger = notif.trigger as any;
         let time = 'Unknown time';
-        
+
         if (trigger.type === 'daily') {
           time = `Daily at ${trigger.hour}:${String(trigger.minute).padStart(2, '0')}`;
         } else if (trigger.type === 'weekly') {
           const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-          time = `${days[trigger.weekday]} at ${trigger.hour}:${String(trigger.minute).padStart(2, '0')}`;
+          time = `${days[trigger.weekday - 1]} at ${trigger.hour}:${String(trigger.minute).padStart(2, '0')}`;
         } else if (trigger.type === 'date') {
           time = new Date(trigger.date).toLocaleString();
         }
-        
+
         return `${index + 1}. ${notif.content.title}\n   ${time}`;
       }).join('\n\n');
 
@@ -296,8 +276,8 @@ export default function NotificationTestScreen() {
             } catch (error) {
               Alert.alert('Error', `Failed: ${error}`);
             }
-          }
-        }
+          },
+        },
       ]
     );
   };
@@ -308,16 +288,16 @@ export default function NotificationTestScreen() {
 
   const testMultipleNotifications = () => {
     const types: NotificationType[] = ['completion', 'streak', 'wird_reminder', 'encouragement', 'info'];
-    
+
     types.forEach((type, index) => {
       setTimeout(() => {
         addNotification({
           type,
           title: `Test ${index + 1}: ${type}`,
           message: `This is test notification #${index + 1}`,
-          metadata: { count: index + 1 }
+          metadata: { count: index + 1 },
         });
-      }, index * 500); // 500ms entre chaque
+      }, index * 500);
     });
 
     Alert.alert('Sending...', '5 notifications will appear over 2.5 seconds');
@@ -338,12 +318,12 @@ export default function NotificationTestScreen() {
                   type: i % 2 === 0 ? 'completion' : 'info',
                   title: `Stress Test #${i + 1}`,
                   message: `Notification ${i + 1} of 20`,
-                  metadata: { count: i + 1 }
+                  metadata: { count: i + 1 },
                 });
               }, i * 100);
             }
-          }
-        }
+          },
+        },
       ]
     );
   };
@@ -358,11 +338,7 @@ export default function NotificationTestScreen() {
       'This will delete all notifications from the list.',
       [
         { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Clear',
-          style: 'destructive',
-          onPress: clearAll
-        }
+        { text: 'Clear', style: 'destructive', onPress: clearAll },
       ]
     );
   };
@@ -383,7 +359,7 @@ export default function NotificationTestScreen() {
         <Text style={styles.subtitle}>Test all notification features</Text>
       </View>
 
-      <ScrollView 
+      <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
@@ -412,7 +388,7 @@ export default function NotificationTestScreen() {
         {/* Permissions */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>🔐 Permissions</Text>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={[styles.testButton, styles.testButtonPrimary]}
             onPress={handleRequestPermissions}
             activeOpacity={0.7}
@@ -474,30 +450,24 @@ export default function NotificationTestScreen() {
             These show as system notifications
           </Text>
 
-          <TouchableOpacity 
-            style={styles.testButton} 
+          <TouchableOpacity
+            style={styles.testButton}
             onPress={testNativeNotification}
             disabled={!permissionsGranted}
           >
             <Bell color={permissionsGranted ? '#059669' : '#9CA3AF'} size={20} />
-            <Text style={[
-              styles.testButtonLabel,
-              !permissionsGranted && styles.testButtonLabelDisabled
-            ]}>
+            <Text style={[styles.testButtonLabel, !permissionsGranted && styles.testButtonLabelDisabled]}>
               Test Native (Immediate)
             </Text>
           </TouchableOpacity>
 
-          <TouchableOpacity 
-            style={styles.testButton} 
+          <TouchableOpacity
+            style={styles.testButton}
             onPress={testDelayedNotification}
             disabled={!permissionsGranted}
           >
             <Clock color={permissionsGranted ? '#3B82F6' : '#9CA3AF'} size={20} />
-            <Text style={[
-              styles.testButtonLabel,
-              !permissionsGranted && styles.testButtonLabelDisabled
-            ]}>
+            <Text style={[styles.testButtonLabel, !permissionsGranted && styles.testButtonLabelDisabled]}>
               Test Native (Delayed 10s)
             </Text>
           </TouchableOpacity>
@@ -510,50 +480,41 @@ export default function NotificationTestScreen() {
             These schedule recurring notifications
           </Text>
 
-          <TouchableOpacity 
-            style={styles.testButton} 
+          <TouchableOpacity
+            style={styles.testButton}
             onPress={testScheduleWirdReminders}
             disabled={!permissionsGranted}
           >
             <Calendar color={permissionsGranted ? '#059669' : '#9CA3AF'} size={20} />
-            <Text style={[
-              styles.testButtonLabel,
-              !permissionsGranted && styles.testButtonLabelDisabled
-            ]}>
+            <Text style={[styles.testButtonLabel, !permissionsGranted && styles.testButtonLabelDisabled]}>
               Schedule Wird (Daily 6AM & 6PM)
             </Text>
           </TouchableOpacity>
 
-          <TouchableOpacity 
-            style={styles.testButton} 
+          <TouchableOpacity
+            style={styles.testButton}
             onPress={testScheduleWazifaReminder}
             disabled={!permissionsGranted}
           >
             <Calendar color={permissionsGranted ? '#EAB308' : '#9CA3AF'} size={20} />
-            <Text style={[
-              styles.testButtonLabel,
-              !permissionsGranted && styles.testButtonLabelDisabled
-            ]}>
+            <Text style={[styles.testButtonLabel, !permissionsGranted && styles.testButtonLabelDisabled]}>
               Schedule Wazifa (Daily 3:30PM)
             </Text>
           </TouchableOpacity>
 
-          <TouchableOpacity 
-            style={styles.testButton} 
+          <TouchableOpacity
+            style={styles.testButton}
             onPress={testScheduleHadraReminder}
             disabled={!permissionsGranted}
           >
             <Calendar color={permissionsGranted ? '#8B5CF6' : '#9CA3AF'} size={20} />
-            <Text style={[
-              styles.testButtonLabel,
-              !permissionsGranted && styles.testButtonLabelDisabled
-            ]}>
+            <Text style={[styles.testButtonLabel, !permissionsGranted && styles.testButtonLabelDisabled]}>
               Schedule Hadra (Friday 7:30PM)
             </Text>
           </TouchableOpacity>
 
-          <TouchableOpacity 
-            style={[styles.testButton, styles.testButtonPrimary]} 
+          <TouchableOpacity
+            style={[styles.testButton, styles.testButtonPrimary]}
             onPress={testScheduleAllReminders}
             disabled={!permissionsGranted}
           >
@@ -565,16 +526,13 @@ export default function NotificationTestScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>⚙️ Scheduled Management</Text>
 
-          <TouchableOpacity 
-            style={styles.testButton} 
-            onPress={viewScheduledNotifications}
-          >
+          <TouchableOpacity style={styles.testButton} onPress={viewScheduledNotifications}>
             <RefreshCw color="#3B82F6" size={20} />
             <Text style={styles.testButtonLabel}>View Scheduled ({scheduledCount})</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity 
-            style={[styles.testButton, styles.testButtonDanger]} 
+          <TouchableOpacity
+            style={[styles.testButton, styles.testButtonDanger]}
             onPress={cancelAllScheduled}
           >
             <Trash2 color="#FFFFFF" size={20} />
@@ -589,18 +547,12 @@ export default function NotificationTestScreen() {
             Test with multiple notifications
           </Text>
 
-          <TouchableOpacity 
-            style={styles.testButton} 
-            onPress={testMultipleNotifications}
-          >
+          <TouchableOpacity style={styles.testButton} onPress={testMultipleNotifications}>
             <Zap color="#F59E0B" size={20} />
             <Text style={styles.testButtonLabel}>Send 5 Notifications</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity 
-            style={styles.testButton} 
-            onPress={testStressTest}
-          >
+          <TouchableOpacity style={styles.testButton} onPress={testStressTest}>
             <Flame color="#EF4444" size={20} />
             <Text style={styles.testButtonLabel}>Stress Test (20 notifications)</Text>
           </TouchableOpacity>
@@ -610,16 +562,13 @@ export default function NotificationTestScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>🧹 Cleanup</Text>
 
-          <TouchableOpacity 
-            style={styles.testButton} 
-            onPress={markAllAsRead}
-          >
+          <TouchableOpacity style={styles.testButton} onPress={markAllAsRead}>
             <Bell color="#10B981" size={20} />
             <Text style={styles.testButtonLabel}>Mark All as Read</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity 
-            style={[styles.testButton, styles.testButtonDanger]} 
+          <TouchableOpacity
+            style={[styles.testButton, styles.testButtonDanger]}
             onPress={handleClearAll}
           >
             <Trash2 color="#FFFFFF" size={20} />
@@ -682,18 +631,9 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     elevation: 2,
   },
-  statusCardGreen: {
-    borderTopWidth: 3,
-    borderTopColor: '#059669',
-  },
-  statusCardOrange: {
-    borderTopWidth: 3,
-    borderTopColor: '#F59E0B',
-  },
-  statusCardBlue: {
-    borderTopWidth: 3,
-    borderTopColor: '#3B82F6',
-  },
+  statusCardGreen:  { borderTopWidth: 3, borderTopColor: '#059669' },
+  statusCardOrange: { borderTopWidth: 3, borderTopColor: '#F59E0B' },
+  statusCardBlue:   { borderTopWidth: 3, borderTopColor: '#3B82F6' },
   statusNumber: {
     fontSize: 32,
     fontWeight: '800',
