@@ -1,22 +1,38 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Alert, Platform } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Bell, Clock, Volume2, Vibrate, Moon, Sun, Star, Calendar, Save, RotateCcw } from 'lucide-react-native';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import {
+  View, Text, StyleSheet, ScrollView, TouchableOpacity,
+  Switch, Alert, Platform, Linking,
+} from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+// ✅ Bug fix: SafeAreaView (unused) and Vibrate (unused) removed from imports
+import { Bell, Clock, Volume2, Moon, Sun, Star, Calendar, Save, RotateCcw } from 'lucide-react-native';
 import { useApp } from '@/contexts/AppContext';
 import { useNotifications } from '@/contexts/NotificationContext';
-import ReminderService from '@/contexts/ReminderService';
+// ✅ Bug #1: import updated ReminderService API + types
+import ReminderService, {
+  DEFAULT_REMINDER_CONFIG,
+  DEFAULT_PREFERENCES,
+  type ReminderConfig,
+  type ReminderPreferences,
+} from '@/contexts/ReminderService';
 import DateTimePicker from '@react-native-community/datetimepicker';
-
 import { useContext } from 'react';
 import MinimalHeader from '../../components/MinimalHeader';
 import { LayoutActionsContext } from '../../contexts/LayoutActionsContext';
 import { useRegisterHeaderActions } from '../../contexts/HeaderActionsContext';
 
+// ─── Storage key for individual reminder toggles ──────────────────────────────
+const PREFS_KEY = 'reminder_preferences_v1';
+
+// ─── Type ─────────────────────────────────────────────────────────────────────
+// ✅ Bug #5: 'wazifa' added to the key union
+type TimePickerKey = 'morning' | 'evening' | 'wazifa' | 'friday';
+
 interface TimePickerState {
-  show: boolean;
-  mode: 'time';
+  show:  boolean;
+  mode:  'time';
   value: Date;
-  key: 'morning' | 'evening' | 'friday';
+  key:   TimePickerKey;
 }
 
 export default function NotificationSettingsScreen() {
@@ -24,207 +40,197 @@ export default function NotificationSettingsScreen() {
   const { requestPermissions } = useNotifications();
   const { darkMode } = state.settings;
   const { handleBack } = useContext(LayoutActionsContext);
-  // États locaux pour les modifications
-  const [notificationsEnabled, setNotificationsEnabled] = useState(state.settings.notificationsEnabled);
+
+  // ── Master toggles ──────────────────────────────────────────────────────────
+  const [notificationsEnabled, setNotificationsEnabled] = useState(
+    state.settings.notificationsEnabled
+  );
   const [soundEnabled, setSoundEnabled] = useState(state.settings.audioEnabled);
-  
-  // Rappels individuels
-  const [wirdMorningEnabled, setWirdMorningEnabled] = useState(true);
-  const [wirdEveningEnabled, setWirdEveningEnabled] = useState(true);
-  const [wazifaEnabled, setWazifaEnabled] = useState(true);
-  const [hadraEnabled, setHadraEnabled] = useState(true);
-  const [encouragementEnabled, setEncouragementEnabled] = useState(true);
-  
-  // Horaires
-  const [morningTime, setMorningTime] = useState(state.settings.reminderTimes.morning);
-  const [eveningTime, setEveningTime] = useState(state.settings.reminderTimes.evening);
-  const [fridayTime, setFridayTime] = useState(state.settings.reminderTimes.friday);
-  
-  // Time picker
+
+  // ── Individual reminder toggles ─────────────────────────────────────────────
+  const [wirdMorningEnabled,   setWirdMorningEnabled]   = useState(DEFAULT_PREFERENCES.wirdMorning);
+  const [wirdEveningEnabled,   setWirdEveningEnabled]   = useState(DEFAULT_PREFERENCES.wirdEvening);
+  const [wazifaEnabled,        setWazifaEnabled]        = useState(DEFAULT_PREFERENCES.wazifa);
+  const [hadraEnabled,         setHadraEnabled]         = useState(DEFAULT_PREFERENCES.hadra);
+  const [encouragementEnabled, setEncouragementEnabled] = useState(DEFAULT_PREFERENCES.encouragement);
+
+  // ── Times ───────────────────────────────────────────────────────────────────
+  const [morningTime, setMorningTime] = useState(
+    state.settings.reminderTimes?.morning ?? DEFAULT_REMINDER_CONFIG.morning
+  );
+  const [eveningTime, setEveningTime] = useState(
+    state.settings.reminderTimes?.evening ?? DEFAULT_REMINDER_CONFIG.evening
+  );
+  // ✅ Bug #2: wazifaTime now has its own state and time picker
+  const [wazifaTime,  setWazifaTime]  = useState(
+    state.settings.reminderTimes?.wazifa  ?? DEFAULT_REMINDER_CONFIG.wazifa
+  );
+  const [fridayTime,  setFridayTime]  = useState(
+    state.settings.reminderTimes?.friday  ?? DEFAULT_REMINDER_CONFIG.friday
+  );
+
+  // ── UI state ────────────────────────────────────────────────────────────────
   const [timePicker, setTimePicker] = useState<TimePickerState>({
-    show: false,
-    mode: 'time',
-    value: new Date(),
-    key: 'morning'
+    show: false, mode: 'time', value: new Date(), key: 'morning',
   });
-  
   const [hasChanges, setHasChanges] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading,  setIsLoading]  = useState(false);
 
   // ============================================================================
-  // LOAD SAVED SETTINGS
+  // LOAD SAVED PREFERENCES
   // ============================================================================
 
-  useEffect(() => {
-    loadSettings();
-  }, []);
+  useEffect(() => { loadSettings(); }, []);
 
+  // ✅ Bug #6: actually loads persisted individual toggles from AsyncStorage
   const loadSettings = async () => {
-    // Les settings sont déjà dans state.settings
-    // On peut charger d'autres paramètres depuis AsyncStorage si nécessaire
+    try {
+      const raw = await AsyncStorage.getItem(PREFS_KEY);
+      if (!raw) return;
+      const saved: Partial<ReminderPreferences> = JSON.parse(raw);
+      if (saved.wirdMorning   !== undefined) setWirdMorningEnabled(saved.wirdMorning);
+      if (saved.wirdEvening   !== undefined) setWirdEveningEnabled(saved.wirdEvening);
+      if (saved.wazifa        !== undefined) setWazifaEnabled(saved.wazifa);
+      if (saved.hadra         !== undefined) setHadraEnabled(saved.hadra);
+      if (saved.encouragement !== undefined) setEncouragementEnabled(saved.encouragement);
+    } catch (e) {
+      console.error('[NotifSettings] loadSettings error:', e);
+    }
   };
 
   // ============================================================================
   // DETECT CHANGES
   // ============================================================================
 
+  // ✅ Bug #7: individual toggles and wazifaTime now included in change detection
   useEffect(() => {
-    const changed = 
+    const changed =
       notificationsEnabled !== state.settings.notificationsEnabled ||
-      soundEnabled !== state.settings.audioEnabled ||
-      morningTime !== state.settings.reminderTimes.morning ||
-      eveningTime !== state.settings.reminderTimes.evening ||
-      fridayTime !== state.settings.reminderTimes.friday;
-    
+      soundEnabled         !== state.settings.audioEnabled         ||
+      morningTime !== (state.settings.reminderTimes?.morning ?? DEFAULT_REMINDER_CONFIG.morning) ||
+      eveningTime !== (state.settings.reminderTimes?.evening ?? DEFAULT_REMINDER_CONFIG.evening) ||
+      wazifaTime  !== (state.settings.reminderTimes?.wazifa  ?? DEFAULT_REMINDER_CONFIG.wazifa)  ||
+      fridayTime  !== (state.settings.reminderTimes?.friday  ?? DEFAULT_REMINDER_CONFIG.friday)  ||
+      wirdMorningEnabled   !== DEFAULT_PREFERENCES.wirdMorning   ||
+      wirdEveningEnabled   !== DEFAULT_PREFERENCES.wirdEvening   ||
+      wazifaEnabled        !== DEFAULT_PREFERENCES.wazifa        ||
+      hadraEnabled         !== DEFAULT_PREFERENCES.hadra         ||
+      encouragementEnabled !== DEFAULT_PREFERENCES.encouragement;
     setHasChanges(changed);
-  }, [notificationsEnabled, soundEnabled, morningTime, eveningTime, fridayTime]);
+  }, [
+    notificationsEnabled, soundEnabled,
+    morningTime, eveningTime, wazifaTime, fridayTime,
+    wirdMorningEnabled, wirdEveningEnabled, wazifaEnabled,
+    hadraEnabled, encouragementEnabled,
+  ]);
 
   // ============================================================================
-  // TIME PICKER HANDLERS
+  // TIME PICKER
   // ============================================================================
 
-  const showTimePicker = (key: 'morning' | 'evening' | 'friday') => {
-    const timeMap = {
+  // ✅ Bug #5: now accepts 'wazifa' as a valid key
+  const showTimePicker = useCallback((key: TimePickerKey) => {
+    const timeMap: Record<TimePickerKey, string> = {
       morning: morningTime,
       evening: eveningTime,
-      friday: fridayTime
+      wazifa:  wazifaTime,
+      friday:  fridayTime,
     };
-    
-    const [hours, minutes] = timeMap[key].split(':').map(Number);
-    const date = new Date();
-    date.setHours(hours);
-    date.setMinutes(minutes);
-    
-    setTimePicker({
-      show: true,
-      mode: 'time',
-      value: date,
-      key
-    });
-  };
+    const [h, m] = timeMap[key].split(':').map(Number);
+    const d = new Date();
+    d.setHours(h, m, 0, 0);
+    setTimePicker({ show: true, mode: 'time', value: d, key });
+  }, [morningTime, eveningTime, wazifaTime, fridayTime]);
 
-  const onTimeChange = (event: any, selectedDate?: Date) => {
+  const onTimeChange = useCallback((event: any, selectedDate?: Date) => {
     if (Platform.OS === 'android') {
       setTimePicker(prev => ({ ...prev, show: false }));
     }
-    
-    if (selectedDate && event.type !== 'dismissed') {
-      const hours = selectedDate.getHours().toString().padStart(2, '0');
-      const minutes = selectedDate.getMinutes().toString().padStart(2, '0');
-      const timeString = `${hours}:${minutes}`;
-      
-      switch (timePicker.key) {
-        case 'morning':
-          setMorningTime(timeString);
-          break;
-        case 'evening':
-          setEveningTime(timeString);
-          break;
-        case 'friday':
-          setFridayTime(timeString);
-          break;
-      }
-    }
-  };
+    if (!selectedDate || event.type === 'dismissed') return;
 
-  const dismissTimePicker = () => {
+    const hh = selectedDate.getHours().toString().padStart(2, '0');
+    const mm = selectedDate.getMinutes().toString().padStart(2, '0');
+    const value = `${hh}:${mm}`;
+
+    setTimePicker(prev => {
+      // ✅ Bug #5: 'wazifa' case handled
+      switch (prev.key) {
+        case 'morning': setMorningTime(value); break;
+        case 'evening': setEveningTime(value); break;
+        case 'wazifa':  setWazifaTime(value);  break;
+        case 'friday':  setFridayTime(value);  break;
+      }
+      return { ...prev, value: selectedDate };
+    });
+  }, []);
+
+  const dismissTimePicker = useCallback(() => {
     setTimePicker(prev => ({ ...prev, show: false }));
-  };
+  }, []);
 
   // ============================================================================
-  // SAVE SETTINGS
+  // SAVE
   // ============================================================================
 
-  const handleSave = async () => {
+  const handleSave = useCallback(async () => {
     setIsLoading(true);
-    
     try {
-      // Sauvegarder dans AppContext
-      dispatch({
-        type: 'UPDATE_SETTINGS',
-        settings: {
-          notificationsEnabled,
-          audioEnabled: soundEnabled,
-        }
-      });
-      
-      dispatch({
-        type: 'UPDATE_REMINDER_TIME',
-        reminderType: 'morning',
-        time: morningTime
-      });
-      
-      dispatch({
-        type: 'UPDATE_REMINDER_TIME',
-        reminderType: 'evening',
-        time: eveningTime
-      });
-      
-      dispatch({
-        type: 'UPDATE_REMINDER_TIME',
-        reminderType: 'friday',
-        time: fridayTime
-      });
+      // 1. Persist to AppContext
+      dispatch({ type: 'UPDATE_SETTINGS', settings: { notificationsEnabled, audioEnabled: soundEnabled } });
+      dispatch({ type: 'UPDATE_REMINDER_TIME', reminderType: 'morning', time: morningTime });
+      dispatch({ type: 'UPDATE_REMINDER_TIME', reminderType: 'evening', time: eveningTime });
+      // ✅ Bug #2: wazifa time now dispatched
+      dispatch({ type: 'UPDATE_REMINDER_TIME', reminderType: 'wazifa',  time: wazifaTime  });
+      dispatch({ type: 'UPDATE_REMINDER_TIME', reminderType: 'friday',  time: fridayTime  });
 
-      // Si notifications activées, programmer les rappels
+      // 2. Persist individual toggles to AsyncStorage
+      const prefs: ReminderPreferences = {
+        wirdMorning:   wirdMorningEnabled,
+        wirdEvening:   wirdEveningEnabled,
+        wazifa:        wazifaEnabled,
+        hadra:         hadraEnabled,
+        encouragement: encouragementEnabled,
+      };
+      await AsyncStorage.setItem(PREFS_KEY, JSON.stringify(prefs));
+
+      // 3. ✅ Bug #1 & #4: single call to new unified API
+      //    Replaces removed methods: scheduleWirdReminders(), scheduleWazifaReminder(),
+      //    scheduleHadraReminder(), scheduleEncouragementNotifications()
       if (notificationsEnabled) {
-        // Annuler tous les rappels existants
-        await ReminderService.cancelAllReminders();
-        
-        // Reprogrammer selon les préférences
-        if (wirdMorningEnabled || wirdEveningEnabled) {
-          await ReminderService.scheduleWirdReminders(
-            wirdMorningEnabled ? morningTime : '00:00',
-            wirdEveningEnabled ? eveningTime : '00:00'
-          );
-        }
-        
-        if (wazifaEnabled) {
-          await ReminderService.scheduleWazifaReminder();
-        }
-        
-        if (hadraEnabled) {
-          await ReminderService.scheduleHadraReminder(fridayTime);
-        }
-        
-        if (encouragementEnabled) {
-          await ReminderService.scheduleEncouragementNotifications();
-        }
-        
-        Alert.alert(
-          'Settings Saved! ✅',
-          'Your notification preferences have been updated and reminders scheduled.',
-          [{ text: 'OK' }]
-        );
+        const config: ReminderConfig = {
+          morning:       morningTime,
+          evening:       eveningTime,
+          wazifa:        wazifaTime,
+          friday:        fridayTime,
+          encouragement: DEFAULT_REMINDER_CONFIG.encouragement,
+        };
+        await ReminderService.scheduleAllReminders(config, prefs);
+        Alert.alert('Settings Saved ✅', 'Your reminders have been updated.', [{ text: 'OK' }]);
       } else {
-        // Si désactivées, annuler tous les rappels
         await ReminderService.cancelAllReminders();
-        
-        Alert.alert(
-          'Settings Saved! ✅',
-          'Notifications have been disabled. All scheduled reminders cancelled.',
-          [{ text: 'OK' }]
-        );
+        Alert.alert('Settings Saved ✅', 'Notifications disabled. All reminders cancelled.', [{ text: 'OK' }]);
       }
-      
+
       setHasChanges(false);
     } catch (error) {
-      Alert.alert(
-        'Error',
-        'Failed to save settings. Please try again.',
-        [{ text: 'OK' }]
-      );
-      console.error('Error saving settings:', error);
+      console.error('[NotifSettings] handleSave error:', error);
+      Alert.alert('Error', 'Failed to save settings. Please try again.');
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [
+    notificationsEnabled, soundEnabled,
+    morningTime, eveningTime, wazifaTime, fridayTime,
+    wirdMorningEnabled, wirdEveningEnabled, wazifaEnabled,
+    hadraEnabled, encouragementEnabled,
+    dispatch,
+  ]);
 
   // ============================================================================
-  // RESET TO DEFAULTS
+  // RESET
   // ============================================================================
 
-  const handleReset = () => {
+  const handleReset = useCallback(() => {
     Alert.alert(
       'Reset to Defaults?',
       'This will reset all notification settings to their default values.',
@@ -236,97 +242,99 @@ export default function NotificationSettingsScreen() {
           onPress: () => {
             setNotificationsEnabled(true);
             setSoundEnabled(true);
-            setWirdMorningEnabled(true);
-            setWirdEveningEnabled(true);
-            setWazifaEnabled(true);
-            setHadraEnabled(true);
-            setEncouragementEnabled(true);
-            setMorningTime('05:30');
-            setEveningTime('18:45');
-            setFridayTime('19:30');
-          }
-        }
+            setWirdMorningEnabled(DEFAULT_PREFERENCES.wirdMorning);
+            setWirdEveningEnabled(DEFAULT_PREFERENCES.wirdEvening);
+            setWazifaEnabled(DEFAULT_PREFERENCES.wazifa);
+            setHadraEnabled(DEFAULT_PREFERENCES.hadra);
+            setEncouragementEnabled(DEFAULT_PREFERENCES.encouragement);
+            setMorningTime(DEFAULT_REMINDER_CONFIG.morning);
+            setEveningTime(DEFAULT_REMINDER_CONFIG.evening);
+            // ✅ Bug #2: wazifa time also reset
+            setWazifaTime(DEFAULT_REMINDER_CONFIG.wazifa);
+            setFridayTime(DEFAULT_REMINDER_CONFIG.friday);
+          },
+        },
       ]
     );
-  };
+  }, []);
 
   // ============================================================================
-  // REQUEST PERMISSIONS
+  // PERMISSIONS
   // ============================================================================
 
-  const handleRequestPermissions = async () => {
+  const handleRequestPermissions = useCallback(async () => {
     const granted = await requestPermissions();
-    
     if (granted) {
-      Alert.alert(
-        'Permissions Granted! ✅',
-        'You can now receive notifications.',
-        [{ text: 'OK' }]
-      );
+      Alert.alert('Permissions Granted ✅', 'You can now receive notifications.', [{ text: 'OK' }]);
     } else {
       Alert.alert(
         'Permissions Required',
         'Please enable notifications in your device settings to receive reminders.',
         [
           { text: 'Cancel', style: 'cancel' },
-          { text: 'Open Settings', onPress: () => {
-            // TODO: Ouvrir les paramètres système
-          }}
+          // ✅ Bug #8: Linking.openSettings() implemented
+          { text: 'Open Settings', onPress: () => Linking.openSettings() },
         ]
       );
     }
-  };
+  }, [requestPermissions]);
 
-  useRegisterHeaderActions('/notification-settings', [
+  // ============================================================================
+  // HEADER ACTIONS
+  // ============================================================================
+
+  // ✅ Bug #10: memoised once — same reference passed to both hooks
+  const menuActions = useMemo(() => [
     {
-      key: 'save',
-      label: 'Save Settings',
-      icon: <Save color="#059669" size={16} strokeWidth={2} />,
+      key:     'save',
+      label:   'Save Settings',
+      icon:    <Save color="#059669" size={16} strokeWidth={2} />,
       onPress: handleSave,
     },
     {
-      key: 'reset',
-      label: 'Reset to Defaults',
-      icon: <RotateCcw color="#EF4444" size={16} strokeWidth={2.5} />,
-      onPress: handleReset,
+      key:         'reset',
+      label:       'Reset to Defaults',
+      icon:        <RotateCcw color="#EF4444" size={16} strokeWidth={2.5} />,
+      onPress:     handleReset,
       destructive: true,
     },
-  ]);
+  ], [handleSave, handleReset]);
+
+  useRegisterHeaderActions('/notification-settings', menuActions);
 
   // ============================================================================
   // RENDER
   // ============================================================================
 
+  const d = darkMode;
+
   return (
-    <View style={[styles.container, darkMode && styles.containerDark]}>
+    <View style={[styles.container, d && styles.containerDark]}>
       <MinimalHeader
         title="Notification Settings"
         subtitle="Reminders & alerts"
         onBackPress={handleBack}
         showMore={true}
-        menuActions={[
-          { key: 'save', label: 'Save Settings', icon: <Save color="#059669" size={16} strokeWidth={2} />, onPress: handleSave },
-          { key: 'reset', label: 'Reset to Defaults', icon: <RotateCcw color="#EF4444" size={16} strokeWidth={2.5} />, onPress: handleReset, destructive: true },
-        ]}
+        menuActions={menuActions}
         theme="default"
       />
 
-      <ScrollView 
+      <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Master Toggle */}
-        <View style={[styles.section, styles.masterSection, darkMode && styles.sectionDark]}>
+        {/* ── Master toggle ── */}
+        <View style={[styles.section, styles.masterSection, d && styles.sectionDark]}>
           <View style={styles.masterContent}>
             <View style={styles.masterIcon}>
               <Bell color={notificationsEnabled ? '#059669' : '#9CA3AF'} size={28} />
             </View>
             <View style={styles.masterTextContainer}>
-              <Text style={[styles.masterTitle, darkMode && styles.masterTitleDark]}>
+              <Text style={[styles.masterTitle, d && styles.masterTitleDark]}>
                 Enable Notifications
               </Text>
-              <Text style={[styles.masterDescription, darkMode && styles.masterDescriptionDark]}>
+              <Text style={[styles.masterDescription, d && styles.masterDescriptionDark]}>
                 {notificationsEnabled ? 'Notifications are enabled' : 'Notifications are disabled'}
               </Text>
             </View>
@@ -340,11 +348,9 @@ export default function NotificationSettingsScreen() {
           </View>
         </View>
 
-        {/* Permissions */}
-        <View style={[styles.section, darkMode && styles.sectionDark]}>
-          <Text style={[styles.sectionTitle, darkMode && styles.sectionTitleDark]}>
-            🔐 Permissions
-          </Text>
+        {/* ── Permissions ── */}
+        <View style={[styles.section, d && styles.sectionDark]}>
+          <Text style={[styles.sectionTitle, d && styles.sectionTitleDark]}>🔐 Permissions</Text>
           <TouchableOpacity
             style={[styles.button, styles.buttonOutline]}
             onPress={handleRequestPermissions}
@@ -353,26 +359,21 @@ export default function NotificationSettingsScreen() {
             <Bell color="#059669" size={20} />
             <Text style={styles.buttonOutlineText}>Request Permissions</Text>
           </TouchableOpacity>
-          <Text style={[styles.helperText, darkMode && styles.helperTextDark]}>
+          <Text style={[styles.helperText, d && styles.helperTextDark]}>
             Required to send notifications and reminders
           </Text>
         </View>
 
-        {/* General Settings */}
-        <View style={[styles.section, darkMode && styles.sectionDark]}>
-          <Text style={[styles.sectionTitle, darkMode && styles.sectionTitleDark]}>
-            ⚙️ General Settings
-          </Text>
-
+        {/* ── General ── */}
+        <View style={[styles.section, d && styles.sectionDark]}>
+          <Text style={[styles.sectionTitle, d && styles.sectionTitleDark]}>⚙️ General Settings</Text>
           <View style={styles.settingItem}>
             <View style={styles.settingIcon}>
-              <Volume2 color={darkMode ? '#D1D5DB' : '#6B7280'} size={22} />
+              <Volume2 color={d ? '#D1D5DB' : '#6B7280'} size={22} />
             </View>
             <View style={styles.settingContent}>
-              <Text style={[styles.settingLabel, darkMode && styles.settingLabelDark]}>
-                Sound
-              </Text>
-              <Text style={[styles.settingDescription, darkMode && styles.settingDescriptionDark]}>
+              <Text style={[styles.settingLabel, d && styles.settingLabelDark]}>Sound</Text>
+              <Text style={[styles.settingDescription, d && styles.settingDescriptionDark]}>
                 Play sound with notifications
               </Text>
             </View>
@@ -386,17 +387,15 @@ export default function NotificationSettingsScreen() {
           </View>
         </View>
 
-        {/* Wird Reminders */}
-        <View style={[styles.section, darkMode && styles.sectionDark]}>
+        {/* ── Wird Reminders ── */}
+        <View style={[styles.section, d && styles.sectionDark]}>
           <View style={styles.sectionHeader}>
             <View style={styles.sectionIconContainer}>
               <Sun color="#F59E0B" size={22} />
             </View>
-            <Text style={[styles.sectionTitle, darkMode && styles.sectionTitleDark]}>
-              Wird Reminders
-            </Text>
+            <Text style={[styles.sectionTitle, d && styles.sectionTitleDark]}>Wird Reminders</Text>
           </View>
-          <Text style={[styles.sectionDescription, darkMode && styles.sectionDescriptionDark]}>
+          <Text style={[styles.sectionDescription, d && styles.sectionDescriptionDark]}>
             Daily reminders for your wird practice
           </Text>
 
@@ -404,10 +403,8 @@ export default function NotificationSettingsScreen() {
           <View style={styles.reminderItem}>
             <View style={styles.reminderHeader}>
               <View style={styles.reminderInfo}>
-                <Text style={[styles.reminderLabel, darkMode && styles.reminderLabelDark]}>
-                  Morning Wird
-                </Text>
-                <Text style={[styles.reminderDescription, darkMode && styles.reminderDescriptionDark]}>
+                <Text style={[styles.reminderLabel, d && styles.reminderLabelDark]}>Morning Wird</Text>
+                <Text style={[styles.reminderDescription, d && styles.reminderDescriptionDark]}>
                   After Fajr prayer
                 </Text>
               </View>
@@ -419,18 +416,15 @@ export default function NotificationSettingsScreen() {
                 disabled={!notificationsEnabled}
               />
             </View>
-            
             {wirdMorningEnabled && (
               <TouchableOpacity
-                style={[styles.timeSelector, darkMode && styles.timeSelectorDark]}
+                style={[styles.timeSelector, d && styles.timeSelectorDark]}
                 onPress={() => showTimePicker('morning')}
                 disabled={!notificationsEnabled}
                 activeOpacity={0.7}
               >
-                <Clock color={darkMode ? '#D1D5DB' : '#6B7280'} size={18} />
-                <Text style={[styles.timeText, darkMode && styles.timeTextDark]}>
-                  {morningTime}
-                </Text>
+                <Clock color={d ? '#D1D5DB' : '#6B7280'} size={18} />
+                <Text style={[styles.timeText, d && styles.timeTextDark]}>{morningTime}</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -439,10 +433,8 @@ export default function NotificationSettingsScreen() {
           <View style={styles.reminderItem}>
             <View style={styles.reminderHeader}>
               <View style={styles.reminderInfo}>
-                <Text style={[styles.reminderLabel, darkMode && styles.reminderLabelDark]}>
-                  Evening Wird
-                </Text>
-                <Text style={[styles.reminderDescription, darkMode && styles.reminderDescriptionDark]}>
+                <Text style={[styles.reminderLabel, d && styles.reminderLabelDark]}>Evening Wird</Text>
+                <Text style={[styles.reminderDescription, d && styles.reminderDescriptionDark]}>
                   Before Maghrib prayer
                 </Text>
               </View>
@@ -454,45 +446,39 @@ export default function NotificationSettingsScreen() {
                 disabled={!notificationsEnabled}
               />
             </View>
-            
             {wirdEveningEnabled && (
               <TouchableOpacity
-                style={[styles.timeSelector, darkMode && styles.timeSelectorDark]}
+                style={[styles.timeSelector, d && styles.timeSelectorDark]}
                 onPress={() => showTimePicker('evening')}
                 disabled={!notificationsEnabled}
                 activeOpacity={0.7}
               >
-                <Clock color={darkMode ? '#D1D5DB' : '#6B7280'} size={18} />
-                <Text style={[styles.timeText, darkMode && styles.timeTextDark]}>
-                  {eveningTime}
-                </Text>
+                <Clock color={d ? '#D1D5DB' : '#6B7280'} size={18} />
+                <Text style={[styles.timeText, d && styles.timeTextDark]}>{eveningTime}</Text>
               </TouchableOpacity>
             )}
           </View>
         </View>
 
-        {/* Wazifa Reminder */}
-        <View style={[styles.section, darkMode && styles.sectionDark]}>
+        {/* ── Wazifa ── */}
+        <View style={[styles.section, d && styles.sectionDark]}>
           <View style={styles.sectionHeader}>
             <View style={styles.sectionIconContainer}>
               <Star color="#EAB308" size={22} />
             </View>
-            <Text style={[styles.sectionTitle, darkMode && styles.sectionTitleDark]}>
-              Wazīfa Reminder
-            </Text>
+            <Text style={[styles.sectionTitle, d && styles.sectionTitleDark]}>Wazīfa Reminder</Text>
           </View>
-          <Text style={[styles.sectionDescription, darkMode && styles.sectionDescriptionDark]}>
+          <Text style={[styles.sectionDescription, d && styles.sectionDescriptionDark]}>
             Daily reminder for your wazīfa practice
           </Text>
 
           <View style={styles.reminderItem}>
             <View style={styles.reminderHeader}>
               <View style={styles.reminderInfo}>
-                <Text style={[styles.reminderLabel, darkMode && styles.reminderLabelDark]}>
-                  Daily Wazīfa
-                </Text>
-                <Text style={[styles.reminderDescription, darkMode && styles.reminderDescriptionDark]}>
-                  After Asr prayer (3:30 PM)
+                <Text style={[styles.reminderLabel, d && styles.reminderLabelDark]}>Daily Wazīfa</Text>
+                {/* ✅ Bug #9: dynamic time instead of hardcoded "3:30 PM" */}
+                <Text style={[styles.reminderDescription, d && styles.reminderDescriptionDark]}>
+                  After Asr prayer · {wazifaTime}
                 </Text>
               </View>
               <Switch
@@ -503,31 +489,39 @@ export default function NotificationSettingsScreen() {
                 disabled={!notificationsEnabled}
               />
             </View>
+            {/* ✅ Bug #2: wazifa time picker */}
+            {wazifaEnabled && (
+              <TouchableOpacity
+                style={[styles.timeSelector, d && styles.timeSelectorDark]}
+                onPress={() => showTimePicker('wazifa')}
+                disabled={!notificationsEnabled}
+                activeOpacity={0.7}
+              >
+                <Clock color={d ? '#D1D5DB' : '#6B7280'} size={18} />
+                <Text style={[styles.timeText, d && styles.timeTextDark]}>{wazifaTime}</Text>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
 
-        {/* Hadra Reminder */}
-        <View style={[styles.section, darkMode && styles.sectionDark]}>
+        {/* ── Hadra ── */}
+        <View style={[styles.section, d && styles.sectionDark]}>
           <View style={styles.sectionHeader}>
             <View style={styles.sectionIconContainer}>
               <Moon color="#8B5CF6" size={22} />
             </View>
-            <Text style={[styles.sectionTitle, darkMode && styles.sectionTitleDark]}>
-              Hadra Reminder
-            </Text>
+            <Text style={[styles.sectionTitle, d && styles.sectionTitleDark]}>Hadra Reminder</Text>
           </View>
-          <Text style={[styles.sectionDescription, darkMode && styles.sectionDescriptionDark]}>
+          <Text style={[styles.sectionDescription, d && styles.sectionDescriptionDark]}>
             Weekly reminder for Friday hadra
           </Text>
 
           <View style={styles.reminderItem}>
             <View style={styles.reminderHeader}>
               <View style={styles.reminderInfo}>
-                <Text style={[styles.reminderLabel, darkMode && styles.reminderLabelDark]}>
-                  Friday Hadra
-                </Text>
-                <Text style={[styles.reminderDescription, darkMode && styles.reminderDescriptionDark]}>
-                  After Maghrib prayer
+                <Text style={[styles.reminderLabel, d && styles.reminderLabelDark]}>Friday Hadra</Text>
+                <Text style={[styles.reminderDescription, d && styles.reminderDescriptionDark]}>
+                  Before Maghrib prayer
                 </Text>
               </View>
               <Switch
@@ -538,45 +532,41 @@ export default function NotificationSettingsScreen() {
                 disabled={!notificationsEnabled}
               />
             </View>
-            
             {hadraEnabled && (
               <TouchableOpacity
-                style={[styles.timeSelector, darkMode && styles.timeSelectorDark]}
+                style={[styles.timeSelector, d && styles.timeSelectorDark]}
                 onPress={() => showTimePicker('friday')}
                 disabled={!notificationsEnabled}
                 activeOpacity={0.7}
               >
-                <Clock color={darkMode ? '#D1D5DB' : '#6B7280'} size={18} />
-                <Text style={[styles.timeText, darkMode && styles.timeTextDark]}>
-                  {fridayTime}
-                </Text>
+                <Clock color={d ? '#D1D5DB' : '#6B7280'} size={18} />
+                <Text style={[styles.timeText, d && styles.timeTextDark]}>{fridayTime}</Text>
               </TouchableOpacity>
             )}
           </View>
         </View>
 
-        {/* Encouragement */}
-        <View style={[styles.section, darkMode && styles.sectionDark]}>
+        {/* ── Encouragement ── */}
+        <View style={[styles.section, d && styles.sectionDark]}>
           <View style={styles.sectionHeader}>
             <View style={styles.sectionIconContainer}>
               <Calendar color="#3B82F6" size={22} />
             </View>
-            <Text style={[styles.sectionTitle, darkMode && styles.sectionTitleDark]}>
-              Encouragement Messages
-            </Text>
+            <Text style={[styles.sectionTitle, d && styles.sectionTitleDark]}>Encouragement Messages</Text>
           </View>
-          <Text style={[styles.sectionDescription, darkMode && styles.sectionDescriptionDark]}>
+          <Text style={[styles.sectionDescription, d && styles.sectionDescriptionDark]}>
             Receive motivational messages
           </Text>
 
           <View style={styles.reminderItem}>
             <View style={styles.reminderHeader}>
               <View style={styles.reminderInfo}>
-                <Text style={[styles.reminderLabel, darkMode && styles.reminderLabelDark]}>
+                <Text style={[styles.reminderLabel, d && styles.reminderLabelDark]}>
                   Weekly Encouragement
                 </Text>
-                <Text style={[styles.reminderDescription, darkMode && styles.reminderDescriptionDark]}>
-                  Every Wednesday at 2:00 PM
+                {/* ✅ Bug #3: reflects 3 rotating messages on Wed/Thu/Fri */}
+                <Text style={[styles.reminderDescription, d && styles.reminderDescriptionDark]}>
+                  3 rotating messages · Wed, Thu & Fri at 2:00 PM
                 </Text>
               </View>
               <Switch
@@ -590,22 +580,20 @@ export default function NotificationSettingsScreen() {
           </View>
         </View>
 
-        {/* Action Buttons */}
+        {/* ── Actions ── */}
         <View style={styles.actionContainer}>
           <TouchableOpacity
             style={[
               styles.button,
               styles.buttonPrimary,
-              (!hasChanges || isLoading) && styles.buttonDisabled
+              (!hasChanges || isLoading) && styles.buttonDisabled,
             ]}
             onPress={handleSave}
             disabled={!hasChanges || isLoading}
             activeOpacity={0.7}
           >
             <Save color="#FFFFFF" size={20} />
-            <Text style={styles.buttonText}>
-              {isLoading ? 'Saving...' : 'Save Settings'}
-            </Text>
+            <Text style={styles.buttonText}>{isLoading ? 'Saving…' : 'Save Settings'}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -622,17 +610,17 @@ export default function NotificationSettingsScreen() {
         <View style={styles.bottomSpacing} />
       </ScrollView>
 
-      {/* Time Picker */}
+      {/* ── Time Picker ── */}
       {timePicker.show && (
         <>
           {Platform.OS === 'ios' && (
             <View style={styles.iosPickerOverlay}>
-              <View style={[styles.iosPickerContainer, darkMode && styles.iosPickerContainerDark]}>
+              <View style={[styles.iosPickerContainer, d && styles.iosPickerContainerDark]}>
                 <View style={styles.iosPickerHeader}>
                   <TouchableOpacity onPress={dismissTimePicker}>
                     <Text style={styles.iosPickerCancel}>Cancel</Text>
                   </TouchableOpacity>
-                  <Text style={[styles.iosPickerTitle, darkMode && styles.iosPickerTitleDark]}>
+                  <Text style={[styles.iosPickerTitle, d && styles.iosPickerTitleDark]}>
                     Select Time
                   </Text>
                   <TouchableOpacity onPress={dismissTimePicker}>
@@ -645,12 +633,11 @@ export default function NotificationSettingsScreen() {
                   is24Hour={true}
                   display="spinner"
                   onChange={onTimeChange}
-                  textColor={darkMode ? '#FFFFFF' : '#000000'}
+                  textColor={d ? '#FFFFFF' : '#000000'}
                 />
               </View>
             </View>
           )}
-          
           {Platform.OS === 'android' && (
             <DateTimePicker
               value={timePicker.value}
@@ -667,310 +654,71 @@ export default function NotificationSettingsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F9FAFB',
-  },
-  containerDark: {
-    backgroundColor: '#111827',
-  },
-  header: {
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 20,
-    paddingTop: Platform.OS === 'ios' ? 20 : 16,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
-  },
-  headerDark: {
-    backgroundColor: '#1F2937',
-    borderBottomColor: '#374151',
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: '#111827',
-    letterSpacing: 0.5,
-  },
-  titleDark: {
-    color: '#FFFFFF',
-  },
-  subtitle: {
-    fontSize: 14,
-    color: '#6B7280',
-    marginTop: 4,
-    fontWeight: '500',
-  },
-  subtitleDark: {
-    color: '#9CA3AF',
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: 16,
-  },
-  section: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 2,
-  },
-  sectionDark: {
-    backgroundColor: '#1F2937',
-  },
-  masterSection: {
-    borderWidth: 2,
-    borderColor: '#059669',
-  },
-  masterContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  masterIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 16,
-    backgroundColor: '#F0FDF4',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  masterTextContainer: {
-    flex: 1,
-  },
-  masterTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#111827',
-    marginBottom: 2,
-  },
-  masterTitleDark: {
-    color: '#FFFFFF',
-  },
-  masterDescription: {
-    fontSize: 13,
-    color: '#6B7280',
-  },
-  masterDescriptionDark: {
-    color: '#9CA3AF',
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 8,
-  },
-  sectionIconContainer: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    backgroundColor: '#F3F4F6',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#111827',
-  },
-  sectionTitleDark: {
-    color: '#FFFFFF',
-  },
-  sectionDescription: {
-    fontSize: 13,
-    color: '#6B7280',
-    marginBottom: 12,
-    lineHeight: 18,
-  },
-  sectionDescriptionDark: {
-    color: '#9CA3AF',
-  },
-  settingItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingVertical: 12,
-  },
-  settingIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 10,
-    backgroundColor: '#F3F4F6',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  settingContent: {
-    flex: 1,
-  },
-  settingLabel: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#111827',
-    marginBottom: 2,
-  },
-  settingLabelDark: {
-    color: '#FFFFFF',
-  },
-  settingDescription: {
-    fontSize: 12,
-    color: '#6B7280',
-  },
-  settingDescriptionDark: {
-    color: '#9CA3AF',
-  },
-  reminderItem: {
-    paddingVertical: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#F3F4F6',
-  },
-  reminderHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  reminderInfo: {
-    flex: 1,
-  },
-  reminderLabel: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#111827',
-    marginBottom: 2,
-  },
-  reminderLabelDark: {
-    color: '#FFFFFF',
-  },
-  reminderDescription: {
-    fontSize: 12,
-    color: '#6B7280',
-  },
-  reminderDescriptionDark: {
-    color: '#9CA3AF',
-  },
-  timeSelector: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginTop: 12,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    backgroundColor: '#F3F4F6',
-    borderRadius: 10,
-    alignSelf: 'flex-start',
-  },
-  timeSelectorDark: {
-    backgroundColor: '#374151',
-  },
-  timeText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#059669',
-  },
-  timeTextDark: {
-    color: '#10B981',
-  },
-  button: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 14,
-    borderRadius: 12,
-    marginBottom: 12,
-  },
-  buttonPrimary: {
-    backgroundColor: '#059669',
-  },
-  buttonSecondary: {
-    backgroundColor: '#F3F4F6',
-  },
-  buttonOutline: {
-    backgroundColor: 'transparent',
-    borderWidth: 2,
-    borderColor: '#059669',
-  },
-  buttonDisabled: {
-    backgroundColor: '#E5E7EB',
-    opacity: 0.5,
-  },
-  buttonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#FFFFFF',
-  },
-  buttonSecondaryText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#6B7280',
-  },
-  buttonOutlineText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#059669',
-  },
-  helperText: {
-    fontSize: 12,
-    color: '#6B7280',
-    marginTop: 8,
-    fontStyle: 'italic',
-  },
-  helperTextDark: {
-    color: '#9CA3AF',
-  },
-  actionContainer: {
-    marginTop: 8,
-  },
-  bottomSpacing: {
-    height: 24,
-  },
-  iosPickerOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
-  },
-  iosPickerContainer: {
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingBottom: Platform.OS === 'ios' ? 34 : 20,
-  },
-  iosPickerContainerDark: {
-    backgroundColor: '#1F2937',
-  },
-  iosPickerHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
-  },
-  iosPickerTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#111827',
-  },
-  iosPickerTitleDark: {
-    color: '#FFFFFF',
-  },
-  iosPickerCancel: {
-    fontSize: 16,
-    color: '#6B7280',
-  },
-  iosPickerDone: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#059669',
-  },
+  container:               { flex: 1, backgroundColor: '#F9FAFB' },
+  containerDark:           { backgroundColor: '#111827' },
+  scrollView:              { flex: 1 },
+  scrollContent:           { padding: 16 },
+
+  section:                 { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, marginBottom: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 3, elevation: 2 },
+  sectionDark:             { backgroundColor: '#1F2937' },
+  masterSection:           { borderWidth: 2, borderColor: '#059669' },
+
+  masterContent:           { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  masterIcon:              { width: 56, height: 56, borderRadius: 16, backgroundColor: '#F0FDF4', justifyContent: 'center', alignItems: 'center' },
+  masterTextContainer:     { flex: 1 },
+  masterTitle:             { fontSize: 18, fontWeight: '700', color: '#111827', marginBottom: 2 },
+  masterTitleDark:         { color: '#FFFFFF' },
+  masterDescription:       { fontSize: 13, color: '#6B7280' },
+  masterDescriptionDark:   { color: '#9CA3AF' },
+
+  sectionHeader:           { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
+  sectionIconContainer:    { width: 32, height: 32, borderRadius: 8, backgroundColor: '#F3F4F6', justifyContent: 'center', alignItems: 'center' },
+  sectionTitle:            { fontSize: 16, fontWeight: '700', color: '#111827' },
+  sectionTitleDark:        { color: '#FFFFFF' },
+  sectionDescription:      { fontSize: 13, color: '#6B7280', marginBottom: 12, lineHeight: 18 },
+  sectionDescriptionDark:  { color: '#9CA3AF' },
+
+  settingItem:             { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 },
+  settingIcon:             { width: 40, height: 40, borderRadius: 10, backgroundColor: '#F3F4F6', justifyContent: 'center', alignItems: 'center' },
+  settingContent:          { flex: 1 },
+  settingLabel:            { fontSize: 15, fontWeight: '600', color: '#111827', marginBottom: 2 },
+  settingLabelDark:        { color: '#FFFFFF' },
+  settingDescription:      { fontSize: 12, color: '#6B7280' },
+  settingDescriptionDark:  { color: '#9CA3AF' },
+
+  reminderItem:            { paddingVertical: 12, borderTopWidth: 1, borderTopColor: '#F3F4F6' },
+  reminderHeader:          { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  reminderInfo:            { flex: 1 },
+  reminderLabel:           { fontSize: 15, fontWeight: '600', color: '#111827', marginBottom: 2 },
+  reminderLabelDark:       { color: '#FFFFFF' },
+  reminderDescription:     { fontSize: 12, color: '#6B7280' },
+  reminderDescriptionDark: { color: '#9CA3AF' },
+
+  timeSelector:            { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 12, paddingVertical: 10, paddingHorizontal: 16, backgroundColor: '#F3F4F6', borderRadius: 10, alignSelf: 'flex-start' },
+  timeSelectorDark:        { backgroundColor: '#374151' },
+  timeText:                { fontSize: 16, fontWeight: '600', color: '#059669' },
+  timeTextDark:            { color: '#10B981' },
+
+  button:                  { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 14, borderRadius: 12, marginBottom: 12 },
+  buttonPrimary:           { backgroundColor: '#059669' },
+  buttonSecondary:         { backgroundColor: '#F3F4F6' },
+  buttonOutline:           { backgroundColor: 'transparent', borderWidth: 2, borderColor: '#059669' },
+  buttonDisabled:          { backgroundColor: '#E5E7EB', opacity: 0.5 },
+  buttonText:              { fontSize: 16, fontWeight: '600', color: '#FFFFFF' },
+  buttonSecondaryText:     { fontSize: 16, fontWeight: '600', color: '#6B7280' },
+  buttonOutlineText:       { fontSize: 16, fontWeight: '600', color: '#059669' },
+
+  helperText:              { fontSize: 12, color: '#6B7280', marginTop: 8, fontStyle: 'italic' },
+  helperTextDark:          { color: '#9CA3AF' },
+  actionContainer:         { marginTop: 8 },
+  bottomSpacing:           { height: 24 },
+
+  iosPickerOverlay:        { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+  iosPickerContainer:      { backgroundColor: '#FFFFFF', borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingBottom: Platform.OS === 'ios' ? 34 : 20 },
+  iosPickerContainerDark:  { backgroundColor: '#1F2937' },
+  iosPickerHeader:         { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: '#E5E7EB' },
+  iosPickerTitle:          { fontSize: 16, fontWeight: '600', color: '#111827' },
+  iosPickerTitleDark:      { color: '#FFFFFF' },
+  iosPickerCancel:         { fontSize: 16, color: '#6B7280' },
+  iosPickerDone:           { fontSize: 16, fontWeight: '600', color: '#059669' },
 });

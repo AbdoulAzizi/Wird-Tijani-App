@@ -49,6 +49,7 @@ interface AppSettings {
   reminderTimes: {
     morning: string;
     evening: string;
+    wazifa: string;
     friday: string;
   };
 }
@@ -122,7 +123,7 @@ const initialState: AppState = {
     darkMode: false,
     language: 'en',
     fontSize: 'medium',
-    reminderTimes: { morning: '05:30', evening: '18:45', friday: '15:30' },
+    reminderTimes: { morning: '05:30', evening: '18:45', wazifa: '15:30', friday: '15:30' },
   },
   currentWirdStep: 0,
   currentWazifaStep: 0,
