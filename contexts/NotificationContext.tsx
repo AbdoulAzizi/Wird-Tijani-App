@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
@@ -7,7 +7,7 @@ import { Platform } from 'react-native';
 // TYPES
 // ============================================================================
 
-export type NotificationType =
+export type NotificationType = 
   | 'wird_reminder'
   | 'wazifa_reminder'
   | 'hadra_reminder'
@@ -17,30 +17,30 @@ export type NotificationType =
   | 'info';
 
 export interface NotificationData {
-  id:        string;
-  type:      NotificationType;
-  title:     string;
-  message:   string;
+  id: string;
+  type: NotificationType;
+  title: string;
+  message: string;
   timestamp: number;
-  read:      boolean;
+  read: boolean;
   metadata?: {
     practice?: 'wird' | 'wazifa' | 'hadra';
-    count?:    number;
-    target?:   number;
+    count?: number;
+    target?: number;
   };
 }
 
 interface NotificationContextValue {
-  notifications:        NotificationData[];
-  unreadCount:          number;
-  addNotification:      (n: Omit<NotificationData, 'id' | 'timestamp' | 'read'>) => void;
-  markAsRead:           (id: string) => void;
-  markAllAsRead:        () => void;
-  deleteNotification:   (id: string) => void;
-  clearAll:             () => void;
-  requestPermissions:   () => Promise<boolean>;
-  scheduleReminder:     (type: NotificationType, title: string, body: string, time: Date) => Promise<void>;
-  cancelAllScheduled:   () => Promise<void>;
+  notifications: NotificationData[];
+  unreadCount: number;
+  addNotification: (notification: Omit<NotificationData, 'id' | 'timestamp' | 'read'>) => void;
+  markAsRead: (id: string) => void;
+  markAllAsRead: () => void;
+  deleteNotification: (id: string) => void;
+  clearAll: () => void;
+  requestPermissions: () => Promise<boolean>;
+  scheduleReminder: (type: NotificationType, title: string, body: string, time: Date) => Promise<void>;
+  cancelAllScheduled: () => Promise<void>;
 }
 
 // ============================================================================
@@ -55,11 +55,11 @@ const NotificationContext = createContext<NotificationContextValue | null>(null)
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
-    shouldShowAlert:  true,
-    shouldPlaySound:  true,
-    shouldSetBadge:   true,
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: true,
     shouldShowBanner: true,
-    shouldShowList:   true,
+    shouldShowList: true,
   }),
 });
 
@@ -68,15 +68,12 @@ Notifications.setNotificationHandler({
 // ============================================================================
 
 export function NotificationProvider({ children }: { children: React.ReactNode }) {
-  const [notifications,      setNotifications]      = useState<NotificationData[]>([]);
+  const [notifications, setNotifications] = useState<NotificationData[]>([]);
   const [permissionsGranted, setPermissionsGranted] = useState(false);
 
-  // Keep a ref so the received-listener callback always has the latest value
-  // without needing to be re-registered every render
-  const permRef = useRef(permissionsGranted);
-  useEffect(() => { permRef.current = permissionsGranted; }, [permissionsGranted]);
-
-  // ── Load / Save ─────────────────────────────────────────────────────────────
+  // ============================================================================
+  // LOAD/SAVE
+  // ============================================================================
 
   useEffect(() => {
     loadNotifications();
@@ -90,33 +87,39 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   const loadNotifications = async () => {
     try {
       const saved = await AsyncStorage.getItem('notifications');
-      if (saved) setNotifications(JSON.parse(saved));
-    } catch (e) {
-      console.error('Error loading notifications:', e);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        setNotifications(parsed);
+      }
+    } catch (error) {
+      console.error('Error loading notifications:', error);
     }
   };
 
   const saveNotifications = async () => {
     try {
       await AsyncStorage.setItem('notifications', JSON.stringify(notifications));
-    } catch (e) {
-      console.error('Error saving notifications:', e);
+    } catch (error) {
+      console.error('Error saving notifications:', error);
     }
   };
 
-  // ── Permissions ──────────────────────────────────────────────────────────────
+  // ============================================================================
+  // PERMISSIONS
+  // ============================================================================
 
   const requestPermissions = async (): Promise<boolean> => {
     try {
-      const { status: existing } = await Notifications.getPermissionsAsync();
-      let final = existing;
+      const { status: existingStatus } = await Notifications.getPermissionsAsync();
+      let finalStatus = existingStatus;
 
-      if (existing !== 'granted') {
+      if (existingStatus !== 'granted') {
         const { status } = await Notifications.requestPermissionsAsync();
-        final = status;
+        finalStatus = status;
       }
 
-      if (final !== 'granted') {
+      if (finalStatus !== 'granted') {
+        console.log('Notification permissions not granted');
         setPermissionsGranted(false);
         return false;
       }
@@ -125,113 +128,75 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
 
       if (Platform.OS === 'android') {
         await Notifications.setNotificationChannelAsync('default', {
-          name:             'default',
-          importance:       Notifications.AndroidImportance.MAX,
+          name: 'default',
+          importance: Notifications.AndroidImportance.MAX,
           vibrationPattern: [0, 250, 250, 250],
-          lightColor:       '#059669',
+          lightColor: '#059669',
         });
       }
 
       return true;
-    } catch (e) {
-      console.error('Error requesting permissions:', e);
+    } catch (error) {
+      console.error('Error requesting permissions:', error);
       return false;
     }
   };
 
-  // ── In-app notification management ──────────────────────────────────────────
+  // ============================================================================
+  // NOTIFICATION MANAGEMENT
+  // ============================================================================
 
   const addNotification = useCallback((
     notification: Omit<NotificationData, 'id' | 'timestamp' | 'read'>
   ) => {
-    const newNotif: NotificationData = {
+    const newNotification: NotificationData = {
       ...notification,
-      id:        Date.now().toString() + Math.random().toString(36).substr(2, 9),
+      id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
       timestamp: Date.now(),
-      read:      false,
+      read: false,
     };
 
-    setNotifications(prev => [newNotif, ...prev]);
+    setNotifications(prev => [newNotification, ...prev]);
 
-    // Also fire a system notification if permissions allow
-    if (permRef.current) {
+    // Afficher une notification locale
+    if (permissionsGranted) {
       Notifications.scheduleNotificationAsync({
         content: {
-          title:    notification.title,
-          body:     notification.message,
-          sound:    true,
+          title: notification.title,
+          body: notification.message,
+          sound: true,
           priority: Notifications.AndroidNotificationPriority.HIGH,
         },
-        trigger: null, // immediate
+        trigger: null,
       });
     }
-  }, []);
+  }, [permissionsGranted]);
 
   const markAsRead = useCallback((id: string) => {
     setNotifications(prev =>
-      prev.map(n => n.id === id ? { ...n, read: true } : n)
+      prev.map(notif =>
+        notif.id === id ? { ...notif, read: true } : notif
+      )
     );
   }, []);
 
   const markAllAsRead = useCallback(() => {
-    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    setNotifications(prev =>
+      prev.map(notif => ({ ...notif, read: true }))
+    );
   }, []);
 
   const deleteNotification = useCallback((id: string) => {
-    setNotifications(prev => prev.filter(n => n.id !== id));
+    setNotifications(prev => prev.filter(notif => notif.id !== id));
   }, []);
 
   const clearAll = useCallback(() => {
     setNotifications([]);
   }, []);
 
-  // ── KEY FIX: listen for received system notifications ────────────────────────
-  // When expo-notifications delivers a notification (scheduled or push),
-  // add it to the in-app list automatically so the bell badge and
-  // NotificationsScreen both update.
-  useEffect(() => {
-    const subscription = Notifications.addNotificationReceivedListener(notification => {
-      const { title, body, data } = notification.request.content;
-
-      // Derive the NotificationType from the data payload if present,
-      // otherwise fall back to 'info'
-      const type: NotificationType =
-        (data?.type as NotificationType) ?? 'info';
-
-      const newNotif: NotificationData = {
-        id:        notification.request.identifier,
-        type,
-        title:     title   ?? 'Notification',
-        message:   body    ?? '',
-        timestamp: Date.now(),
-        read:      false,
-        metadata:  data?.metadata as NotificationData['metadata'],
-      };
-
-      setNotifications(prev => {
-        // Avoid duplicates (addNotification already pushed one for immediate triggers)
-        if (prev.some(n => n.id === newNotif.id)) return prev;
-        return [newNotif, ...prev];
-      });
-    });
-
-    return () => subscription.remove();
-  }, []);
-
-  // ── Also handle tapping a notification (marks it read & navigates) ───────────
-  useEffect(() => {
-    const subscription = Notifications.addNotificationResponseReceivedListener(response => {
-      const id = response.notification.request.identifier;
-      // Mark the tapped notification as read
-      setNotifications(prev =>
-        prev.map(n => n.id === id ? { ...n, read: true } : n)
-      );
-    });
-
-    return () => subscription.remove();
-  }, []);
-
-  // ── Scheduled notifications ──────────────────────────────────────────────────
+  // ============================================================================
+  // SCHEDULED NOTIFICATIONS
+  // ============================================================================
 
   const scheduleReminder = async (
     type: NotificationType,
@@ -239,55 +204,64 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     body: string,
     time: Date
   ) => {
-    if (!permissionsGranted) return;
+    if (!permissionsGranted) {
+      console.log('Permissions not granted, cannot schedule');
+      return;
+    }
 
     try {
       await Notifications.scheduleNotificationAsync({
         content: {
           title,
           body,
-          sound:    true,
+          sound: true,
           priority: Notifications.AndroidNotificationPriority.HIGH,
-          data:     { type }, // ← passed back to the received listener above
+          data: { type },
         },
         trigger: {
-          type:    Notifications.SchedulableTriggerInputTypes.DATE,
-          date:    time,
+          type: Notifications.SchedulableTriggerInputTypes.DATE,
+          date: time,
           repeats: false,
         } as Notifications.DateTriggerInput,
       });
-    } catch (e) {
-      console.error('Error scheduling notification:', e);
+    } catch (error) {
+      console.error('Error scheduling notification:', error);
     }
   };
 
   const cancelAllScheduled = async () => {
     try {
       await Notifications.cancelAllScheduledNotificationsAsync();
-    } catch (e) {
-      console.error('Error canceling notifications:', e);
+    } catch (error) {
+      console.error('Error canceling notifications:', error);
     }
   };
 
-  // ── Derived ──────────────────────────────────────────────────────────────────
+  // ============================================================================
+  // COMPUTED VALUES
+  // ============================================================================
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
-  // ── Render ───────────────────────────────────────────────────────────────────
+  // ============================================================================
+  // RENDER
+  // ============================================================================
 
   return (
-    <NotificationContext.Provider value={{
-      notifications,
-      unreadCount,
-      addNotification,
-      markAsRead,
-      markAllAsRead,
-      deleteNotification,
-      clearAll,
-      requestPermissions,
-      scheduleReminder,
-      cancelAllScheduled,
-    }}>
+    <NotificationContext.Provider
+      value={{
+        notifications,
+        unreadCount,
+        addNotification,
+        markAsRead,
+        markAllAsRead,
+        deleteNotification,
+        clearAll,
+        requestPermissions,
+        scheduleReminder,
+        cancelAllScheduled,
+      }}
+    >
       {children}
     </NotificationContext.Provider>
   );
@@ -298,48 +272,68 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
 // ============================================================================
 
 export function useNotifications() {
-  const ctx = useContext(NotificationContext);
-  if (!ctx) throw new Error('useNotifications must be used within NotificationProvider');
-  return ctx;
+  const context = useContext(NotificationContext);
+  if (!context) {
+    throw new Error('useNotifications must be used within NotificationProvider');
+  }
+  return context;
 }
 
 // ============================================================================
 // UTILITY FUNCTIONS
 // ============================================================================
 
-export const getNotificationIcon = (type: NotificationType): string => {
+export const getNotificationIcon = (type: NotificationType) => {
   switch (type) {
-    case 'completion':      return 'checkmark-circle';
-    case 'streak':          return 'flame';
+    case 'completion':
+      return 'checkmark-circle';
+    case 'streak':
+      return 'flame';
     case 'wird_reminder':
     case 'wazifa_reminder':
-    case 'hadra_reminder':  return 'notifications';
-    case 'encouragement':   return 'star';
-    default:                return 'information-circle';
+    case 'hadra_reminder':
+      return 'notifications';
+    case 'encouragement':
+      return 'star';
+    default:
+      return 'information-circle';
   }
 };
 
-export const getNotificationColor = (type: NotificationType): string => {
+export const getNotificationColor = (type: NotificationType) => {
   switch (type) {
-    case 'completion':      return '#10B981';
-    case 'streak':          return '#F59E0B';
+    case 'completion':
+      return '#10B981';
+    case 'streak':
+      return '#F59E0B';
     case 'wird_reminder':
     case 'wazifa_reminder':
-    case 'hadra_reminder':  return '#3B82F6';
-    case 'encouragement':   return '#8B5CF6';
-    default:                return '#6B7280';
+    case 'hadra_reminder':
+      return '#3B82F6';
+    case 'encouragement':
+      return '#8B5CF6';
+    default:
+      return '#6B7280';
   }
 };
 
 export const formatTimestamp = (timestamp: number): string => {
-  const diff    = Date.now() - timestamp;
+  const now = Date.now();
+  const diff = now - timestamp;
+
   const seconds = Math.floor(diff / 1000);
   const minutes = Math.floor(seconds / 60);
-  const hours   = Math.floor(minutes / 60);
-  const days    = Math.floor(hours / 24);
+  const hours = Math.floor(minutes / 60);
+  const days = Math.floor(hours / 24);
 
-  if (days > 0)    return days    === 1 ? '1 day ago'    : `${days} days ago`;
-  if (hours > 0)   return hours   === 1 ? '1 hour ago'   : `${hours} hours ago`;
-  if (minutes > 0) return minutes === 1 ? '1 min ago'    : `${minutes} mins ago`;
+  if (days > 0) {
+    return days === 1 ? '1 day ago' : `${days} days ago`;
+  }
+  if (hours > 0) {
+    return hours === 1 ? '1 hour ago' : `${hours} hours ago`;
+  }
+  if (minutes > 0) {
+    return minutes === 1 ? '1 min ago' : `${minutes} mins ago`;
+  }
   return 'Just now';
 };
