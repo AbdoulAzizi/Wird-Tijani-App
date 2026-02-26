@@ -97,7 +97,7 @@ export class ReminderService {
         hour: eveningHour,
         minute: eveningMin,
         title: 'Evening Wird Reminder 🌆',
-        body: 'Don\'t forget your evening wird before Maghrib.',
+        body: 'Don\'t forget your evening wird.',
         type: 'wird_reminder',
       });
     }
@@ -131,7 +131,7 @@ export class ReminderService {
       hour,
       minute,
       title: 'Hadra Joumou\'a Reminder 🌙',
-      body: 'Join the Friday Hadra gathering after Maghrib.',
+      body: 'Join the Friday Hadra gathering Before Maghrib.',
       type: 'hadra_reminder',
     });
   }
@@ -190,7 +190,7 @@ export class ReminderService {
       hour,
       minute,
       title: 'Evening Wird Reminder 🌆',
-      body: 'Don\'t forget your evening wird before Maghrib.',
+      body: 'Don\'t forget your evening wird.',
       type: 'wird_reminder',
     });
   }
