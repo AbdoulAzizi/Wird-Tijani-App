@@ -9,7 +9,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import {
   AzkarItem, AzkarCategory,
   CATEGORY_LABELS, CATEGORY_ICONS, CATEGORY_COLORS, PRESET_AZKARS,
-} from '@/data/azkarData';
+} from '@/data/dhikrCounterData';
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 

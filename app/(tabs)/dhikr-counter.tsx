@@ -13,7 +13,7 @@ import { useDhikrCounter } from '@/hooks/Usedhikrcounter';
 import DhikrPickerModal from '@/components/Dhikrpickermodal';
 import { useApp } from '../../contexts/AppContext';
 import ScreenBackground from '../../components/ScreenBackground';
-import { CATEGORY_LABELS, CATEGORY_COLORS, CATEGORY_ICONS } from '../../data/azkarData';
+import { CATEGORY_LABELS, CATEGORY_COLORS, CATEGORY_ICONS } from '../../data/dhikrCounterData';
 import { useContext } from 'react';
 import MinimalHeader from '../../components/MinimalHeader';
 import { LayoutActionsContext } from '../../contexts/LayoutActionsContext';

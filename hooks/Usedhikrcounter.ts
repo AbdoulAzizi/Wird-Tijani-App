@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { AzkarItem, PRESET_AZKARS } from '@/data/azkarData';
+import { AzkarItem, PRESET_AZKARS } from '@/data/dhikrCounterData';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 

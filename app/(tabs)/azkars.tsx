@@ -50,7 +50,7 @@ import {
   type CustomAzkar,
   getCategoryLabel,
   CATEGORY_COLORS,
-} from '../../data/azkarData';
+} from '../../data/azkars';
 
 const { width: W, height: H } = Dimensions.get('window');
 
