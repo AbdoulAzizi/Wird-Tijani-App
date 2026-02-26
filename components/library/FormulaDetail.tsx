@@ -48,13 +48,13 @@ export default function FormulaDetail({ item, visible, onClose }: {
       </Section>
 
       {/* Recitation guidelines */}
-      <Section label="Recitation Guidelines">
+      {/* <Section label="Recitation Guidelines">
         <View style={fd.guideBox}>
           <InfoChip icon={<Clock color="#059669" size={16} strokeWidth={2} />} label="Frequency" value={item.recitation.frequency} />
           <InfoChip icon={<Star color="#059669" size={16} strokeWidth={2} />} label="Timing" value={item.recitation.timing} />
           <InfoChip icon={<Users color="#059669" size={16} strokeWidth={2} />} label="Requirements" value={item.recitation.requirements} />
         </View>
-      </Section>
+      </Section> */}
     </DetailShell>
   );
 }

@@ -329,6 +329,7 @@ function InnerTabLayout() {
     { name: 'Dhikr Counter',    route: '/dhikr-counter',         icon: Timer,       description: 'Your dhikr counter',              color: '#0891B2', isNew: true },
     { name: 'Library',          route: '/library',               icon: BookOpen,    description: 'Resources & sacred texts',        color: '#059669', dividerAfter: true },
     { name: 'Hadara Map',        route: '/hadra-map',             icon: MapPin,         description: 'Find local Zawiya & gatherings',   color: '#059669' },
+    { name: 'Adhkar',            route: '/azkars',                icon: BookOpen,    description: 'Morning & evening adhkar',    color: '#059669' },
     // ── Al-Hadra — Station of Presence (nouvelle entrée méditative) ──
     {
       name: 'Al-Hadra',
@@ -341,8 +342,8 @@ function InnerTabLayout() {
     // ── Tools ──
     { name: 'Statistics',       route: '/stats',                 icon: BarChart3,   description: 'Consistency & discipline',        color: '#0891B2' },
     { name: "Today's Practices",route: '/daily-achievements',    icon: CheckCircle2,description: "Today's completed awrād",         color: '#059669' },
-    { name: 'Notifications',    route: '/notifications',         icon: Bell,        description: 'Reminders for your awrād',        color: '#059669', badge: unreadCount, isNew: true },
-    { name: 'Notif. Settings',  route: '/notification-settings', icon: Bell,        description: 'Manage notifications',            color: '#64748B' },
+    // { name: 'Notifications',    route: '/notifications',         icon: Bell,        description: 'Reminders for your awrād',        color: '#059669', badge: unreadCount, isNew: true },
+    // { name: 'Notif. Settings',  route: '/notification-settings', icon: Bell,        description: 'Manage notifications',            color: '#64748B' },
     { name: 'Settings',         route: '/settings',              icon: SettingsIcon,description: 'Configuration',                  color: '#475569' },
     { name: 'About',            route: '/about',                 icon: Info,        description: 'App information',                color: '#7C3AED' },
     { name: 'Contact Us',        route: '/contact',               icon: Mail,         description: 'Get in touch',                   color: '#0891B2' },

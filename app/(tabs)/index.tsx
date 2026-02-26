@@ -7,7 +7,7 @@ import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
   Heart, Star, Users, BookOpen, TrendingUp, Clock,
-  Award, ChevronRight, Sparkles, LucideIcon,
+  Award, ChevronRight, Sparkles, Sun, Moon, LucideIcon,
 } from 'lucide-react-native';
 import { useApp } from '../../contexts/AppContext';
 import { openHadraMap } from '../../utils/OpenHadraMap';
@@ -17,6 +17,7 @@ import DailyProgressCard from '../../components/DailyProgressCard';
 import CategoryHeader, { PracticeCategory } from '../../components/CategoryHeader';
 import SpiritualHeader from '../../components/SpiritualHeader';
 import FeaturedCard from '../../components/FeaturedCard';
+import { useAppVersion }    from '@/hooks/useAppVersion';
 import { LayoutActionsContext } from '../../contexts/LayoutActionsContext';
 
 // ─── Palette ──────────────────────────────────────────────────────────────────
@@ -209,9 +210,123 @@ const sb = StyleSheet.create({
   ctaBtnText:{ fontSize: 12, fontWeight: '800', color: GOLD },
 });
 
+// ─── Azkars Banner ────────────────────────────────────────────────────────────
+// Design nuit cohérent avec l'écran Azkars : fond noir, accent doré/bleu.
+// Deux boutons : Morning (doré) + Evening (bleu), séparés par un divider.
+function AzkarsBanner({ onPressMorning, onPressEvening }: {
+  onPressMorning: () => void;
+  onPressEvening: () => void;
+}) {
+  return (
+    <View style={az.wrap}>
+
+      {/* ── En-tête descriptif ── */}
+      <LinearGradient
+        colors={['#050400', '#0d0b00', '#050400']}
+        start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+        style={az.header}
+      >
+        {/* Anneaux décoratifs */}
+        <View pointerEvents="none" style={[az.ring, { width: 180, height: 180, borderRadius: 90, right: -40, top: -70 }]} />
+        <View pointerEvents="none" style={[az.ring, { width: 100, height: 100, borderRadius: 50, right: 50,  top: -10 }]} />
+
+        <LinearGradient colors={['transparent', '#C8922A', 'transparent']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={az.shimmerLine} />
+
+        <View style={az.headerInner}>
+          <View style={az.headerLeft}>
+            <View style={az.badge}>
+              <Text style={az.badgeText}>✦ REMEMBRANCE</Text>
+            </View>
+            <Text style={az.arabicTitle}>الأَذْكَار اليَوْمِيَّة</Text>
+            <Text style={az.mainTitle}>Daily Azkaar</Text>
+            <Text style={az.desc}>Morning & evening remembrance{'\n'}of Allah — a light for the heart.</Text>
+          </View>
+          <View style={az.headerRight}>
+            <View style={[az.iconCircle, { borderColor: '#C8922A40' }]}>
+              <Text style={az.iconEmoji}>☀️</Text>
+            </View>
+            <View style={[az.iconCircle, { borderColor: '#5a7db540' }]}>
+              <Text style={az.iconEmoji}>🌙</Text>
+            </View>
+          </View>
+        </View>
+
+        <LinearGradient colors={['transparent', '#C8922A', 'transparent']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={az.shimmerLine} />
+      </LinearGradient>
+
+      {/* ── Bouton Morning ── */}
+      <TouchableOpacity onPress={onPressMorning} activeOpacity={0.82}>
+        <LinearGradient colors={['#180d00', '#1e1100', '#180d00']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={az.sessionRow}>
+          <View style={[az.sessionIcon, { borderColor: '#C8922A50', backgroundColor: '#C8922A10' }]}>
+            <Sun size={22} color="#C8922A" strokeWidth={1.5} />
+          </View>
+          <View style={az.sessionInfo}>
+            <Text style={[az.sessionPeriod, { color: '#C8922A' }]}>MORNING</Text>
+            <Text style={az.sessionTitle}>Adhkar Al-Sabah</Text>
+            <Text style={[az.sessionArabic, { color: '#C8922A70' }]}>أذكار الصباح</Text>
+          </View>
+          <ChevronRight size={18} color="#C8922A45" />
+        </LinearGradient>
+      </TouchableOpacity>
+
+      <View style={az.divider} />
+
+      {/* ── Bouton Evening ── */}
+      <TouchableOpacity onPress={onPressEvening} activeOpacity={0.82}>
+        <LinearGradient colors={['#00020e', '#000414', '#00020e']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={az.sessionRow}>
+          <View style={[az.sessionIcon, { borderColor: '#5a7db550', backgroundColor: '#5a7db510' }]}>
+            <Moon size={20} color="#5a7db5" strokeWidth={1.5} />
+          </View>
+          <View style={az.sessionInfo}>
+            <Text style={[az.sessionPeriod, { color: '#5a7db5' }]}>EVENING</Text>
+            <Text style={az.sessionTitle}>Adhkar Al-Masa</Text>
+            <Text style={[az.sessionArabic, { color: '#5a7db570' }]}>أذكار المساء</Text>
+          </View>
+          <ChevronRight size={18} color="#5a7db545" />
+        </LinearGradient>
+      </TouchableOpacity>
+
+    </View>
+  );
+}
+
+const az = StyleSheet.create({
+  wrap: {
+    marginHorizontal: 16,
+    marginBottom: 12,
+    borderRadius: 22,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(200,146,42,0.20)',
+    shadowColor: '#C8922A',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.18,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  header:       { overflow: 'hidden' },
+  ring:         { position: 'absolute', borderWidth: 1, borderColor: '#C8922A', opacity: 0.10 },
+  shimmerLine:  { height: 1, width: '100%', opacity: 0.40 },
+  headerInner:  { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 16, gap: 14 },
+  headerLeft:   { flex: 1, gap: 3 },
+  badge:        { alignSelf: 'flex-start', backgroundColor: 'rgba(200,146,42,0.15)', borderWidth: 1, borderColor: 'rgba(200,146,42,0.38)', borderRadius: 10, paddingHorizontal: 8, paddingVertical: 3, marginBottom: 5 },
+  badgeText:    { fontSize: 9, fontWeight: '800', color: '#C8922A', letterSpacing: 1.2 },
+  arabicTitle:  { fontSize: 15, color: 'rgba(255,255,255,0.80)', fontWeight: '400', letterSpacing: 0.8, lineHeight: 22 },
+  mainTitle:    { fontSize: 22, color: '#FFFFFF', fontWeight: '800', letterSpacing: -0.3 },
+  desc:         { fontSize: 11, color: 'rgba(255,255,255,0.42)', lineHeight: 17, marginTop: 3 },
+  headerRight:  { alignItems: 'center', gap: 8 },
+  iconCircle:   { width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(200,146,42,0.07)', borderWidth: 1, justifyContent: 'center', alignItems: 'center' },
+  iconEmoji:    { fontSize: 20 },
+  sessionRow:   { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 14, gap: 16 },
+  sessionIcon:  { width: 46, height: 46, borderRadius: 23, borderWidth: 1.5, justifyContent: 'center', alignItems: 'center' },
+  sessionInfo:  { flex: 1, gap: 2 },
+  sessionPeriod:{ fontSize: 9, fontWeight: '800', letterSpacing: 2.5 },
+  sessionTitle: { fontSize: 16, color: '#ffffff', fontWeight: '300' },
+  sessionArabic:{ fontSize: 12, fontWeight: '300' },
+  divider:      { height: 1, backgroundColor: 'rgba(200,146,42,0.10)', marginHorizontal: 20 },
+});
+
 // ─── Al-Hadra Banner ──────────────────────────────────────────────────────────
-// Carte premium pour l'expérience méditative — Station of Presence
-// Design : void absolu (noir) + lumière dorée, distinct des autres cartes vertes
 function AlHadraBanner({ onPress }: { onPress: () => void }) {
   return (
     <TouchableOpacity onPress={onPress} activeOpacity={0.88} style={hb.wrap}>
@@ -220,48 +335,22 @@ function AlHadraBanner({ onPress }: { onPress: () => void }) {
         start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
         style={hb.gradient}
       >
-        {/* Decorative radial glow */}
         <View style={hb.glow} />
-
-        {/* Concentric rings suggestion */}
         <View style={[hb.ring, { width: 180, height: 180, borderRadius: 90, opacity: 0.06 }]} />
         <View style={[hb.ring, { width: 120, height: 120, borderRadius: 60, opacity: 0.09 }]} />
         <View style={[hb.ring, { width: 70,  height: 70,  borderRadius: 35, opacity: 0.13 }]} />
-
-        {/* Top gold shimmer */}
-        <LinearGradient
-          colors={['transparent', '#C8922A', '#FDE68A', '#C8922A', 'transparent']}
-          start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-          style={hb.goldLine}
-        />
-
+        <LinearGradient colors={['transparent', '#C8922A', '#FDE68A', '#C8922A', 'transparent']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={hb.goldLine} />
         <View style={hb.inner}>
-          {/* Left — content */}
           <View style={hb.left}>
-            {/* Badge */}
             <View style={hb.badgeRow}>
-              <View style={hb.badge}>
-                <Text style={hb.badgeText}>✦ MÉDITATION</Text>
-              </View>
+              <View style={hb.badge}><Text style={hb.badgeText}>✦ MÉDITATION</Text></View>
             </View>
-
-            {/* Arabic title */}
             <Text style={hb.arabicTitle}>الأَسْمَاءُ الحُسْنَى</Text>
             <Text style={hb.title}>Al-Hadra</Text>
             <Text style={hb.subtitle}>Station of Presence</Text>
-
-            <Text style={hb.desc}>
-              Entrez dans la présence des 99 Noms.{'\n'}
-              Une expérience méditative immersive.
-            </Text>
-
-            {/* Stats */}
+            <Text style={hb.desc}>Entrez dans la présence des 99 Noms.{'\n'}Une expérience méditative immersive.</Text>
             <View style={hb.statsRow}>
-              {[
-                { n: '99',  l: 'Names'      },
-                { n: '5',   l: 'Dimensions' },
-                { n: '∞',   l: 'Depth'      },
-              ].map(stat => (
+              {[{ n: '99', l: 'Names' }, { n: '5', l: 'Dimensions' }, { n: '∞', l: 'Depth' }].map(stat => (
                 <View key={stat.l} style={hb.stat}>
                   <Text style={hb.statNum}>{stat.n}</Text>
                   <Text style={hb.statLabel}>{stat.l}</Text>
@@ -269,10 +358,7 @@ function AlHadraBanner({ onPress }: { onPress: () => void }) {
               ))}
             </View>
           </View>
-
-          {/* Right — CTA */}
           <View style={hb.right}>
-            {/* Arabic Name display */}
             <View style={hb.arabicCircle}>
               <Text style={hb.arabicSymbol}>الله</Text>
             </View>
@@ -282,175 +368,36 @@ function AlHadraBanner({ onPress }: { onPress: () => void }) {
             </View>
           </View>
         </View>
-
-        {/* Bottom gold shimmer */}
-        <LinearGradient
-          colors={['transparent', '#C8922A', '#FDE68A', '#C8922A', 'transparent']}
-          start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-          style={hb.goldLine}
-        />
+        <LinearGradient colors={['transparent', '#C8922A', '#FDE68A', '#C8922A', 'transparent']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={hb.goldLine} />
       </LinearGradient>
     </TouchableOpacity>
   );
 }
 
 const hb = StyleSheet.create({
-  wrap: {
-    marginHorizontal: 16,
-    marginBottom: 12,
-    borderRadius: 22,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(200,146,42,0.25)',
-    shadowColor: '#C8922A',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.20,
-    shadowRadius: 18,
-    elevation: 12,
-  },
-  gradient: {
-    padding: 0,
-    overflow: 'hidden',
-    position: 'relative',
-  },
-  // Radial glow behind — center-left
-  glow: {
-    position: 'absolute',
-    width: 220,
-    height: 220,
-    borderRadius: 110,
-    backgroundColor: '#C8922A',
-    opacity: 0.06,
-    top: -60,
-    left: -40,
-  },
-  // Concentric ring decorations — positioned on right side
-  ring: {
-    position: 'absolute',
-    borderWidth: 1,
-    borderColor: '#C8922A',
-    right: 30,
-    top: '50%',
-    marginTop: -90, // half of largest ring
-  },
-  goldLine: {
-    height: 1.5,
-    width: '100%',
-    opacity: 0.55,
-  },
-  inner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    padding: 20,
-    paddingVertical: 18,
-  },
-  left: {
-    flex: 1,
-    gap: 5,
-  },
-  badgeRow: {
-    flexDirection: 'row',
-    marginBottom: 2,
-  },
-  badge: {
-    backgroundColor: 'rgba(200,146,42,0.18)',
-    borderWidth: 1,
-    borderColor: 'rgba(200,146,42,0.45)',
-    borderRadius: 10,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-  },
-  badgeText: {
-    fontSize: 9,
-    fontWeight: '800',
-    color: '#C8922A',
-    letterSpacing: 1,
-  },
-  arabicTitle: {
-    fontSize: 18,
-    color: 'rgba(255,255,255,0.90)',
-    fontWeight: '400',
-    letterSpacing: 1,
-    lineHeight: 28,
-  },
-  title: {
-    fontSize: 22,
-    color: '#FFFFFF',
-    fontWeight: '800',
-    letterSpacing: -0.3,
-  },
-  subtitle: {
-    fontSize: 12,
-    color: '#C8922A',
-    fontWeight: '700',
-    letterSpacing: 1.5,
-    textTransform: 'uppercase',
-    marginBottom: 4,
-  },
-  desc: {
-    fontSize: 11,
-    color: 'rgba(255,255,255,0.50)',
-    lineHeight: 17,
-  },
-  statsRow: {
-    flexDirection: 'row',
-    gap: 18,
-    marginTop: 8,
-  },
-  stat: {
-    alignItems: 'center',
-  },
-  statNum: {
-    fontSize: 16,
-    fontWeight: '900',
-    color: '#C8922A',
-  },
-  statLabel: {
-    fontSize: 8,
-    fontWeight: '600',
-    color: 'rgba(200,146,42,0.65)',
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
-  },
-  right: {
-    alignItems: 'center',
-    gap: 10,
-  },
-  // Circle displaying Arabic calligraphy
-  arabicCircle: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: 'rgba(200,146,42,0.08)',
-    borderWidth: 1.5,
-    borderColor: 'rgba(200,146,42,0.30)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  arabicSymbol: {
-    fontSize: 22,
-    color: 'rgba(200,146,42,0.90)',
-    fontWeight: '400',
-    letterSpacing: 1,
-  },
-  ctaBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: 'rgba(200,146,42,0.15)',
-    borderWidth: 1,
-    borderColor: 'rgba(200,146,42,0.40)',
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-  },
-  ctaBtnText: {
-    fontSize: 12,
-    fontWeight: '800',
-    color: '#C8922A',
-    letterSpacing: 0.5,
-  },
+  wrap:         { marginHorizontal: 16, marginBottom: 12, borderRadius: 22, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(200,146,42,0.25)', shadowColor: '#C8922A', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.20, shadowRadius: 18, elevation: 12 },
+  gradient:     { padding: 0, overflow: 'hidden', position: 'relative' },
+  glow:         { position: 'absolute', width: 220, height: 220, borderRadius: 110, backgroundColor: '#C8922A', opacity: 0.06, top: -60, left: -40 },
+  ring:         { position: 'absolute', borderWidth: 1, borderColor: '#C8922A', right: 30, top: '50%', marginTop: -90 },
+  goldLine:     { height: 1.5, width: '100%', opacity: 0.55 },
+  inner:        { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 20, paddingVertical: 18 },
+  left:         { flex: 1, gap: 5 },
+  badgeRow:     { flexDirection: 'row', marginBottom: 2 },
+  badge:        { backgroundColor: 'rgba(200,146,42,0.18)', borderWidth: 1, borderColor: 'rgba(200,146,42,0.45)', borderRadius: 10, paddingHorizontal: 8, paddingVertical: 3 },
+  badgeText:    { fontSize: 9, fontWeight: '800', color: '#C8922A', letterSpacing: 1 },
+  arabicTitle:  { fontSize: 18, color: 'rgba(255,255,255,0.90)', fontWeight: '400', letterSpacing: 1, lineHeight: 28 },
+  title:        { fontSize: 22, color: '#FFFFFF', fontWeight: '800', letterSpacing: -0.3 },
+  subtitle:     { fontSize: 12, color: '#C8922A', fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 4 },
+  desc:         { fontSize: 11, color: 'rgba(255,255,255,0.50)', lineHeight: 17 },
+  statsRow:     { flexDirection: 'row', gap: 18, marginTop: 8 },
+  stat:         { alignItems: 'center' },
+  statNum:      { fontSize: 16, fontWeight: '900', color: '#C8922A' },
+  statLabel:    { fontSize: 8, fontWeight: '600', color: 'rgba(200,146,42,0.65)', textTransform: 'uppercase', letterSpacing: 0.8 },
+  right:        { alignItems: 'center', gap: 10 },
+  arabicCircle: { width: 72, height: 72, borderRadius: 36, backgroundColor: 'rgba(200,146,42,0.08)', borderWidth: 1.5, borderColor: 'rgba(200,146,42,0.30)', justifyContent: 'center', alignItems: 'center' },
+  arabicSymbol: { fontSize: 22, color: 'rgba(200,146,42,0.90)', fontWeight: '400', letterSpacing: 1 },
+  ctaBtn:       { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(200,146,42,0.15)', borderWidth: 1, borderColor: 'rgba(200,146,42,0.40)', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 7 },
+  ctaBtnText:   { fontSize: 12, fontWeight: '800', color: '#C8922A', letterSpacing: 0.5 },
 });
 
 // ─── Main screen ──────────────────────────────────────────────────────────────
@@ -461,6 +408,7 @@ export default function HomeScreen() {
     wirdCompletionsToday, wazifaCompletionsToday, hadraCompletionsToday,
   } = useApp();
 
+  const { appName, fullVersion } = useAppVersion();
   const { openDrawer, handleNotifications, unreadCount } = useContext(LayoutActionsContext);
 
   const dark = state.settings.darkMode;
@@ -528,7 +476,7 @@ export default function HomeScreen() {
 
       <SpiritualHeader
         onMenuPress={openDrawer}
-        currentPage="Home"
+        currentPage={appName}
         onNotificationPress={handleNotifications}
         notificationCount={unreadCount}
         showNotification={true}
@@ -582,6 +530,19 @@ export default function HomeScreen() {
           ))}
         </View>
 
+        {/* ── Daily Azkaar ── */}
+        <View style={s.section}>
+          <SectionLabel dark={dark}>Daily Azkaar</SectionLabel>
+        </View>
+        <AzkarsBanner
+          onPressMorning={() =>
+            router.push({ pathname: '/(tabs)/azkars', params: { period: 'morning' } })
+          }
+          onPressEvening={() =>
+            router.push({ pathname: '/(tabs)/azkars', params: { period: 'evening' } })
+          }
+        />
+
         {/* ── Quran Suwar Banner ── */}
         <View style={s.section}>
           <SectionLabel dark={dark}>Holy Qur'ān</SectionLabel>
@@ -592,7 +553,6 @@ export default function HomeScreen() {
         />
 
         {/* ── Al-Hadra — Station of Presence ── */}
-        {/* Section distincte : expérience méditative immersive, design void/or */}
         <View style={s.section}>
           <SectionLabel dark={dark}>Meditation & Presence</SectionLabel>
         </View>
