@@ -39,6 +39,9 @@ const HADRA_DHIKR = {
 
 const DHIKR_KEYS = ['tahlil', 'ismuLlah'] as const;
 
+// Tahlil can be a large count — give a bit more breathing room before scrolling.
+const AUTOSCROLL_DELAYS: number[] = [3000, 700];
+
 // ─── Instructions ─────────────────────────────────────────────────────────────
 
 function Instructions({ dark }: { dark: boolean }) {
@@ -109,7 +112,7 @@ export default function HadraScreen() {
     state.hadra.ismuLlah >= state.hadraTargets.ismuLlah,
   ], [state.hadra, state.hadraTargets]);
 
-  const { scrollRef, registerCard } = useAutoScroll(completions);
+  const { scrollRef, registerCard } = useAutoScroll(completions, AUTOSCROLL_DELAYS);
 
   // ── Auto-show completion modal ─────────────────────────────────────────────
   const prevIsComplete = useRef(false);
@@ -122,7 +125,7 @@ export default function HadraScreen() {
     if (!isHadraComplete) prevIsComplete.current = false;
   }, [isHadraComplete]);
 
-  // ── OpeningBanner rows — targets are dynamic (from settings) ──────────────
+  // ── OpeningBanner rows ─────────────────────────────────────────────────────
   const openingRows: DhikrRow[] = useMemo(() => [
     { arabic: 'لَا إِلٰهَ إِلَّا اللّٰهُ', label: `Tahlīl — ${state.hadraTargets.tahlil}×`,   icon: '💎' },
     { arabic: 'اللّٰهُ',                     label: `Ism Allāh — ${state.hadraTargets.ismuLlah}×`, icon: '🌟' },
@@ -209,7 +212,6 @@ export default function HadraScreen() {
           <Text style={[styles.progressLabel, dark && styles.progressLabelDark]}>Overall Hadra progress</Text>
         </View>
 
-        {/* Re-open pill */}
         {isHadraComplete && !showCompletionModal && (
           <TouchableOpacity style={[styles.pill, dark && styles.pillDark]} onPress={() => setShowCompletionModal(true)} activeOpacity={0.85}>
             <Award color="#F59E0B" size={16} strokeWidth={2} />

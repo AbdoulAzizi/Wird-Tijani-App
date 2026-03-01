@@ -45,6 +45,9 @@ const BLESSINGS  = [
   'سيدنا محمد رسول الله عليه السلام',
 ];
 
+// Ṣalāt al-Fātiḥ is the longest recitation — give more time before scrolling to Tahlīl.
+const AUTOSCROLL_DELAYS: number[] = [700, 4000, 700];
+
 // ─── Instructions ─────────────────────────────────────────────────────────────
 
 function Instructions({ dark }: { dark: boolean }) {
@@ -112,7 +115,7 @@ export default function WirdScreen() {
     state.wird.tahlil     >= WIRD_TARGETS.tahlil,
   ], [state.wird]);
 
-  const { scrollRef, registerCard } = useAutoScroll(completions);
+  const { scrollRef, registerCard } = useAutoScroll(completions, AUTOSCROLL_DELAYS);
 
   // ── Auto-show completion modal ─────────────────────────────────────────────
   const prevIsComplete = useRef(false);
@@ -210,7 +213,6 @@ export default function WirdScreen() {
           <Text style={[styles.progressLabel, dark && styles.progressLabelDark]}>Overall Wird progress</Text>
         </View>
 
-        {/* Re-open pill */}
         {isWirdComplete && !showCompletionModal && (
           <TouchableOpacity style={[styles.pill, dark && styles.pillDark]} onPress={() => setShowCompletionModal(true)} activeOpacity={0.85}>
             <Award color="#F59E0B" size={16} strokeWidth={2} />

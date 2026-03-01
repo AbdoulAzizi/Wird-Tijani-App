@@ -51,6 +51,10 @@ const WAZIFA_DHIKR = {
 
 const DHIKR_KEYS = ['istighfar', 'salatFatih1', 'tahlil', 'jawhara'] as const;
 
+// Delay (ms) before auto-scrolling to the next card after completion.
+// Jawhara (index 2 → scroll to 3) gets extra time — it's the longest dhikr.
+const AUTOSCROLL_DELAYS: number[] = [700, 4000, 3000, 700];
+
 // ─── Instructions ─────────────────────────────────────────────────────────────
 
 function Instructions({ dark }: { dark: boolean }) {
@@ -237,7 +241,7 @@ export default function WazifaScreen() {
     state.wazifa.jawhara     >= jawharaTarget,
   ], [state.wazifa, jawharaTarget]);
 
-  const { scrollRef, registerCard } = useAutoScroll(completions);
+  const { scrollRef, registerCard } = useAutoScroll(completions, AUTOSCROLL_DELAYS);
 
   // ── Auto-show completion modal ─────────────────────────────────────────────
   const prevIsComplete = useRef(false);
@@ -358,7 +362,6 @@ export default function WazifaScreen() {
           <Text style={[styles.progressLabel, dark && styles.progressLabelDark]}>Overall Wazīfa progress</Text>
         </View>
 
-        {/* Re-open pill */}
         {isWazifaComplete && !showCompletionModal && (
           <TouchableOpacity style={[styles.pill, dark && styles.pillDark]} onPress={() => setShowCompletionModal(true)} activeOpacity={0.85}>
             <Award color="#F59E0B" size={16} strokeWidth={2} />
