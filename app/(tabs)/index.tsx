@@ -238,7 +238,7 @@ function AzkarsBanner({ onPressMorning, onPressEvening }: {
               <Text style={az.badgeText}>✦ REMEMBRANCE</Text>
             </View>
             <Text style={az.arabicTitle}>الأَذْكَار اليَوْمِيَّة</Text>
-            <Text style={az.mainTitle}>Daily Azkaar</Text>
+            <Text style={az.mainTitle}>Daily Adhkaar</Text>
             <Text style={az.desc}>Morning & evening remembrance{'\n'}of Allah — a light for the heart.</Text>
           </View>
           <View style={az.headerRight}>
@@ -348,7 +348,10 @@ function AlHadraBanner({ onPress }: { onPress: () => void }) {
             <Text style={hb.arabicTitle}>الأَسْمَاءُ الحُسْنَى</Text>
             <Text style={hb.title}>Al-Hadra</Text>
             <Text style={hb.subtitle}>Station of Presence</Text>
-            <Text style={hb.desc}>Entrez dans la présence des 99 Noms.{'\n'}Une expérience méditative immersive.</Text>
+            <Text style={hb.desc}>
+              Enter into the presence of the 99 Names.{'\n'}
+              An immersive meditative experience.
+            </Text>
             <View style={hb.statsRow}>
               {[{ n: '99', l: 'Names' }, { n: '5', l: 'Dimensions' }, { n: '∞', l: 'Depth' }].map(stat => (
                 <View key={stat.l} style={hb.stat}>
@@ -532,7 +535,7 @@ export default function HomeScreen() {
 
         {/* ── Daily Azkaar ── */}
         <View style={s.section}>
-          <SectionLabel dark={dark}>Daily Azkaar</SectionLabel>
+          <SectionLabel dark={dark}>Daily Adhkaar</SectionLabel>
         </View>
         <AzkarsBanner
           onPressMorning={() =>
