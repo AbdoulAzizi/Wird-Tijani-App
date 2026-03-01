@@ -40,7 +40,7 @@ const HADRA_DHIKR = {
 
 const DHIKR_KEYS = ['tahlil', 'ismuLlah'] as const;
 
-const AUTOSCROLL_DELAYS: number[] = [1000, 700];
+const AUTOSCROLL_DELAYS: number[] = [2000, 700];
 
 // ─── Instructions ─────────────────────────────────────────────────────────────
 

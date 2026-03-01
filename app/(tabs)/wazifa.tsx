@@ -52,7 +52,7 @@ const WAZIFA_DHIKR = {
 
 const DHIKR_KEYS = ['istighfar', 'salatFatih1', 'tahlil', 'jawhara'] as const;
 
-const AUTOSCROLL_DELAYS: number[] = [700, 700, 1200, 700];
+const AUTOSCROLL_DELAYS: number[] = [700, 4000, 3000, 700];
 
 // ─── Instructions ─────────────────────────────────────────────────────────────
 

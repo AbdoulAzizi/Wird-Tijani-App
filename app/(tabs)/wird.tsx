@@ -46,7 +46,7 @@ const BLESSINGS  = [
   'سيدنا محمد رسول الله عليه السلام',
 ];
 
-const AUTOSCROLL_DELAYS: number[] = [700, 1200, 700];
+const AUTOSCROLL_DELAYS: number[] = [700, 4000, 700];
 
 // ─── Instructions ─────────────────────────────────────────────────────────────
 
