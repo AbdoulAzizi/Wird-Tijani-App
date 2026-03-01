@@ -852,20 +852,20 @@ export const asmaAllah: AsmAllah[] = [
     reflection: 'Al-Wahid is the Singularity that has no parallel, no companion, no peer. The Oneness of Allah is not merely numerical (there is not another God) but ontological -- He is One in a way that has no analogy in creation, where everything is composed of parts, everything is relational, everything is multiple. Al-Wahid\'s oneness means all beauty, all mercy, all power, all wisdom, all knowledge are gathered in a single undivided reality. No partition. No delegation. All.',
     invocation: '"La ilaha illa Allah." Say it slowly. Laa: negation of everything. Illa: except. Allah: the One. The most important sentence in existence.',
   },
+  // {
+  //   id: 68,
+  //   arabic: 'الأَحَد',
+  //   transliteration: 'Al-Ahad',
+  //   english: 'The Unique One',
+  //   root: 'أ ح د',
+  //   dimension: 'transcendence',
+  //   color: '#6D28D9',
+  //   glow: '#C4B5FD',
+  //   reflection: 'Al-Ahad goes further than Al-Wahid -- this is absolute, absolute singularity that admits no comparison even in concept. When asked about their Lord, the Quran answered with four verses (Al-Ikhlas): "Qul Huwa Allahu Ahad" -- the scholars say these four verses contain the entire theology of monotheism. Al-Ahad is the Name that no human language had before Islam -- a Oneness so complete it cannot even be described as "unique" because uniqueness implies a category of things from which one stands out. Al-Ahad stands outside all categories.',
+  //   invocation: 'Say "Allahu Ahad" three times and let the mind fall quiet after each. The silence after this Name is itself worship.',
+  // },
   {
     id: 68,
-    arabic: 'الأَحَد',
-    transliteration: 'Al-Ahad',
-    english: 'The Unique One',
-    root: 'أ ح د',
-    dimension: 'transcendence',
-    color: '#6D28D9',
-    glow: '#C4B5FD',
-    reflection: 'Al-Ahad goes further than Al-Wahid -- this is absolute, absolute singularity that admits no comparison even in concept. When asked about their Lord, the Quran answered with four verses (Al-Ikhlas): "Qul Huwa Allahu Ahad" -- the scholars say these four verses contain the entire theology of monotheism. Al-Ahad is the Name that no human language had before Islam -- a Oneness so complete it cannot even be described as "unique" because uniqueness implies a category of things from which one stands out. Al-Ahad stands outside all categories.',
-    invocation: 'Say "Allahu Ahad" three times and let the mind fall quiet after each. The silence after this Name is itself worship.',
-  },
-  {
-    id: 69,
     arabic: 'الصَّمَد',
     transliteration: 'Al-Samad',
     english: 'The Eternal Refuge',
@@ -877,7 +877,7 @@ export const asmaAllah: AsmAllah[] = [
     invocation: 'Feel every point in your being where you need something. Then: Al-Samad needs nothing. Between your neediness and His sufficiency: prayer.',
   },
   {
-    id: 70,
+    id: 69,
     arabic: 'القَادِر',
     transliteration: 'Al-Qadir',
     english: 'The All-Powerful',
@@ -889,7 +889,7 @@ export const asmaAllah: AsmAllah[] = [
     invocation: 'The impossible thing in your life: Al-Qadir is capable. Now ask: is my request aligned with His wisdom? Align the request, then trust the power.',
   },
   {
-    id: 71,
+    id: 70,
     arabic: 'المُقْتَدِر',
     transliteration: 'Al-Muqtadir',
     english: 'The Powerful',
@@ -901,7 +901,7 @@ export const asmaAllah: AsmAllah[] = [
     invocation: 'You will one day be near Al-Muqtadir in the akhira. What kind of person do you want to be when you arrive there? Begin becoming that person now.',
   },
   {
-    id: 72,
+    id: 71,
     arabic: 'المُقَدِّم',
     transliteration: 'Al-Muqaddim',
     english: 'The Expediter',
@@ -913,7 +913,7 @@ export const asmaAllah: AsmAllah[] = [
     invocation: 'Think of something that came "just in time" or even "before you knew you needed it." That was Al-Muqaddim at work.',
   },
   {
-    id: 73,
+    id: 72,
     arabic: 'المُؤَخِّر',
     transliteration: 'Al-Muakhkhir',
     english: 'The Delayer',
@@ -925,7 +925,7 @@ export const asmaAllah: AsmAllah[] = [
     invocation: 'What has been delayed in your life that you are struggling with? Ask: "What is Al-Muakhkhir protecting me from by delaying this?"',
   },
   {
-    id: 74,
+    id: 73,
     arabic: 'الأَوَّل',
     transliteration: 'Al-Awwal',
     english: 'The First',
@@ -937,7 +937,7 @@ export const asmaAllah: AsmAllah[] = [
     invocation: 'Before everything you love, everything you fear, everything you are -- Al-Awwal. Rest in the knowledge that the source precedes all consequences.',
   },
   {
-    id: 75,
+    id: 74,
     arabic: 'الآخِر',
     transliteration: 'Al-Akhir',
     english: 'The Last',
@@ -949,7 +949,7 @@ export const asmaAllah: AsmAllah[] = [
     invocation: 'What in your life are you building that will remain after you? That which will last participates in the nature of Al-Akhir.',
   },
   {
-    id: 76,
+    id: 75,
     arabic: 'الظَّاهِر',
     transliteration: 'Al-Zahir',
     english: 'The Manifest',
@@ -961,7 +961,7 @@ export const asmaAllah: AsmAllah[] = [
     invocation: 'Look at one thing in your environment until you see through it to the divine sign within it. That seeing is Al-Zahir making Himself manifest to you.',
   },
   {
-    id: 77,
+    id: 76,
     arabic: 'البَاطِن',
     transliteration: 'Al-Batin',
     english: 'The Hidden',
@@ -973,7 +973,7 @@ export const asmaAllah: AsmAllah[] = [
     invocation: 'Turn attention inward. Past thought. Past emotion. Past sensation. The presence you find in the deep interior: that is the nearness of Al-Batin.',
   },
   {
-    id: 78,
+    id: 77,
     arabic: 'الوَالِي',
     transliteration: 'Al-Wali',
     english: 'The Governing',
@@ -985,7 +985,7 @@ export const asmaAllah: AsmAllah[] = [
     invocation: 'What feels ungoverned in your life -- chaotic, out of control? Al-Wali is governing it, even this. Especially this.',
   },
   {
-    id: 79,
+    id: 78,
     arabic: 'المُتَعَالِي',
     transliteration: 'Al-Mutaali',
     english: 'The Most Exalted',
@@ -997,7 +997,7 @@ export const asmaAllah: AsmAllah[] = [
     invocation: 'Whatever image or concept you have of Allah right now -- Al-Mutaali is beyond it. Release the concept. Let the Name point past itself.',
   },
   {
-    id: 80,
+    id: 79,
     arabic: 'البَرّ',
     transliteration: 'Al-Barr',
     english: 'The Source of Goodness',
@@ -1009,7 +1009,7 @@ export const asmaAllah: AsmAllah[] = [
     invocation: 'What would it mean to be a flowing channel of Al-Barr\'s goodness to those around you today? One person, one act. Begin there.',
   },
   {
-    id: 81,
+    id: 80,
     arabic: 'التَّوَّاب',
     transliteration: 'Al-Tawwab',
     english: 'The Acceptor of Repentance',
@@ -1021,7 +1021,7 @@ export const asmaAllah: AsmAllah[] = [
     invocation: 'Return. For what: you know. Al-Tawwab is more eager to receive you than you are to return. That eagerness is a Name.',
   },
   {
-    id: 82,
+    id: 81,
     arabic: 'المُنْتَقِم',
     transliteration: 'Al-Muntaqim',
     english: 'The Avenger',
@@ -1033,7 +1033,7 @@ export const asmaAllah: AsmAllah[] = [
     invocation: 'Release anyone you have been waiting to see punished by circumstances. Hand them to Al-Muntaqim and walk away lighter.',
   },
   {
-    id: 83,
+    id: 82,
     arabic: 'العَفُوّ',
     transliteration: 'Al-Afuw',
     english: 'The Pardoner',
@@ -1045,7 +1045,7 @@ export const asmaAllah: AsmAllah[] = [
     invocation: '"Allahumma innaka Afuwwun tuhibb al-afw fa\'fu anni." Say it now. This dua was the most recommended dua for the holiest night.',
   },
   {
-    id: 84,
+    id: 83,
     arabic: 'الرَّؤُوف',
     transliteration: 'Al-Rauf',
     english: 'The Compassionate',
@@ -1057,7 +1057,7 @@ export const asmaAllah: AsmAllah[] = [
     invocation: 'Think of someone who is suffering. Let their pain reach you -- do not protect yourself from it. That opening of the heart to pain: Al-Rauf is moving through you.',
   },
   {
-    id: 85,
+    id: 84,
     arabic: 'مَالِكُ المُلْك',
     transliteration: 'Malik al-Mulk',
     english: 'Master of the Kingdom',
@@ -1069,7 +1069,7 @@ export const asmaAllah: AsmAllah[] = [
     invocation: 'Before the most powerful person in your life: they hold a license from Malik al-Mulk. The license can expire. Act accordingly -- with respect but without fear.',
   },
   {
-    id: 86,
+    id: 85,
     arabic: 'ذُو الجَلَالِ وَالإِكْرَام',
     transliteration: 'Dhu al-Jalal wal-Ikram',
     english: 'Lord of Majesty and Bounty',
@@ -1081,7 +1081,7 @@ export const asmaAllah: AsmAllah[] = [
     invocation: 'After your next prayer: "Ya Dha al-Jalali wal-Ikram." Three times. The name of the One who is simultaneously the most awesome and the most generous.',
   },
   {
-    id: 87,
+    id: 86,
     arabic: 'المُقْسِط',
     transliteration: 'Al-Muqsit',
     english: 'The Equitable',
@@ -1093,7 +1093,7 @@ export const asmaAllah: AsmAllah[] = [
     invocation: 'Am I treating those around me with Al-Muqsit\'s equity -- each one given what they specifically need, not just an equal portion of my attention?',
   },
   {
-    id: 88,
+    id: 87,
     arabic: 'الجَامِع',
     transliteration: 'Al-Jami',
     english: 'The Gatherer',
@@ -1105,7 +1105,7 @@ export const asmaAllah: AsmAllah[] = [
     invocation: '"Rabbi ijma li mutafarriqa amri." Say this when you feel scattered. Al-Jami gathers what has been dispersed.',
   },
   {
-    id: 89,
+    id: 88,
     arabic: 'الغَنِيّ',
     transliteration: 'Al-Ghani',
     english: 'The Self-Sufficient',
@@ -1117,7 +1117,7 @@ export const asmaAllah: AsmAllah[] = [
     invocation: 'Pray without any sense of doing Allah a favor. Let the prayer be purely for your own transformation in the presence of the One Who needs nothing.',
   },
   {
-    id: 90,
+    id: 89,
     arabic: 'المُغْنِي',
     transliteration: 'Al-Mughni',
     english: 'The Enricher',
@@ -1129,7 +1129,7 @@ export const asmaAllah: AsmAllah[] = [
     invocation: 'What would it mean to be rich in the sense Al-Mughni gives? Ask for that richness specifically.',
   },
   {
-    id: 91,
+    id: 90,
     arabic: 'المَانِع',
     transliteration: 'Al-Mani',
     english: 'The Preventer',
@@ -1141,7 +1141,7 @@ export const asmaAllah: AsmAllah[] = [
     invocation: 'Think of a door that was closed to you that you are still grieving. Ask Al-Mani: what were you preventing? Then trust the answer even before it comes.',
   },
   {
-    id: 92,
+    id: 91,
     arabic: 'الضَّارّ',
     transliteration: 'Al-Darr',
     english: 'The Distressor',
@@ -1153,7 +1153,7 @@ export const asmaAllah: AsmAllah[] = [
     invocation: 'What difficulty are you currently in? Ask: what is Al-Darr shaping in me through this? What am I becoming that I could not have become without it?',
   },
   {
-    id: 93,
+    id: 92,
     arabic: 'النَّافِع',
     transliteration: 'Al-Nafi',
     english: 'The Benefactor',
@@ -1165,7 +1165,7 @@ export const asmaAllah: AsmAllah[] = [
     invocation: 'Think of the most beneficial person or thing in your life. Then trace the benefit back to its source: Al-Nafi sent it through them.',
   },
   {
-    id: 94,
+    id: 93,
     arabic: 'النُّور',
     transliteration: 'Al-Nur',
     english: 'The Light',
@@ -1177,7 +1177,7 @@ export const asmaAllah: AsmAllah[] = [
     invocation: '"Ya Nur al-Sama\'awati wal-Ard" -- say it in the dark, at night, when you feel confused or lost. The light is already there. You are asking it to manifest.',
   },
   {
-    id: 95,
+    id: 94,
     arabic: 'الهَادِي',
     transliteration: 'Al-Hadi',
     english: 'The Guide',
@@ -1189,7 +1189,7 @@ export const asmaAllah: AsmAllah[] = [
     invocation: '"Rabbi zidni huda." Lord, increase me in guidance. Say it daily. Al-Hadi responds to every sincere request for direction.',
   },
   {
-    id: 96,
+    id: 95,
     arabic: 'البَدِيع',
     transliteration: 'Al-Badi',
     english: 'The Incomparable Originator',
@@ -1201,7 +1201,7 @@ export const asmaAllah: AsmAllah[] = [
     invocation: 'You too were created as a badi\' -- unprecedented, original. Honor the originality Al-Badi invested in you by being fully yourself, not a copy.',
   },
   {
-    id: 97,
+    id: 96,
     arabic: 'البَاقِي',
     transliteration: 'Al-Baqi',
     english: 'The Everlasting',
@@ -1213,7 +1213,7 @@ export const asmaAllah: AsmAllah[] = [
     invocation: 'What are you investing your deepest energy in? Will it last? Point your heart toward Al-Baqi. That is the only investment that survives death.',
   },
   {
-    id: 98,
+    id: 97,
     arabic: 'الوَارِث',
     transliteration: 'Al-Warith',
     english: 'The Inheritor',
@@ -1223,6 +1223,17 @@ export const asmaAllah: AsmAllah[] = [
     glow: '#FCA5A5',
     reflection: 'Al-Warith inherits all things after their passing. When all the owners have died, Al-Warith inherits. When all kingdoms have fallen, Al-Warith remains. "And indeed, it is We who give life and cause death, and We are the Inheritor." (15:23) The Prophet ﷺ and the prophets before him taught: "O the Ever-Living, O the Sustaining, by Your mercy I seek relief." To know Al-Warith is to understand: everything you own, you own temporarily on loan from the One who will inherit it back.',
     invocation: 'Hold whatever you most prize in your hands -- in imagination. Feel: Al-Warith. It will return to Him. How does this change how you hold it now?',
+  },
+  {
+    id: 98,    arabic: 'الرَّشِيد',
+    transliteration: 'Al-Rashid',
+    english: 'The Guide to the Right Path',
+    root: 'ر ش د',
+    dimension: 'perfection',
+    color: '#C8922A',
+    glow: '#FDE68A',
+    reflection: 'Al-Rashid is the guide to the right path -- not just guidance but the specific guidance that leads to the straight path. The Quran says: "Guide us to the straight path." (1:6) -- this is a prayer to Al-Rashid. The straight path is not just any path but the one that leads to Allah. To know Al-Rashid is to know that every step on the right path is a step guided by Him.',
+    invocation: 'When you ask for guidance, ask specifically for Al-Rashid\'s guidance to the straight path. This is the path that leads to Allah.',
   },
   {
     id: 99,

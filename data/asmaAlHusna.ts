@@ -1156,25 +1156,25 @@ export const asmaAlHusna: AsmaAlHusnaItem[] = [
       french: "Contemplez l'unité parfaite d'Allah. Dans Son unicité, trouvez l'unité pour vos pensées éparpillées et votre cœur divisé."
     }
   },
+  // {
+  //   id: 68,
+  //   arabic: "الأَحَد",
+  //   transliteration: "Al-Ahad",
+  //   english: "The One",
+  //   french: "L'Un",
+  //   verse: {
+  //     arabic: "قُلْ هُوَ اللَّهُ أَحَدٌ",
+  //     english: "Say, 'He is Allah, [who is] One'",
+  //     french: "Dis : « Il est Allah, Unique »",
+  //     reference: "Quran 112:1"
+  //   },
+  //   meditation: {
+  //     english: "Focus on Allah's absolute oneness. He is indivisible, incomparable, and completely unique.",
+  //     french: "Concentrez-vous sur l'unicité absolue d'Allah. Il est indivisible, incomparable et complètement unique."
+  //   }
+  // },
   {
     id: 68,
-    arabic: "الأَحَد",
-    transliteration: "Al-Ahad",
-    english: "The One",
-    french: "L'Un",
-    verse: {
-      arabic: "قُلْ هُوَ اللَّهُ أَحَدٌ",
-      english: "Say, 'He is Allah, [who is] One'",
-      french: "Dis : « Il est Allah, Unique »",
-      reference: "Quran 112:1"
-    },
-    meditation: {
-      english: "Focus on Allah's absolute oneness. He is indivisible, incomparable, and completely unique.",
-      french: "Concentrez-vous sur l'unicité absolue d'Allah. Il est indivisible, incomparable et complètement unique."
-    }
-  },
-  {
-    id: 69,
     arabic: "الصَّمَد",
     transliteration: "As-Samad",
     english: "The Satisfier of All Needs",
@@ -1191,7 +1191,7 @@ export const asmaAlHusna: AsmaAlHusnaItem[] = [
     }
   },
   {
-    id: 70,
+    id: 69,
     arabic: "الْقَادِر",
     transliteration: "Al-Qadir",
     english: "The All Powerful",
@@ -1208,7 +1208,7 @@ export const asmaAlHusna: AsmaAlHusnaItem[] = [
     }
   },
   {
-    id: 71,
+    id: 70,
     arabic: "الْمُقْتَدِر",
     transliteration: "Al-Muqtadir",
     english: "The Creator of All Power",
@@ -1225,7 +1225,7 @@ export const asmaAlHusna: AsmaAlHusnaItem[] = [
     }
   },
   {
-    id: 72,
+    id: 71,
     arabic: "الْمُقَدِّم",
     transliteration: "Al-Muqaddim",
     english: "The Expediter",
@@ -1242,7 +1242,7 @@ export const asmaAlHusna: AsmaAlHusnaItem[] = [
     }
   },
   {
-    id: 73,
+    id: 72,
     arabic: "الْمُؤَخِّر",
     transliteration: "Al-Mu'akhkhir",
     english: "The Delayer",
@@ -1259,7 +1259,7 @@ export const asmaAlHusna: AsmaAlHusnaItem[] = [
     }
   },
   {
-    id: 74,
+    id: 73,
     arabic: "الأوَّل",
     transliteration: "Al-Awwal",
     english: "The First",
@@ -1276,7 +1276,7 @@ export const asmaAlHusna: AsmaAlHusnaItem[] = [
     }
   },
   {
-    id: 75,
+    id: 74,
     arabic: "الآخِر",
     transliteration: "Al-Akhir",
     english: "The Last",
@@ -1293,7 +1293,7 @@ export const asmaAlHusna: AsmaAlHusnaItem[] = [
     }
   },
   {
-    id: 76,
+    id: 75,
     arabic: "الظَّاهِر",
     transliteration: "Az-Zahir",
     english: "The Manifest One",
@@ -1310,7 +1310,7 @@ export const asmaAlHusna: AsmaAlHusnaItem[] = [
     }
   },
   {
-    id: 77,
+    id: 76,
     arabic: "الْبَاطِن",
     transliteration: "Al-Batin",
     english: "The Hidden One",
@@ -1327,7 +1327,7 @@ export const asmaAlHusna: AsmaAlHusnaItem[] = [
     }
   },
   {
-    id: 78,
+    id: 77,
     arabic: "الْوَالِي",
     transliteration: "Al-Wali",
     english: "The Ruler",
@@ -1344,7 +1344,7 @@ export const asmaAlHusna: AsmaAlHusnaItem[] = [
     }
   },
   {
-    id: 79,
+    id: 78,
     arabic: "الْمُتَعَالِي",
     transliteration: "Al-Muta'ali",
     english: "The Supreme One",
@@ -1361,7 +1361,7 @@ export const asmaAlHusna: AsmaAlHusnaItem[] = [
     }
   },
   {
-    id: 80,
+    id: 79,
     arabic: "الْبَرّ",
     transliteration: "Al-Barr",
     english: "The Beneficent One",
@@ -1378,7 +1378,7 @@ export const asmaAlHusna: AsmaAlHusnaItem[] = [
     }
   },
   {
-    id: 81,
+    id: 80,
     arabic: "التَّوَاب",
     transliteration: "At-Tawwab",
     english: "The Guide to Repentance",
@@ -1395,7 +1395,7 @@ export const asmaAlHusna: AsmaAlHusnaItem[] = [
     }
   },
   {
-    id: 82,
+    id: 81,
     arabic: "الْمُنْتَقِم",
     transliteration: "Al-Muntaqim",
     english: "The Avenger",
@@ -1412,7 +1412,7 @@ export const asmaAlHusna: AsmaAlHusnaItem[] = [
     }
   },
   {
-    id: 83,
+    id: 82,
     arabic: "العَفُوّ",
     transliteration: "Al-Afuww",
     english: "The Forgiver",
@@ -1429,7 +1429,7 @@ export const asmaAlHusna: AsmaAlHusnaItem[] = [
     }
   },
   {
-    id: 84,
+    id: 83,
     arabic: "الرَّؤُوف",
     transliteration: "Ar-Ra'uf",
     english: "The Compassionate",
@@ -1446,7 +1446,7 @@ export const asmaAlHusna: AsmaAlHusnaItem[] = [
     }
   },
   {
-    id: 85,
+    id: 84,
     arabic: "مَالِكُ الْمُلْك",
     transliteration: "Malik-ul-Mulk",
     english: "Owner of All",
@@ -1463,7 +1463,7 @@ export const asmaAlHusna: AsmaAlHusnaItem[] = [
     }
   },
   {
-    id: 86,
+    id: 85,
     arabic: "ذُوالْجَلاَلِ وَالإكْرَام",
     transliteration: "Dhu-l-Jalali wa-l-Ikram",
     english: "Owner of Majesty and Bounty",
@@ -1480,7 +1480,7 @@ export const asmaAlHusna: AsmaAlHusnaItem[] = [
     }
   },
   {
-    id: 87,
+    id: 86,
     arabic: "الْمُقْسِط",
     transliteration: "Al-Muqsit",
     english: "The Equitable One",
@@ -1497,7 +1497,7 @@ export const asmaAlHusna: AsmaAlHusnaItem[] = [
     }
   },
   {
-    id: 88,
+    id: 87,
     arabic: "الْجَامِع",
     transliteration: "Al-Jami",
     english: "The Gatherer",
@@ -1514,7 +1514,7 @@ export const asmaAlHusna: AsmaAlHusnaItem[] = [
     }
   },
   {
-    id: 89,
+    id: 88,
     arabic: "الْغَنِيّ",
     transliteration: "Al-Ghani",
     english: "The Rich One",
@@ -1531,7 +1531,7 @@ export const asmaAlHusna: AsmaAlHusnaItem[] = [
     }
   },
   {
-    id: 90,
+    id: 89,
     arabic: "الْمُغْنِي",
     transliteration: "Al-Mughni",
     english: "The Enricher",
@@ -1548,7 +1548,7 @@ export const asmaAlHusna: AsmaAlHusnaItem[] = [
     }
   },
   {
-    id: 91,
+    id: 90,
     arabic: "الْمَانِع",
     transliteration: "Al-Mani",
     english: "The Preventer of Harm",
@@ -1565,7 +1565,7 @@ export const asmaAlHusna: AsmaAlHusnaItem[] = [
     }
   },
   {
-    id: 92,
+    id: 91,
     arabic: "الضَّارّ",
     transliteration: "Ad-Darr",
     english: "The Creator of the Harmful",
@@ -1582,7 +1582,7 @@ export const asmaAlHusna: AsmaAlHusnaItem[] = [
     }
   },
   {
-    id: 93,
+    id: 92,
     arabic: "النَّافِع",
     transliteration: "An-Nafi",
     english: "The Creator of Good",
@@ -1599,7 +1599,7 @@ export const asmaAlHusna: AsmaAlHusnaItem[] = [
     }
   },
   {
-    id: 94,
+    id: 93,
     arabic: "النُّور",
     transliteration: "An-Nur",
     english: "The Light",
@@ -1616,7 +1616,7 @@ export const asmaAlHusna: AsmaAlHusnaItem[] = [
     }
   },
   {
-    id: 95,
+    id: 94,
     arabic: "الْهَادِي",
     transliteration: "Al-Hadi",
     english: "The Guide",
@@ -1633,7 +1633,7 @@ export const asmaAlHusna: AsmaAlHusnaItem[] = [
     }
   },
   {
-    id: 96,
+    id: 95,
     arabic: "الْبَدِيع",
     transliteration: "Al-Badi",
     english: "The Originator",
@@ -1650,7 +1650,7 @@ export const asmaAlHusna: AsmaAlHusnaItem[] = [
     }
   },
   {
-    id: 97,
+    id: 96,
     arabic: "الْبَاقِي",
     transliteration: "Al-Baqi",
     english: "The Everlasting One",
@@ -1667,7 +1667,7 @@ export const asmaAlHusna: AsmaAlHusnaItem[] = [
     }
   },
   {
-    id: 98,
+    id: 97,
     arabic: "الْوَارِث",
     transliteration: "Al-Warith",
     english: "The Inheritor of All",
@@ -1684,7 +1684,7 @@ export const asmaAlHusna: AsmaAlHusnaItem[] = [
     }
   },
   {
-    id: 99,
+    id: 98,
     arabic: "الرَّشِيد",
     transliteration: "Ar-Rashid",
     english: "The Righteous Teacher",
@@ -1701,7 +1701,7 @@ export const asmaAlHusna: AsmaAlHusnaItem[] = [
     }
   },
   {
-  id: 100,
+  id: 99,
   arabic: "الصَّبُور",
   transliteration: "As-Sabur",
   english: "The Patient",
