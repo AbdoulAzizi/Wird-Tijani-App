@@ -2,7 +2,7 @@
   "expo": {
     "name": "My Wird",
     "slug": "wird-tijani",
-    "version": "1.0.11",
+    "version": "1.0.12",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "wirdtijani",
@@ -27,7 +27,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.wirdtijani.app",
-      "buildNumber": "12"
+      "buildNumber": "13"
     },
 
     "android": {
