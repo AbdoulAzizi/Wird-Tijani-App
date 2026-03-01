@@ -14,6 +14,7 @@ import ScreenBackground from '../../components/ScreenBackground';
 import WazifaInfoModal from '../../components/WazifaInfoModal';
 import StatsBar from '../../components/StatsBar';
 import { useAutoScroll } from '@/components/hooks/useAutoScroll';
+import { usePracticeTimer } from '@/components/hooks/usePracticeTimer';
 import { useRegisterHeaderActions } from '../../contexts/HeaderActionsContext';
 import MinimalHeader from '../../components/MinimalHeader';
 import { LayoutActionsContext } from '../../contexts/LayoutActionsContext';
@@ -51,9 +52,7 @@ const WAZIFA_DHIKR = {
 
 const DHIKR_KEYS = ['istighfar', 'salatFatih1', 'tahlil', 'jawhara'] as const;
 
-// Delay (ms) before auto-scrolling to the next card after completion.
-// Jawhara (index 2 → scroll to 3) gets extra time — it's the longest dhikr.
-const AUTOSCROLL_DELAYS: number[] = [700, 4000, 3000, 700];
+const AUTOSCROLL_DELAYS: number[] = [700, 700, 1200, 700];
 
 // ─── Instructions ─────────────────────────────────────────────────────────────
 
@@ -213,12 +212,16 @@ export default function WazifaScreen() {
   const [showSettings,        setShowSettings]        = useState(false);
   const [showOpeningBanner,   setShowOpeningBanner]   = useState(true);
   const [showCompletionModal, setShowCompletionModal] = useState(false);
+  const [timerSaved,          setTimerSaved]          = useState(false);
   const [tempUseJawhara,      setTempUseJawhara]      = useState(state.wazifaSettings.useJawhara);
   const [tempJawharaCount,    setTempJawharaCount]    = useState<number>(state.wazifaSettings.jawharaCount || 12);
 
   const { handleBack } = useContext(LayoutActionsContext);
   const dark          = state.settings.darkMode;
   const jawharaTarget = getWazifaJawharaTarget();
+
+  // ── Timer ──────────────────────────────────────────────────────────────────
+  const timer = usePracticeTimer();
 
   const targets = useMemo(() => [
     WAZIFA_TARGETS.istighfar,
@@ -250,6 +253,11 @@ export default function WazifaScreen() {
       const t = setTimeout(() => setShowCompletionModal(true), 650);
       prevIsComplete.current = true;
       return () => clearTimeout(t);
+    }
+    // Session reset (new round) — unlock timer so it can be used again
+    if (!isWazifaComplete && prevIsComplete.current) {
+      timer.reset();
+      setTimerSaved(false);
     }
     if (!isWazifaComplete) prevIsComplete.current = false;
   }, [isWazifaComplete]);
@@ -291,17 +299,26 @@ export default function WazifaScreen() {
   const handleResetAll = useCallback(() => {
     Alert.alert('Reset All', 'Are you sure you want to reset all wazīfa counts?', [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Reset', style: 'destructive', onPress: () => dispatch({ type: 'RESET_ALL_WAZIFA' }) },
+      {
+        text: 'Reset', style: 'destructive', onPress: () => {
+          dispatch({ type: 'RESET_ALL_WAZIFA' });
+          timer.reset();
+          setTimerSaved(false);
+        },
+      },
     ]);
-  }, [dispatch]);
+  }, [dispatch, timer]);
 
   const handleCompleteWazifa = useCallback(() => {
     if (!isWazifaComplete) return;
     haptic('success');
-    dispatch({ type: 'COMPLETE_WAZIFA' });
+    // Stop timer and save duration alongside the completion
+    const duration = timer.stop();
+    dispatch({ type: 'COMPLETE_WAZIFA', duration });
+    setTimerSaved(true);
     setShowCompletionModal(false);
     Alert.alert('Wazīfa Recorded 🎉', 'May Allah accept your devotion.', [{ text: 'Alhamdulillah' }]);
-  }, [isWazifaComplete, dispatch]);
+  }, [isWazifaComplete, dispatch, timer]);
 
   const handleIncrement = useCallback(
     (k: keyof typeof state.wazifa) => dispatch({ type: 'INCREMENT_WAZIFA', dhikr: k }),
@@ -349,11 +366,20 @@ export default function WazifaScreen() {
       />
 
       <ScreenBackground>
-        <StatsBar dark={dark} stats={[
-          { icon: <Target color="#7C3AED" size={13} strokeWidth={2.5} />, value: `${completedCount}/4`, label: 'Completed', color: '#7C3AED' },
-          { icon: <Flame  color="#D97706" size={13} strokeWidth={2.5} />, value: `${progressPct}%`,    label: 'Progress',  color: '#D97706' },
-          { icon: <Star   color="#059669" size={13} strokeWidth={2.5} />, value: String(state.streak ?? 0), label: 'Day streak', color: '#059669' },
-        ]} />
+        <StatsBar
+          dark={dark}
+          stats={[
+            { icon: <Target color="#7C3AED" size={13} strokeWidth={2.5} />, value: `${completedCount}/4`, label: 'Completed', color: '#7C3AED' },
+            { icon: <Flame  color="#D97706" size={13} strokeWidth={2.5} />, value: `${progressPct}%`,    label: 'Progress',  color: '#D97706' },
+          ]}
+          timer={{
+            formatted:  timer.formatted,
+            isRunning:  timer.isRunning,
+            isComplete: timerSaved,
+            onToggle:   timer.toggle,
+            color:      '#7C3AED',
+          }}
+        />
 
         <View style={styles.progressWrap}>
           <View style={[styles.progressTrack, dark && styles.progressTrackDark]}>

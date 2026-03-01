@@ -14,6 +14,7 @@ import HadraInfoModal from '../../components/HadraInfoModal';
 import HadraSettingsModal from '../../components/HadraSettingsModal';
 import StatsBar from '../../components/StatsBar';
 import { useAutoScroll } from '@/components/hooks/useAutoScroll';
+import { usePracticeTimer } from '@/components/hooks/usePracticeTimer';
 import { useRegisterHeaderActions } from '../../contexts/HeaderActionsContext';
 import MinimalHeader from '../../components/MinimalHeader';
 import { LayoutActionsContext } from '../../contexts/LayoutActionsContext';
@@ -39,8 +40,7 @@ const HADRA_DHIKR = {
 
 const DHIKR_KEYS = ['tahlil', 'ismuLlah'] as const;
 
-// Tahlil can be a large count — give a bit more breathing room before scrolling.
-const AUTOSCROLL_DELAYS: number[] = [3000, 700];
+const AUTOSCROLL_DELAYS: number[] = [1000, 700];
 
 // ─── Instructions ─────────────────────────────────────────────────────────────
 
@@ -91,9 +91,13 @@ export default function HadraScreen() {
   const [showInfoModal,       setShowInfoModal]       = useState(false);
   const [showOpeningBanner,   setShowOpeningBanner]   = useState(true);
   const [showCompletionModal, setShowCompletionModal] = useState(false);
+  const [timerSaved,          setTimerSaved]          = useState(false);
 
   const { handleBack } = useContext(LayoutActionsContext);
   const dark = state.settings.darkMode;
+
+  // ── Timer ──────────────────────────────────────────────────────────────────
+  const timer = usePracticeTimer();
 
   const targets = useMemo(() => [
     state.hadraTargets.tahlil,
@@ -122,12 +126,17 @@ export default function HadraScreen() {
       prevIsComplete.current = true;
       return () => clearTimeout(t);
     }
+    // Session reset (new round) — unlock timer so it can be used again
+    if (!isHadraComplete && prevIsComplete.current) {
+      timer.reset();
+      setTimerSaved(false);
+    }
     if (!isHadraComplete) prevIsComplete.current = false;
   }, [isHadraComplete]);
 
   // ── OpeningBanner rows ─────────────────────────────────────────────────────
   const openingRows: DhikrRow[] = useMemo(() => [
-    { arabic: 'لَا إِلٰهَ إِلَّا اللّٰهُ', label: `Tahlīl — ${state.hadraTargets.tahlil}×`,   icon: '💎' },
+    { arabic: 'لَا إِلٰهَ إِلَّا اللّٰهُ', label: `Tahlīl — ${state.hadraTargets.tahlil}×`,    icon: '💎' },
     { arabic: 'اللّٰهُ',                     label: `Ism Allāh — ${state.hadraTargets.ismuLlah}×`, icon: '🌟' },
   ], [state.hadraTargets]);
 
@@ -148,17 +157,25 @@ export default function HadraScreen() {
   const handleResetAll = useCallback(() => {
     Alert.alert('Reset All', 'Are you sure you want to reset all hadra counts?', [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Reset', style: 'destructive', onPress: () => dispatch({ type: 'RESET_ALL_HADRA' }) },
+      {
+        text: 'Reset', style: 'destructive', onPress: () => {
+          dispatch({ type: 'RESET_ALL_HADRA' });
+          timer.reset();
+          setTimerSaved(false);
+        },
+      },
     ]);
-  }, [dispatch]);
+  }, [dispatch, timer]);
 
   const handleCompleteHadra = useCallback(() => {
     if (!isHadraComplete) return;
     haptic('success');
-    dispatch({ type: 'COMPLETE_HADRA' });
+    const duration = timer.stop();
+    dispatch({ type: 'COMPLETE_HADRA', duration });
+    setTimerSaved(true);
     setShowCompletionModal(false);
     Alert.alert('Hadra Recorded 🎉', 'May Allah accept your dhikr.', [{ text: 'Alhamdulillah' }]);
-  }, [isHadraComplete, dispatch]);
+  }, [isHadraComplete, dispatch, timer]);
 
   const handleIncrement = useCallback(
     (k: keyof typeof state.hadra) => dispatch({ type: 'INCREMENT_HADRA', dhikr: k }),
@@ -199,11 +216,20 @@ export default function HadraScreen() {
       />
 
       <ScreenBackground>
-        <StatsBar dark={dark} stats={[
-          { icon: <Target color="#7C3AED" size={13} strokeWidth={2.5} />, value: `${completedCount}/2`, label: 'Completed', color: '#7C3AED' },
-          { icon: <Flame  color="#F59E0B" size={13} strokeWidth={2.5} />, value: `${progressPct}%`,    label: 'Progress',  color: '#F59E0B' },
-          { icon: <Moon   color="#0891B2" size={13} strokeWidth={2.5} />, value: String(state.streak ?? 0), label: 'Day streak', color: '#0891B2' },
-        ]} />
+        <StatsBar
+          dark={dark}
+          stats={[
+            { icon: <Target color="#7C3AED" size={13} strokeWidth={2.5} />, value: `${completedCount}/2`, label: 'Completed', color: '#7C3AED' },
+            { icon: <Flame  color="#F59E0B" size={13} strokeWidth={2.5} />, value: `${progressPct}%`,    label: 'Progress',  color: '#F59E0B' },
+          ]}
+          timer={{
+            formatted:  timer.formatted,
+            isRunning:  timer.isRunning,
+            isComplete: timerSaved,
+            onToggle:   timer.toggle,
+            color:      '#0891B2',
+          }}
+        />
 
         <View style={styles.progressWrap}>
           <View style={[styles.progressTrack, dark && styles.progressTrackDark]}>

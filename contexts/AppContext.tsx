@@ -67,6 +67,10 @@ interface AppState {
   completedWirds: string[];
   completedWazifas: string[];
   completedHadras: string[];
+  // Duration history in seconds — parallel arrays, index-aligned with completed* arrays
+  wirdDurations: number[];
+  wazifaDurations: number[];
+  hadraDurations: number[];
   streak: number;
   settings: AppSettings;
   currentWirdStep: number;
@@ -91,9 +95,9 @@ type AppAction =
   | { type: 'UPDATE_WAZIFA_SETTINGS'; settings: Partial<WazifaSettings> }
   | { type: 'UPDATE_WIRD_SETTINGS'; settings: WirdSettings }
   | { type: 'UPDATE_FREQUENCY_SETTINGS'; settings: Partial<FrequencySettings> }
-  | { type: 'COMPLETE_WIRD' }
-  | { type: 'COMPLETE_WAZIFA' }
-  | { type: 'COMPLETE_HADRA' }
+  | { type: 'COMPLETE_WIRD';   duration?: number }
+  | { type: 'COMPLETE_WAZIFA'; duration?: number }
+  | { type: 'COMPLETE_HADRA';  duration?: number }
   | { type: 'LOAD_STATE'; state: AppState }
   | { type: 'UPDATE_SETTINGS'; settings: Partial<AppSettings> }
   | { type: 'SET_WIRD_STEP'; step: number }
@@ -116,6 +120,9 @@ const initialState: AppState = {
   completedWirds: [],
   completedWazifas: [],
   completedHadras: [],
+  wirdDurations: [],
+  wazifaDurations: [],
+  hadraDurations: [],
   streak: 0,
   settings: {
     audioEnabled: true,
@@ -246,12 +253,12 @@ function appReducer(state: AppState, action: AppAction): AppState {
         frequencySettings: { ...state.frequencySettings, ...action.settings },
       };
 
-    // COMPLETE_WIRD: push today's date — if already done once, pushes again (twice = 2 entries)
     case 'COMPLETE_WIRD': {
       const today = getTodayDate();
       return {
         ...state,
-        completedWirds: [...state.completedWirds, today],
+        completedWirds:  [...state.completedWirds, today],
+        wirdDurations:   [...(state.wirdDurations ?? []), action.duration ?? 0],
         wird: initialState.wird,
         currentWirdStep: 0,
       };
@@ -260,7 +267,8 @@ function appReducer(state: AppState, action: AppAction): AppState {
       const today = getTodayDate();
       return {
         ...state,
-        completedWazifas: [...state.completedWazifas, today],
+        completedWazifas:  [...state.completedWazifas, today],
+        wazifaDurations:   [...(state.wazifaDurations ?? []), action.duration ?? 0],
         wazifa: initialState.wazifa,
         currentWazifaStep: 0,
       };
@@ -269,7 +277,8 @@ function appReducer(state: AppState, action: AppAction): AppState {
       const today = getTodayDate();
       return {
         ...state,
-        completedHadras: [...state.completedHadras, today],
+        completedHadras:  [...state.completedHadras, today],
+        hadraDurations:   [...(state.hadraDurations ?? []), action.duration ?? 0],
         hadra: initialState.hadra,
         currentHadraStep: 0,
       };
@@ -292,6 +301,10 @@ function appReducer(state: AppState, action: AppAction): AppState {
         wirdSettings: action.state.wirdSettings || initialState.wirdSettings,
         completedHadras: action.state.completedHadras || [],
         currentHadraStep: action.state.currentHadraStep || 0,
+        // Migrate: ensure duration arrays exist for users upgrading from older builds
+        wirdDurations:  action.state.wirdDurations  ?? [],
+        wazifaDurations: action.state.wazifaDurations ?? [],
+        hadraDurations:  action.state.hadraDurations  ?? [],
         settings: {
           ...initialState.settings,
           ...action.state.settings,

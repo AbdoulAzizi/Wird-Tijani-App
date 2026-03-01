@@ -14,6 +14,7 @@ import WirdInfoModal from '../../components/WirdInfoModal';
 import WirdSettingsModal from '../../components/WirdSettingsModal';
 import StatsBar from '../../components/StatsBar';
 import { useAutoScroll } from '@/components/hooks/useAutoScroll';
+import { usePracticeTimer } from '@/components/hooks/usePracticeTimer';
 import { useRegisterHeaderActions } from '../../contexts/HeaderActionsContext';
 import MinimalHeader from '../../components/MinimalHeader';
 import { LayoutActionsContext } from '../../contexts/LayoutActionsContext';
@@ -45,8 +46,7 @@ const BLESSINGS  = [
   'سيدنا محمد رسول الله عليه السلام',
 ];
 
-// Ṣalāt al-Fātiḥ is the longest recitation — give more time before scrolling to Tahlīl.
-const AUTOSCROLL_DELAYS: number[] = [700, 4000, 700];
+const AUTOSCROLL_DELAYS: number[] = [700, 1200, 700];
 
 // ─── Instructions ─────────────────────────────────────────────────────────────
 
@@ -96,10 +96,14 @@ export default function WirdScreen() {
   const [showSettingsModal,   setShowSettingsModal]   = useState(false);
   const [showOpeningBanner,   setShowOpeningBanner]   = useState(true);
   const [showCompletionModal, setShowCompletionModal] = useState(false);
+  const [timerSaved,          setTimerSaved]          = useState(false);
 
   const { handleBack } = useContext(LayoutActionsContext);
   const dark    = state.settings.darkMode;
   const salawat = getCurrentSalawatFormula();
+
+  // ── Timer ──────────────────────────────────────────────────────────────────
+  const timer = usePracticeTimer();
 
   // ── Derived stats ──────────────────────────────────────────────────────────
   const completedCount = useMemo(
@@ -125,6 +129,11 @@ export default function WirdScreen() {
       prevIsComplete.current = true;
       return () => clearTimeout(t);
     }
+    // Session reset (new round) — unlock timer so it can be used again
+    if (!isWirdComplete && prevIsComplete.current) {
+      timer.reset();
+      setTimerSaved(false);
+    }
     if (!isWirdComplete) prevIsComplete.current = false;
   }, [isWirdComplete]);
 
@@ -147,17 +156,25 @@ export default function WirdScreen() {
     haptic('medium');
     Alert.alert('Reset All', 'Are you sure you want to reset all dhikr counts?', [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Reset', style: 'destructive', onPress: () => dispatch({ type: 'RESET_ALL_WIRD' }) },
+      {
+        text: 'Reset', style: 'destructive', onPress: () => {
+          dispatch({ type: 'RESET_ALL_WIRD' });
+          timer.reset();
+          setTimerSaved(false);
+        },
+      },
     ]);
-  }, [dispatch]);
+  }, [dispatch, timer]);
 
   const handleCompleteWird = useCallback(() => {
     if (!isWirdComplete) return;
     haptic('success');
-    dispatch({ type: 'COMPLETE_WIRD' });
+    const duration = timer.stop();
+    dispatch({ type: 'COMPLETE_WIRD', duration });
+    setTimerSaved(true);
     setShowCompletionModal(false);
     Alert.alert('Wird Recorded 🎉', 'May Allah accept your dhikr.', [{ text: 'Alhamdulillah' }]);
-  }, [isWirdComplete, dispatch]);
+  }, [isWirdComplete, dispatch, timer]);
 
   const handleIncrement = useCallback(
     (k: keyof typeof state.wird) => dispatch({ type: 'INCREMENT_WIRD', dhikr: k }),
@@ -200,11 +217,20 @@ export default function WirdScreen() {
       />
 
       <ScreenBackground>
-        <StatsBar dark={dark} stats={[
-          { icon: <Target color="#059669" size={13} strokeWidth={2.5} />, value: `${completedCount}/3`, label: 'Completed', color: '#059669' },
-          { icon: <Flame  color="#F59E0B" size={13} strokeWidth={2.5} />, value: `${progressPct}%`,    label: 'Progress',  color: '#F59E0B' },
-          { icon: <Award  color="#7C3AED" size={13} strokeWidth={2.5} />, value: String(state.streak ?? 0), label: 'Day streak', color: '#7C3AED' },
-        ]} />
+        <StatsBar
+          dark={dark}
+          stats={[
+            { icon: <Target color="#059669" size={13} strokeWidth={2.5} />, value: `${completedCount}/3`, label: 'Completed', color: '#059669' },
+            { icon: <Flame  color="#F59E0B" size={13} strokeWidth={2.5} />, value: `${progressPct}%`,    label: 'Progress',  color: '#F59E0B' },
+          ]}
+          timer={{
+            formatted:  timer.formatted,
+            isRunning:  timer.isRunning,
+            isComplete: timerSaved,
+            onToggle:   timer.toggle,
+            color:      '#059669',
+          }}
+        />
 
         <View style={styles.progressWrap}>
           <View style={[styles.progressTrack, dark && styles.progressTrackDark]}>
