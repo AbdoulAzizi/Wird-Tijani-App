@@ -49,9 +49,26 @@ function StatPill({ icon, value, label, color, dark }: StatItem & { dark: boolea
 
 function TimerPill({ timer, dark }: { timer: TimerConfig; dark: boolean }) {
   const { formatted, isRunning, isComplete, onToggle, color } = timer;
-  const sublabel  = isComplete ? 'Saved' : isRunning ? 'Running' : 'Timer';
-  const iconBg    = isComplete ? '#10B98122' : color + (isRunning ? '33' : '22');
-  const valueColor = isComplete ? '#10B981' : color;
+
+  // Four distinct states:
+  //   "Start"   — never been started yet (still at 00:00, idle)
+  //   "Paused"  — was running, now paused mid-session (elapsed > 0)
+  //   "Running" — actively ticking
+  //   "Saved"   — session completed and recorded
+  const neverStarted = formatted === '00:00' && !isRunning;
+
+  const sublabel = isComplete    ? 'Saved'
+                 : isRunning     ? 'Running'
+                 : neverStarted  ? 'Start'
+                 :                 'Paused';
+
+  const iconBg     = isComplete ? '#10B98122' : color + (isRunning ? '33' : '22');
+  const valueColor = isComplete ? '#10B981'   : color;
+
+  // "Paused" label uses the accent color as a subtle visual nudge to resume
+  const labelStyle = !isComplete && !isRunning && !neverStarted
+    ? { color }
+    : undefined;
 
   return (
     <View style={[styles.pill, dark && styles.pillDark]}>
@@ -74,7 +91,9 @@ function TimerPill({ timer, dark }: { timer: TimerConfig; dark: boolean }) {
         <Text style={[styles.value, styles.timerValue, { color: valueColor }]}>
           {formatted}
         </Text>
-        <Text style={[styles.label, dark && styles.labelDark]}>{sublabel}</Text>
+        <Text style={[styles.label, dark && styles.labelDark, labelStyle]}>
+          {sublabel}
+        </Text>
       </View>
     </View>
   );
