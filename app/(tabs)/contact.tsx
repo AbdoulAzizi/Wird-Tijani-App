@@ -451,10 +451,10 @@ export default function ContactScreen() {
           <ContactInfoCard icon={<MapPin color="#B45309" size={20} strokeWidth={2} />}        label="Location" value="Available worldwide · Online" color="#B45309" delay={340} />
         </View>
 
-        <View style={s.section}>
+        {/* <View style={s.section}>
           <SectionTitle sub="Follow our community">Follow Us</SectionTitle>
           <SocialLinks />
-        </View>
+        </View> */}
 
         <View style={s.section}>
           <QuoteBanner />
