@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useContext } from 'react';
+import React, { useState, useCallback, useMemo, useContext, useRef, useEffect } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
   TouchableOpacity, Alert, Animated, Platform,
@@ -17,6 +17,10 @@ import { useAutoScroll } from '@/components/hooks/useAutoScroll';
 import { useRegisterHeaderActions } from '../../contexts/HeaderActionsContext';
 import MinimalHeader from '../../components/MinimalHeader';
 import { LayoutActionsContext } from '../../contexts/LayoutActionsContext';
+import OpeningBanner,    { DhikrRow }        from '../../components/OpeningBanner';
+import CompletionBanner                       from '../../components/CompletionBanner';
+
+// ─── Constants ────────────────────────────────────────────────────────────────
 
 const DHIKR_DATA = {
   istighfar: {
@@ -41,34 +45,7 @@ const BLESSINGS  = [
   'سيدنا محمد رسول الله عليه السلام',
 ];
 
-function CompletionBanner({ dark, onComplete }: { dark: boolean; onComplete: () => void }) {
-  return (
-    <TouchableOpacity
-      style={[cBanner.wrap, dark && cBanner.wrapDark]}
-      onPress={onComplete} activeOpacity={0.85}
-    >
-      <View style={cBanner.left}>
-        <View style={cBanner.iconWrap}>
-          <Award color="#F59E0B" size={26} strokeWidth={2} />
-        </View>
-        <View>
-          <Text style={cBanner.title}>Wird Complete! 🎉</Text>
-          <Text style={cBanner.subtitle}>Tap to record your completion</Text>
-        </View>
-      </View>
-      <CheckCircle color="#059669" size={24} strokeWidth={2.5} />
-    </TouchableOpacity>
-  );
-}
-
-const cBanner = StyleSheet.create({
-  wrap:     { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#F0FDF4', borderRadius: 20, padding: 18, marginHorizontal: 16, marginTop: 8, borderWidth: 2, borderColor: '#A7F3D0', shadowColor: '#059669', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.15, shadowRadius: 12, elevation: 5 },
-  wrapDark: { backgroundColor: '#052E16', borderColor: '#065F46' },
-  left:     { flexDirection: 'row', alignItems: 'center', gap: 14, flex: 1 },
-  iconWrap: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#FEF3C7', justifyContent: 'center', alignItems: 'center' },
-  title:    { fontSize: 17, fontWeight: '800', color: '#065F46', marginBottom: 3 },
-  subtitle: { fontSize: 13, color: '#059669', fontWeight: '500' },
-});
+// ─── Instructions ─────────────────────────────────────────────────────────────
 
 function Instructions({ dark }: { dark: boolean }) {
   return (
@@ -104,18 +81,24 @@ const instr = StyleSheet.create({
   rowTextDark: { color: '#94A3B8' },
 });
 
+// ─── Main Screen ──────────────────────────────────────────────────────────────
+
 export default function WirdScreen() {
-  const { state, dispatch, isWirdComplete, getWirdProgress, getCurrentSalawatFormula } = useApp();
-  const [showInfoModal,     setShowInfoModal]     = useState(false);
-  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const {
+    state, dispatch, isWirdComplete, getWirdProgress,
+    getCurrentSalawatFormula, wirdCompletionsToday, isWirdFullyDoneToday,
+  } = useApp();
 
-  // ── Callback back du layout ──────────────────────────────────────────────
+  const [showInfoModal,       setShowInfoModal]       = useState(false);
+  const [showSettingsModal,   setShowSettingsModal]   = useState(false);
+  const [showOpeningBanner,   setShowOpeningBanner]   = useState(true);
+  const [showCompletionModal, setShowCompletionModal] = useState(false);
+
   const { handleBack } = useContext(LayoutActionsContext);
-
-  const { darkMode, audioEnabled } = state.settings;
-  const dark    = darkMode;
+  const dark    = state.settings.darkMode;
   const salawat = getCurrentSalawatFormula();
 
+  // ── Derived stats ──────────────────────────────────────────────────────────
   const completedCount = useMemo(
     () => DHIKR_KEYS.filter((k, i) => state.wird[k] >= TARGETS[i]).length,
     [state.wird],
@@ -131,12 +114,25 @@ export default function WirdScreen() {
 
   const { scrollRef, registerCard } = useAutoScroll(completions);
 
-  const getStepStatus = useCallback((i: number) => {
-    if (state.wird[DHIKR_KEYS[i]] >= TARGETS[i]) return 'completed';
-    if (i === 0 || state.wird[DHIKR_KEYS[i - 1]] >= TARGETS[i - 1]) return 'active';
-    return 'disabled';
-  }, [state.wird]);
+  // ── Auto-show completion modal ─────────────────────────────────────────────
+  const prevIsComplete = useRef(false);
+  useEffect(() => {
+    if (isWirdComplete && !prevIsComplete.current) {
+      const t = setTimeout(() => setShowCompletionModal(true), 650);
+      prevIsComplete.current = true;
+      return () => clearTimeout(t);
+    }
+    if (!isWirdComplete) prevIsComplete.current = false;
+  }, [isWirdComplete]);
 
+  // ── OpeningBanner rows ─────────────────────────────────────────────────────
+  const openingRows: DhikrRow[] = useMemo(() => [
+    { arabic: 'أَسْتَغْفِرُ اللّٰهَ',      label: `Istighfār — ${WIRD_TARGETS.istighfar}×`,    icon: '🌿' },
+    { arabic: salawat.arabic.slice(0, 38) + '…', label: `${salawat.title} — ${WIRD_TARGETS.salatFatih}×`, icon: '✨' },
+    { arabic: 'لَا إِلٰهَ إِلَّا اللّٰهُ', label: `Tahlīl — ${WIRD_TARGETS.tahlil}×`,          icon: '💎' },
+  ], [salawat]);
+
+  // ── Handlers ──────────────────────────────────────────────────────────────
   const haptic = (type: 'light' | 'medium' | 'success' = 'light') => {
     if (Platform.OS !== 'ios') return;
     if (type === 'success') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -156,7 +152,8 @@ export default function WirdScreen() {
     if (!isWirdComplete) return;
     haptic('success');
     dispatch({ type: 'COMPLETE_WIRD' });
-    Alert.alert('Wird Complete! 🎉', 'May Allah accept your dhikr.', [{ text: 'Alhamdulillah' }]);
+    setShowCompletionModal(false);
+    Alert.alert('Wird Recorded 🎉', 'May Allah accept your dhikr.', [{ text: 'Alhamdulillah' }]);
   }, [isWirdComplete, dispatch]);
 
   const handleIncrement = useCallback(
@@ -175,43 +172,28 @@ export default function WirdScreen() {
     ]);
   }, [dispatch]);
 
+  const getStepStatus = useCallback((i: number) => {
+    if (state.wird[DHIKR_KEYS[i]] >= TARGETS[i]) return 'completed';
+    if (i === 0 || state.wird[DHIKR_KEYS[i - 1]] >= TARGETS[i - 1]) return 'active';
+    return 'disabled';
+  }, [state.wird]);
+
   const playAudio = useCallback((type: string) => {
-    if (audioEnabled) console.log(`Playing audio for ${type}`);
-  }, [audioEnabled]);
+    if (state.settings.audioEnabled) console.log(`Playing audio for ${type}`);
+  }, [state.settings.audioEnabled]);
 
   const menuActions = [
-    {
-      key: 'info', label: 'Wird Information',
-      icon: <Info color="#059669" size={16} strokeWidth={2} />,
-      onPress: () => setShowInfoModal(true),
-    },
-    {
-      key: 'settings', label: 'Wird Settings',
-      icon: <Settings color="#059669" size={16} strokeWidth={2} />,
-      onPress: () => setShowSettingsModal(true),
-      dividerAfter: true,
-    },
-    {
-      key: 'reset', label: 'Reset All Dhikr',
-      icon: <RotateCcw color="#EF4444" size={16} strokeWidth={2.5} />,
-      onPress: handleResetAll,
-      destructive: true,
-    },
+    { key: 'info',     label: 'Wird Information', icon: <Info     color="#059669" size={16} strokeWidth={2} />,   onPress: () => setShowInfoModal(true) },
+    { key: 'settings', label: 'Wird Settings',    icon: <Settings color="#059669" size={16} strokeWidth={2} />,   onPress: () => setShowSettingsModal(true), dividerAfter: true },
+    { key: 'reset',    label: 'Reset All Dhikr',  icon: <RotateCcw color="#EF4444" size={16} strokeWidth={2.5} />, onPress: handleResetAll, destructive: true },
   ];
-
   useRegisterHeaderActions('/wird', menuActions);
 
   return (
     <View style={[styles.root, dark && styles.rootDark]}>
-
-      {/* ── MinimalHeader rendu directement dans l'écran ── */}
       <MinimalHeader
-        title="Wird Tijāni"
-        subtitle="Daily litany"
-        onBackPress={handleBack}
-        showMore={true}
-        menuActions={menuActions}
-        theme="default"
+        title="Wird Tijāni" subtitle="Daily litany"
+        onBackPress={handleBack} showMore menuActions={menuActions} theme="default"
       />
 
       <ScreenBackground>
@@ -228,72 +210,104 @@ export default function WirdScreen() {
           <Text style={[styles.progressLabel, dark && styles.progressLabelDark]}>Overall Wird progress</Text>
         </View>
 
-        <ScrollView ref={scrollRef} style={styles.scroll} showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+        {/* Re-open pill */}
+        {isWirdComplete && !showCompletionModal && (
+          <TouchableOpacity style={[styles.pill, dark && styles.pillDark]} onPress={() => setShowCompletionModal(true)} activeOpacity={0.85}>
+            <Award color="#F59E0B" size={16} strokeWidth={2} />
+            <Text style={styles.pillText}>Wird Complete — tap to record</Text>
+            <CheckCircle color="#059669" size={16} strokeWidth={2.5} />
+          </TouchableOpacity>
+        )}
 
+        <ScrollView ref={scrollRef} style={styles.scroll} showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
           <View onLayout={registerCard(0)}>
             <DhikrCard
-              title={DHIKR_DATA.istighfar.title}
-              arabic={DHIKR_DATA.istighfar.arabic}
-              transliteration={DHIKR_DATA.istighfar.transliteration}
-              translation={DHIKR_DATA.istighfar.translation}
+              title={DHIKR_DATA.istighfar.title} arabic={DHIKR_DATA.istighfar.arabic}
+              transliteration={DHIKR_DATA.istighfar.transliteration} translation={DHIKR_DATA.istighfar.translation}
               count={state.wird.istighfar} target={WIRD_TARGETS.istighfar}
-              onIncrement={() => handleIncrement('istighfar')}
-              onDecrement={() => handleDecrement('istighfar')}
-              onReset={() => handleReset('istighfar', DHIKR_DATA.istighfar.title)}
-              onPlayAudio={() => playAudio('istighfar')}
+              onIncrement={() => handleIncrement('istighfar')} onDecrement={() => handleDecrement('istighfar')}
+              onReset={() => handleReset('istighfar', DHIKR_DATA.istighfar.title)} onPlayAudio={() => playAudio('istighfar')}
               status={getStepStatus(0)} blessing={BLESSINGS[0]}
             />
           </View>
-
           <View onLayout={registerCard(1)}>
             <DhikrCard
               title={salawat.title} arabic={salawat.arabic}
               transliteration={salawat.transliteration} translation={salawat.translation}
               count={state.wird.salatFatih} target={WIRD_TARGETS.salatFatih}
-              onIncrement={() => handleIncrement('salatFatih')}
-              onDecrement={() => handleDecrement('salatFatih')}
-              onReset={() => handleReset('salatFatih', salawat.title)}
-              onPlayAudio={() => playAudio('salatFatih')}
+              onIncrement={() => handleIncrement('salatFatih')} onDecrement={() => handleDecrement('salatFatih')}
+              onReset={() => handleReset('salatFatih', salawat.title)} onPlayAudio={() => playAudio('salatFatih')}
               status={getStepStatus(1)} blessing={BLESSINGS[1]}
             />
           </View>
-
           <View onLayout={registerCard(2)}>
             <DhikrCard
               title={DHIKR_DATA.tahlil.title} arabic={DHIKR_DATA.tahlil.arabic}
               transliteration={DHIKR_DATA.tahlil.transliteration} translation={DHIKR_DATA.tahlil.translation}
               count={state.wird.tahlil} target={WIRD_TARGETS.tahlil}
-              onIncrement={() => handleIncrement('tahlil')}
-              onDecrement={() => handleDecrement('tahlil')}
-              onReset={() => handleReset('tahlil', DHIKR_DATA.tahlil.title)}
-              onPlayAudio={() => playAudio('tahlil')}
+              onIncrement={() => handleIncrement('tahlil')} onDecrement={() => handleDecrement('tahlil')}
+              onReset={() => handleReset('tahlil', DHIKR_DATA.tahlil.title)} onPlayAudio={() => playAudio('tahlil')}
               status={getStepStatus(2)} blessing={BLESSINGS[2]}
             />
           </View>
-
-          {isWirdComplete && <CompletionBanner dark={dark} onComplete={handleCompleteWird} />}
           <Instructions dark={dark} />
           <View style={styles.bottomSpace} />
         </ScrollView>
       </ScreenBackground>
 
-      <WirdInfoModal visible={showInfoModal} onClose={() => setShowInfoModal(false)} darkMode={dark} />
+      <WirdInfoModal     visible={showInfoModal}     onClose={() => setShowInfoModal(false)}     darkMode={dark} />
       <WirdSettingsModal visible={showSettingsModal} onClose={() => setShowSettingsModal(false)} darkMode={dark} />
+
+      {showOpeningBanner && (
+        <OpeningBanner
+          theme="wird"
+          titleArabic="الوِرْدُ التِّيجَانِي"
+          titleLatin="Wird Tijānī"
+          subtitle="Daily Litany of the Tijāniyya"
+          instruction={`Recite after Fajr and Asr.\nComplete each dhikr fully before moving to the next.`}
+          beginLabel="Begin Wird"
+          dhikrRows={openingRows}
+          streak={state.streak ?? 0}
+          completionsToday={wirdCompletionsToday}
+          targetPerDay={state.frequencySettings.wirdPerDay}
+          isFullyDoneToday={isWirdFullyDoneToday}
+          onClose={() => setShowOpeningBanner(false)}
+        />
+      )}
+
+      {showCompletionModal && (
+        <CompletionBanner
+          theme="wird"
+          titleArabic="الحمد لله"
+          titleLatin="Alḥamdulillāh"
+          practiceName="Wird"
+          completionsToday={wirdCompletionsToday}
+          targetPerDay={state.frequencySettings.wirdPerDay}
+          streak={state.streak ?? 0}
+          hadith="Whoever perseveres in the Wird, Allah provides from where he does not expect, and opens the doors of nearness."
+          confirmLabel="Record Completion"
+          onComplete={handleCompleteWird}
+          onClose={() => setShowCompletionModal(false)}
+        />
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  root:              { flex: 1, backgroundColor: '#F8FAFC' },
-  rootDark:          { backgroundColor: '#0F172A' },
-  progressWrap:      { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 8 },
-  progressTrack:     { height: 8, backgroundColor: '#E2E8F0', borderRadius: 4, overflow: 'hidden', marginBottom: 6 },
-  progressTrackDark: { backgroundColor: '#334155' },
-  progressFill:      { height: '100%', backgroundColor: '#059669', borderRadius: 4 },
-  progressComplete:  { backgroundColor: '#F59E0B' },
-  progressLabel:     { fontSize: 13, color: '#FFFFFF', fontWeight: '600' },
-  progressLabelDark: { color: '#64748B' },
-  scroll:            { flex: 1 },
-  scrollContent:     { paddingTop: 8 },
-  bottomSpace:       { height: 32 },
+  root:               { flex: 1, backgroundColor: '#F8FAFC' },
+  rootDark:           { backgroundColor: '#0F172A' },
+  progressWrap:       { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 8 },
+  progressTrack:      { height: 8, backgroundColor: '#E2E8F0', borderRadius: 4, overflow: 'hidden', marginBottom: 6 },
+  progressTrackDark:  { backgroundColor: '#334155' },
+  progressFill:       { height: '100%', backgroundColor: '#059669', borderRadius: 4 },
+  progressComplete:   { backgroundColor: '#F59E0B' },
+  progressLabel:      { fontSize: 13, color: '#94A3B8', fontWeight: '600' },
+  progressLabelDark:  { color: '#64748B' },
+  pill:               { flexDirection: 'row', alignItems: 'center', gap: 10, marginHorizontal: 16, marginBottom: 8, paddingHorizontal: 16, paddingVertical: 11, borderRadius: 14, backgroundColor: '#F0FDF4', borderWidth: 1.5, borderColor: '#A7F3D0' },
+  pillDark:           { backgroundColor: '#052E16', borderColor: '#065F46' },
+  pillText:           { flex: 1, fontSize: 13, fontWeight: '700', color: '#059669' },
+  scroll:             { flex: 1 },
+  scrollContent:      { paddingTop: 8 },
+  bottomSpace:        { height: 32 },
 });

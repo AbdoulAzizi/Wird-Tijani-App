@@ -1,11 +1,12 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useContext, useRef, useEffect } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
-  TouchableOpacity, Alert, Animated
+  TouchableOpacity, Alert, Animated, Platform,
 } from 'react-native';
 import {
-  RotateCcw, Settings, Info, CheckCircle, Award, Flame, Moon, Target
+  RotateCcw, Settings, Info, CheckCircle, Award, Flame, Moon, Target,
 } from 'lucide-react-native';
+import * as Haptics from 'expo-haptics';
 import DhikrCard from '../../components/DhikrCard';
 import { useApp } from '../../contexts/AppContext';
 import ScreenBackground from '../../components/ScreenBackground';
@@ -14,12 +15,12 @@ import HadraSettingsModal from '../../components/HadraSettingsModal';
 import StatsBar from '../../components/StatsBar';
 import { useAutoScroll } from '@/components/hooks/useAutoScroll';
 import { useRegisterHeaderActions } from '../../contexts/HeaderActionsContext';
-
-import { useContext } from 'react';
 import MinimalHeader from '../../components/MinimalHeader';
 import { LayoutActionsContext } from '../../contexts/LayoutActionsContext';
-import * as Haptics from 'expo-haptics';
-import { Platform } from 'react-native';
+import OpeningBanner,    { DhikrRow }        from '../../components/OpeningBanner';
+import CompletionBanner                       from '../../components/CompletionBanner';
+
+// ─── Constants ────────────────────────────────────────────────────────────────
 
 const HADRA_DHIKR = {
   tahlil: {
@@ -38,43 +39,7 @@ const HADRA_DHIKR = {
 
 const DHIKR_KEYS = ['tahlil', 'ismuLlah'] as const;
 
-function CompletionBanner({ dark, onComplete }: { dark: boolean; onComplete: () => void }) {
-  return (
-    <TouchableOpacity
-      style={[cBanner.wrap, dark && cBanner.wrapDark]}
-      onPress={onComplete} activeOpacity={0.85}
-    >
-      <View style={cBanner.left}>
-        <View style={cBanner.iconWrap}>
-          <Award color="#F59E0B" size={26} strokeWidth={2} />
-        </View>
-        <View>
-          <Text style={cBanner.title}>Hadra Complete! 🎉</Text>
-          <Text style={cBanner.subtitle}>Tap to record your completion</Text>
-        </View>
-      </View>
-      <CheckCircle color="#059669" size={24} strokeWidth={2.5} />
-    </TouchableOpacity>
-  );
-}
-
-const cBanner = StyleSheet.create({
-  wrap: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    backgroundColor: '#F5F3FF', borderRadius: 20, padding: 18,
-    marginHorizontal: 16, marginTop: 8, borderWidth: 2, borderColor: '#DDD6FE',
-    shadowColor: '#7C3AED', shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.15, shadowRadius: 12, elevation: 5,
-  },
-  wrapDark: { backgroundColor: '#1E1135', borderColor: '#4C1D95' },
-  left: { flexDirection: 'row', alignItems: 'center', gap: 14, flex: 1 },
-  iconWrap: {
-    width: 48, height: 48, borderRadius: 24,
-    backgroundColor: '#EDE9FE', justifyContent: 'center', alignItems: 'center',
-  },
-  title:    { fontSize: 17, fontWeight: '800', color: '#4C1D95', marginBottom: 3 },
-  subtitle: { fontSize: 13, color: '#7C3AED', fontWeight: '500' },
-});
+// ─── Instructions ─────────────────────────────────────────────────────────────
 
 function Instructions({ dark }: { dark: boolean }) {
   return (
@@ -99,31 +64,33 @@ function Instructions({ dark }: { dark: boolean }) {
 }
 
 const instr = StyleSheet.create({
-  wrap: {
-    backgroundColor: '#FFFFFF', borderRadius: 20, padding: 20,
-    marginHorizontal: 16, marginTop: 16, borderWidth: 1, borderColor: '#F1F5F9',
-    shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06, shadowRadius: 8, elevation: 3,
-  },
-  wrapDark: { backgroundColor: '#1E293B', borderColor: '#334155' },
-  header: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 14 },
-  emoji: { fontSize: 20 },
-  title: { fontSize: 16, fontWeight: '700', color: '#1E293B' },
-  titleDark: { color: '#F8FAFC' },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
-  rowIcon: { fontSize: 16 },
-  rowText: { fontSize: 14, color: '#64748B', flex: 1, lineHeight: 20 },
+  wrap:        { backgroundColor: '#FFFFFF', borderRadius: 20, padding: 20, marginHorizontal: 16, marginTop: 16, borderWidth: 1, borderColor: '#F1F5F9', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8, elevation: 3 },
+  wrapDark:    { backgroundColor: '#1E293B', borderColor: '#334155' },
+  header:      { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 14 },
+  emoji:       { fontSize: 20 },
+  title:       { fontSize: 16, fontWeight: '700', color: '#1E293B' },
+  titleDark:   { color: '#F8FAFC' },
+  row:         { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
+  rowIcon:     { fontSize: 16 },
+  rowText:     { fontSize: 14, color: '#64748B', flex: 1, lineHeight: 20 },
   rowTextDark: { color: '#94A3B8' },
 });
 
-export default function HadraScreen() {
-  const { state, dispatch, isHadraComplete, getHadraProgress } = useApp();
-  const [showSettings,  setShowSettings]  = useState(false);
-  const [showInfoModal, setShowInfoModal] = useState(false);
-  const { handleBack } = useContext(LayoutActionsContext);
+// ─── Main Screen ──────────────────────────────────────────────────────────────
 
-  const { darkMode, audioEnabled } = state.settings;
-  const dark = darkMode;
+export default function HadraScreen() {
+  const {
+    state, dispatch, isHadraComplete, getHadraProgress,
+    hadraCompletionsToday, isHadraFullyDoneToday,
+  } = useApp();
+
+  const [showSettings,        setShowSettings]        = useState(false);
+  const [showInfoModal,       setShowInfoModal]       = useState(false);
+  const [showOpeningBanner,   setShowOpeningBanner]   = useState(true);
+  const [showCompletionModal, setShowCompletionModal] = useState(false);
+
+  const { handleBack } = useContext(LayoutActionsContext);
+  const dark = state.settings.darkMode;
 
   const targets = useMemo(() => [
     state.hadraTargets.tahlil,
@@ -131,10 +98,9 @@ export default function HadraScreen() {
   ], [state.hadraTargets]);
 
   const completedCount = useMemo(
-    () => DHIKR_KEYS.filter((key, index) => state.hadra[key] >= targets[index]).length,
+    () => DHIKR_KEYS.filter((k, i) => state.hadra[k] >= targets[i]).length,
     [state.hadra, targets],
   );
-
   const progress    = useMemo(() => getHadraProgress(), [state.hadra, state.hadraTargets]);
   const progressPct = Math.round(progress);
 
@@ -145,11 +111,36 @@ export default function HadraScreen() {
 
   const { scrollRef, registerCard } = useAutoScroll(completions);
 
-  const getStepStatus = useCallback((stepIndex: number) => {
-    if (state.hadra[DHIKR_KEYS[stepIndex]] >= targets[stepIndex]) return 'completed';
-    if (stepIndex === 0 || state.hadra[DHIKR_KEYS[stepIndex - 1]] >= targets[stepIndex - 1]) return 'active';
+  // ── Auto-show completion modal ─────────────────────────────────────────────
+  const prevIsComplete = useRef(false);
+  useEffect(() => {
+    if (isHadraComplete && !prevIsComplete.current) {
+      const t = setTimeout(() => setShowCompletionModal(true), 650);
+      prevIsComplete.current = true;
+      return () => clearTimeout(t);
+    }
+    if (!isHadraComplete) prevIsComplete.current = false;
+  }, [isHadraComplete]);
+
+  // ── OpeningBanner rows — targets are dynamic (from settings) ──────────────
+  const openingRows: DhikrRow[] = useMemo(() => [
+    { arabic: 'لَا إِلٰهَ إِلَّا اللّٰهُ', label: `Tahlīl — ${state.hadraTargets.tahlil}×`,   icon: '💎' },
+    { arabic: 'اللّٰهُ',                     label: `Ism Allāh — ${state.hadraTargets.ismuLlah}×`, icon: '🌟' },
+  ], [state.hadraTargets]);
+
+  // ── Handlers ──────────────────────────────────────────────────────────────
+  const getStepStatus = useCallback((i: number) => {
+    if (state.hadra[DHIKR_KEYS[i]] >= targets[i]) return 'completed';
+    if (i === 0 || state.hadra[DHIKR_KEYS[i - 1]] >= targets[i - 1]) return 'active';
     return 'disabled';
   }, [state.hadra, targets]);
+
+  const haptic = (type: 'light' | 'medium' | 'success' = 'light') => {
+    if (Platform.OS !== 'ios') return;
+    if (type === 'success') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    else if (type === 'medium') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    else Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  };
 
   const handleResetAll = useCallback(() => {
     Alert.alert('Reset All', 'Are you sure you want to reset all hadra counts?', [
@@ -160,22 +151,24 @@ export default function HadraScreen() {
 
   const handleCompleteHadra = useCallback(() => {
     if (!isHadraComplete) return;
+    haptic('success');
     dispatch({ type: 'COMPLETE_HADRA' });
-    Alert.alert('Hadra Complete! 🎉', 'May Allah accept your dhikr.', [{ text: 'Alhamdulillah' }]);
+    setShowCompletionModal(false);
+    Alert.alert('Hadra Recorded 🎉', 'May Allah accept your dhikr.', [{ text: 'Alhamdulillah' }]);
   }, [isHadraComplete, dispatch]);
 
   const handleIncrement = useCallback(
-    (dhikr: keyof typeof state.hadra) => dispatch({ type: 'INCREMENT_HADRA', dhikr }),
+    (k: keyof typeof state.hadra) => dispatch({ type: 'INCREMENT_HADRA', dhikr: k }),
     [dispatch],
   );
   const handleDecrement = useCallback(
-    (dhikr: keyof typeof state.hadra) => dispatch({ type: 'DECREMENT_HADRA', dhikr }),
+    (k: keyof typeof state.hadra) => dispatch({ type: 'DECREMENT_HADRA', dhikr: k }),
     [dispatch],
   );
-  const handleReset = useCallback((dhikr: keyof typeof state.hadra, dhikrTitle: string) => {
-    Alert.alert('Reset Dhikr', `Are you sure you want to reset ${dhikrTitle}?`, [
+  const handleReset = useCallback((k: keyof typeof state.hadra, title: string) => {
+    Alert.alert('Reset Dhikr', `Are you sure you want to reset ${title}?`, [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Reset', style: 'destructive', onPress: () => dispatch({ type: 'RESET_HADRA', dhikr }) },
+      { text: 'Reset', style: 'destructive', onPress: () => dispatch({ type: 'RESET_HADRA', dhikr: k }) },
     ]);
   }, [dispatch]);
 
@@ -184,40 +177,24 @@ export default function HadraScreen() {
     Alert.alert('Settings Saved', 'Your hadra targets have been updated.', [{ text: 'OK' }]);
   }, [dispatch]);
 
-  const playAudio = useCallback((dhikrType: string) => {
-    if (audioEnabled) console.log(`Playing audio for ${dhikrType}`);
-  }, [audioEnabled]);
+  const playAudio = useCallback((type: string) => {
+    if (state.settings.audioEnabled) console.log(`Playing audio for ${type}`);
+  }, [state.settings.audioEnabled]);
 
   const menuActions = [
-    {
-      key: 'info', label: 'Hadra Information',
-      icon: <Info color="#7C3AED" size={16} strokeWidth={2} />,
-      onPress: () => setShowInfoModal(true),
-    },
-    {
-      key: 'settings', label: 'Hadra Settings',
-      icon: <Settings color="#7C3AED" size={16} strokeWidth={2} />,
-      onPress: () => setShowSettings(true), dividerAfter: true,
-    },
-    {
-      key: 'reset', label: 'Reset All Dhikr',
-      icon: <RotateCcw color="#EF4444" size={16} strokeWidth={2.5} />,
-      onPress: handleResetAll, destructive: true,
-    },
+    { key: 'info',     label: 'Hadra Information', icon: <Info     color="#7C3AED" size={16} strokeWidth={2} />,   onPress: () => setShowInfoModal(true) },
+    { key: 'settings', label: 'Hadra Settings',    icon: <Settings color="#7C3AED" size={16} strokeWidth={2} />,   onPress: () => setShowSettings(true), dividerAfter: true },
+    { key: 'reset',    label: 'Reset All Dhikr',   icon: <RotateCcw color="#EF4444" size={16} strokeWidth={2.5} />, onPress: handleResetAll, destructive: true },
   ];
-
   useRegisterHeaderActions('/hadra', menuActions);
+
   return (
     <View style={[styles.root, dark && styles.rootDark]}>
+      <MinimalHeader
+        title="Ḥaḍra Joumouʿa" subtitle="Friday gathering"
+        onBackPress={handleBack} showMore menuActions={menuActions} theme="default"
+      />
 
-       <MinimalHeader
-          title="Ḥaḍra Joumouʿa"
-          subtitle="Friday gathering"
-          onBackPress={handleBack}
-          showMore={true}
-          menuActions={menuActions}
-          theme="default"
-        />
       <ScreenBackground>
         <StatsBar dark={dark} stats={[
           { icon: <Target color="#7C3AED" size={13} strokeWidth={2.5} />, value: `${completedCount}/2`, label: 'Completed', color: '#7C3AED' },
@@ -232,39 +209,38 @@ export default function HadraScreen() {
           <Text style={[styles.progressLabel, dark && styles.progressLabelDark]}>Overall Hadra progress</Text>
         </View>
 
-        <ScrollView ref={scrollRef} style={styles.scroll} showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+        {/* Re-open pill */}
+        {isHadraComplete && !showCompletionModal && (
+          <TouchableOpacity style={[styles.pill, dark && styles.pillDark]} onPress={() => setShowCompletionModal(true)} activeOpacity={0.85}>
+            <Award color="#F59E0B" size={16} strokeWidth={2} />
+            <Text style={styles.pillText}>Hadra Complete — tap to record</Text>
+            <CheckCircle color="#7C3AED" size={16} strokeWidth={2.5} />
+          </TouchableOpacity>
+        )}
 
+        <ScrollView ref={scrollRef} style={styles.scroll} showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
           <View onLayout={registerCard(0)}>
             <DhikrCard
               title={`${HADRA_DHIKR.tahlil.title} (${state.hadraTargets.tahlil}x)`}
               arabic={HADRA_DHIKR.tahlil.arabic}
-              transliteration={HADRA_DHIKR.tahlil.transliteration}
-              translation={HADRA_DHIKR.tahlil.translation}
+              transliteration={HADRA_DHIKR.tahlil.transliteration} translation={HADRA_DHIKR.tahlil.translation}
               count={state.hadra.tahlil} target={state.hadraTargets.tahlil}
-              onIncrement={() => handleIncrement('tahlil')}
-              onDecrement={() => handleDecrement('tahlil')}
-              onReset={() => handleReset('tahlil', `Tahlīl (${state.hadraTargets.tahlil}x)`)}
-              onPlayAudio={() => playAudio('tahlil')}
+              onIncrement={() => handleIncrement('tahlil')} onDecrement={() => handleDecrement('tahlil')}
+              onReset={() => handleReset('tahlil', `Tahlīl (${state.hadraTargets.tahlil}x)`)} onPlayAudio={() => playAudio('tahlil')}
               status={getStepStatus(0)} blessing="سيدنا محمد رسول الله عليه السلام"
             />
           </View>
-
           <View onLayout={registerCard(1)}>
             <DhikrCard
               title={`${HADRA_DHIKR.ismuLlah.title} (${state.hadraTargets.ismuLlah}x)`}
               arabic={HADRA_DHIKR.ismuLlah.arabic}
-              transliteration={HADRA_DHIKR.ismuLlah.transliteration}
-              translation={HADRA_DHIKR.ismuLlah.translation}
+              transliteration={HADRA_DHIKR.ismuLlah.transliteration} translation={HADRA_DHIKR.ismuLlah.translation}
               count={state.hadra.ismuLlah} target={state.hadraTargets.ismuLlah}
-              onIncrement={() => handleIncrement('ismuLlah')}
-              onDecrement={() => handleDecrement('ismuLlah')}
-              onReset={() => handleReset('ismuLlah', `Ism Allāh (${state.hadraTargets.ismuLlah}x)`)}
-              onPlayAudio={() => playAudio('ismuLlah')}
+              onIncrement={() => handleIncrement('ismuLlah')} onDecrement={() => handleDecrement('ismuLlah')}
+              onReset={() => handleReset('ismuLlah', `Ism Allāh (${state.hadraTargets.ismuLlah}x)`)} onPlayAudio={() => playAudio('ismuLlah')}
               status={getStepStatus(1)} blessing="سيدنا محمد رسول الله عليه السلام"
             />
           </View>
-          
-          {isHadraComplete && <CompletionBanner dark={dark} onComplete={handleCompleteHadra} />}
           <Instructions dark={dark} />
           <View style={styles.bottomSpace} />
         </ScrollView>
@@ -275,21 +251,57 @@ export default function HadraScreen() {
         currentTargets={state.hadraTargets} onSave={handleSaveSettings} darkMode={dark}
       />
       <HadraInfoModal visible={showInfoModal} onClose={() => setShowInfoModal(false)} darkMode={dark} />
+
+      {showOpeningBanner && (
+        <OpeningBanner
+          theme="hadra"
+          titleArabic="الحَضْرَةُ الجُمُعِيَّة"
+          titleLatin="Ḥaḍra Joumouʿa"
+          subtitle="Friday Gathering of Remembrance"
+          instruction={`Performed on Fridays after Maghrib.\nBest in congregation — let the rhythm carry the heart.`}
+          beginLabel="Begin Hadra"
+          dhikrRows={openingRows}
+          streak={state.streak ?? 0}
+          completionsToday={hadraCompletionsToday}
+          targetPerDay={state.frequencySettings.hadraPerDay}
+          isFullyDoneToday={isHadraFullyDoneToday}
+          onClose={() => setShowOpeningBanner(false)}
+        />
+      )}
+
+      {showCompletionModal && (
+        <CompletionBanner
+          theme="hadra"
+          titleArabic="الحمد لله"
+          titleLatin="Alḥamdulillāh"
+          practiceName="Hadra"
+          completionsToday={hadraCompletionsToday}
+          targetPerDay={state.frequencySettings.hadraPerDay}
+          streak={state.streak ?? 0}
+          hadith="The gathering of dhikr is a garden of Paradise. Whoever enters it is immersed in the mercy of Allah."
+          confirmLabel="Record Completion"
+          onComplete={handleCompleteHadra}
+          onClose={() => setShowCompletionModal(false)}
+        />
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#F8FAFC' },
-  rootDark: { backgroundColor: '#0F172A' },
-  progressWrap: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 8 },
-  progressTrack: { height: 8, backgroundColor: '#E2E8F0', borderRadius: 4, overflow: 'hidden', marginBottom: 6 },
-  progressTrackDark: { backgroundColor: '#334155' },
-  progressFill: { height: '100%', backgroundColor: '#7C3AED', borderRadius: 4 },
-  progressComplete: { backgroundColor: '#F59E0B' },
-  progressLabel: { fontSize: 13, color: '#FFFFFF', fontWeight: '600' },
-  progressLabelDark: { color: '#64748B' },
-  scroll: { flex: 1 },
-  scrollContent: { paddingTop: 8 },
-  bottomSpace: { height: 32 },
+  root:               { flex: 1, backgroundColor: '#F8FAFC' },
+  rootDark:           { backgroundColor: '#0F172A' },
+  progressWrap:       { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 8 },
+  progressTrack:      { height: 8, backgroundColor: '#E2E8F0', borderRadius: 4, overflow: 'hidden', marginBottom: 6 },
+  progressTrackDark:  { backgroundColor: '#334155' },
+  progressFill:       { height: '100%', backgroundColor: '#7C3AED', borderRadius: 4 },
+  progressComplete:   { backgroundColor: '#F59E0B' },
+  progressLabel:      { fontSize: 13, color: '#94A3B8', fontWeight: '600' },
+  progressLabelDark:  { color: '#64748B' },
+  pill:               { flexDirection: 'row', alignItems: 'center', gap: 10, marginHorizontal: 16, marginBottom: 8, paddingHorizontal: 16, paddingVertical: 11, borderRadius: 14, backgroundColor: '#F5F3FF', borderWidth: 1.5, borderColor: '#C4B5FD' },
+  pillDark:           { backgroundColor: '#1E0A3C', borderColor: '#4C1D95' },
+  pillText:           { flex: 1, fontSize: 13, fontWeight: '700', color: '#7C3AED' },
+  scroll:             { flex: 1 },
+  scrollContent:      { paddingTop: 8 },
+  bottomSpace:        { height: 32 },
 });
