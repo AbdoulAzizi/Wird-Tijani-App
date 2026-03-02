@@ -32,6 +32,7 @@ export const EVENING_OPENING = {
 };
 
 export const AZKARS: Azkar[] = [
+
   // ─── AYAT AL-KURSI ───────────────────────────────────────────
   {
     id: 'ayat_kursi',
@@ -42,7 +43,7 @@ export const AZKARS: Azkar[] = [
     translation: "Allah! There is none worthy of worship but He, the Ever-Living, the One Who sustains and protects all that exists. Neither slumber nor sleep overtakes Him. To Him belongs whatever is in the heavens and whatever is on the earth. Who is it that can intercede with Him except by His permission? He knows what is before them and what will be after them, and they encompass not a thing of His knowledge except for what He wills. His Kursi (Throne) extends over the heavens and the earth, and their preservation tires Him not. And He is the Most High, the Most Great.",
     defaultCount: 1,
     source: "Al-Baqarah 2:255",
-    virtue: "Whoever recites it in the morning, will be in the protection of Allah until the evening.",
+    virtue: "Whoever recites it in the morning will be in the protection of Allah until the evening, and whoever recites it in the evening will be in the protection of Allah until the morning.",
     color: '#1a4a6b',
     glow: '#4a9fd4',
   },
@@ -57,7 +58,7 @@ export const AZKARS: Azkar[] = [
     translation: "Say: He is Allah, the One. Allah, the Eternal Refuge. He neither begets nor is born. Nor is there to Him any equivalent.",
     defaultCount: 3,
     source: "Surah Al-Ikhlas (112)",
-    virtue: "Reciting it 3 times is equivalent to reciting the whole Quran.",
+    virtue: "Reciting it 3 times in the morning and evening is equivalent to reciting the whole Quran.",
     color: '#1a3d2e',
     glow: '#4aab6d',
   },
@@ -72,7 +73,7 @@ export const AZKARS: Azkar[] = [
     translation: "Say: I seek refuge in the Lord of the daybreak. From the evil of that which He created. And from the evil of darkness when it settles. And from the evil of the blowers in knots. And from the evil of an envier when he envies.",
     defaultCount: 3,
     source: "Surah Al-Falaq (113)",
-    virtue: "These surahs protect against all evil.",
+    virtue: "These Mu'awwidhatayn (the two surahs of refuge) suffice against everything.",
     color: '#3d1a1a',
     glow: '#c45c5c',
   },
@@ -87,70 +88,9 @@ export const AZKARS: Azkar[] = [
     translation: "Say: I seek refuge in the Lord of mankind. The Sovereign of mankind. The God of mankind. From the evil of the retreating whisperer. Who whispers evil into the breasts of mankind. From among the jinn and mankind.",
     defaultCount: 3,
     source: "Surah An-Nas (114)",
-    virtue: "These surahs protect against all evil.",
+    virtue: "These Mu'awwidhatayn (the two surahs of refuge) suffice against everything.",
     color: '#2d1a3d',
     glow: '#7c4ab8',
-  },
-  
-  // ─── ALLAHUMMA MA ASBAHA BI MIN NI'MATIN ─────────────────────
-  {
-    id: 'allahumma_ni_mah_morning',
-    period: ['morning'],
-    category: 'praise',
-    arabic: 'اللَّهُمَّ مَا أَصْبَحَ بِي مِنْ نِعْمَةٍ أَوْ بِأَحَدٍ مِنْ خَلْقِكَ فَمِنْكَ وَحْدَكَ لَا شَرِيكَ لَكَ، فَلَكَ الْحَمْدُ وَلَكَ الشُّكْرُ',
-    transliteration: "Allahumma ma asbaha bi min ni'matin aw bi ahadin min khalqika fa minka wahdaka la sharika lak, falakal hamdu wa lakash shukr.",
-    translation: "O Allah, whatever blessing I or any of Your creation have received this morning is from You alone, You have no partner. To You belongs all praise and thanks.",
-    defaultCount: 1,
-    source: "Sunan Abu Dawud 5073",
-    virtue: "Whoever says this in the morning has fulfilled the gratitude due for that day.",
-    color: '#3a2a0a',
-    glow: '#c8922a',
-  },
-
-  // ─── ALLAHUMMA MA AMSA BI MIN NI'MATIN ───────────────────────
-  {
-    id: 'allahumma_ni_mah_evening',
-    period: ['evening'],
-    category: 'praise',
-    arabic: 'اللَّهُمَّ مَا أَمْسَى بِي مِنْ نِعْمَةٍ أَوْ بِأَحَدٍ مِنْ خَلْقِكَ فَمِنْكَ وَحْدَكَ لَا شَرِيكَ لَكَ، فَلَكَ الْحَمْدُ وَلَكَ الشُّكْرُ',
-    transliteration: "Allahumma ma amsa bi min ni'matin aw bi ahadin min khalqika fa minka wahdaka la sharika lak, falakal hamdu wa lakash shukr.",
-    translation: "O Allah, whatever blessing I or any of Your creation have received this evening is from You alone, You have no partner. To You belongs all praise and thanks.",
-    defaultCount: 1,
-    source: "Sunan Abu Dawud 5073",
-    virtue: "Whoever says this in the evening has fulfilled the gratitude due for that night.",
-    color: '#0a1a3a',
-    glow: '#4a6ab5',
-  },
-
-
-  // ─── ALLAHUMMA INNI ASBAHTU USH-HIDUKA ───────────────────────
-  {
-    id: 'ashhiduka_morning',
-    period: ['morning'],
-    category: 'tawhid',
-    arabic: 'اللَّهُمَّ إِنِّي أَصْبَحْتُ أُشْهِدُكَ وَأُشْهِدُ حَمَلَةَ عَرْشِكَ وَمَلاَئِكَتَكَ وَجَمِيعَ خَلْقِكَ، أَنَّكَ أَنْتَ اللَّهُ لاَ إِلَهَ إِلاَّ أَنْتَ وَحْدَكَ لاَ شَرِيكَ لَكَ، وَأَنَّ مُحَمَّدًا عَبْدُكَ وَرَسُولُكَ',
-    transliteration: "Allahumma inni asbahtu ushhiduka wa ushhidu hamalata 'arshika wa mala'ikataka wa jami'a khalqik, annaka antallahu la ilaha illa anta wahdaka la sharika lak, wa anna Muhammadan 'abduka wa rasuluk.",
-    translation: "O Allah, I have reached the morning calling You to witness, and calling to witness the bearers of Your Throne, Your angels, and all of Your creation, that You are Allah, there is none worthy of worship but You alone, without any partner, and that Muhammad is Your slave and Your messenger.",
-    defaultCount: 4,
-    source: "Sunan Abu Dawud 5069",
-    virtue: "Whoever says this 4 times in the morning, Allah will free one quarter of him from the Fire. Whoever says it 4 times, Allah will free him entirely from the Fire.",
-    color: '#1a2a3d',
-    glow: '#4a7ab5',
-  },
-
-  // ─── ALLAHUMMA INNI AMSAYTU USH-HIDUKA ───────────────────────
-  {
-    id: 'ashhiduka_evening',
-    period: ['evening'],
-    category: 'tawhid',
-    arabic: 'اللَّهُمَّ إِنِّي أَمْسَيْتُ أُشْهِدُكَ وَأُشْهِدُ حَمَلَةَ عَرْشِكَ وَمَلاَئِكَتَكَ وَجَمِيعَ خَلْقِكَ، أَنَّكَ أَنْتَ اللَّهُ لاَ إِلَهَ إِلاَّ أَنْتَ وَحْدَكَ لاَ شَرِيكَ لَكَ، وَأَنَّ مُحَمَّدًا عَبْدُكَ وَرَسُولُكَ',
-    transliteration: "Allahumma inni amsaytu ushhiduka wa ushhidu hamalata 'arshika wa mala'ikataka wa jami'a khalqik, annaka antallahu la ilaha illa anta wahdaka la sharika lak, wa anna Muhammadan 'abduka wa rasuluk.",
-    translation: "O Allah, I have reached the evening calling You to witness, and calling to witness the bearers of Your Throne, Your angels, and all of Your creation, that You are Allah, there is none worthy of worship but You alone, without any partner, and that Muhammad is Your slave and Your messenger.",
-    defaultCount: 4,
-    source: "Sunan Abu Dawud 5069",
-    virtue: "Whoever says this 4 times in the evening, Allah will free one quarter of him from the Fire. Whoever says it 4 times, Allah will free him entirely from the Fire.",
-    color: '#0a1a2a',
-    glow: '#3a5a9b',
   },
 
   // ─── SAYYID AL-ISTIGHFAR ─────────────────────────────────────
@@ -163,7 +103,7 @@ export const AZKARS: Azkar[] = [
     translation: "O Allah, You are my Lord, none has the right to be worshipped except You. You created me and I am Your servant, and I abide by Your covenant and promise as best as I can. I seek refuge with You from the evil that I have done. I acknowledge Your favor upon me and I acknowledge my sin, so forgive me, for verily none can forgive sins except You.",
     defaultCount: 1,
     source: "Sahih Al-Bukhari 6306",
-    virtue: "The master of seeking forgiveness. Whoever recites it firmly believing in it when it's morning and dies that day before evening shall be from the people of Paradise.",
+    virtue: "The master of seeking forgiveness. Whoever recites it firmly believing in it when it is morning and dies that day before evening shall be from the people of Paradise.",
     color: '#3d2a0a',
     glow: '#c8922a',
   },
@@ -213,7 +153,7 @@ export const AZKARS: Azkar[] = [
     glow: '#9b59b6',
   },
 
-  // ─── ASBAHNA 'ALA FITRATIL ISLAM ─────────────────────────────
+  // ─── ASBAHNA 'ALA FITRATIL ISLAM (morning) ───────────────────
   {
     id: 'fitrat_al_islam',
     period: ['morning'],
@@ -228,7 +168,7 @@ export const AZKARS: Azkar[] = [
     glow: '#3a8fb5',
   },
 
-  // ─── AMSAYNA 'ALA FITRATIL ISLAM ─────────────────────────────
+  // ─── AMSAYNA 'ALA FITRATIL ISLAM (evening) ───────────────────
   {
     id: 'fitrat_al_islam_evening',
     period: ['evening'],
@@ -258,7 +198,7 @@ export const AZKARS: Azkar[] = [
     glow: '#2aab6a',
   },
 
-  // ─── LA ILAHA ILLA ALLAH ─────────────────────────────────────
+  // ─── LA ILAHA ILLA ALLAH WAHDAHU ─────────────────────────────
   {
     id: 'la_ilaha_illa_allah',
     period: ['morning', 'evening'],
@@ -268,7 +208,7 @@ export const AZKARS: Azkar[] = [
     translation: "None has the right to be worshipped except Allah, alone, without partner. To Him belongs all sovereignty and praise, and He is over all things omnipotent.",
     defaultCount: 10,
     source: "Sahih Bukhari 6404",
-    virtue: "Whoever says it 10 times in the morning will have the reward of freeing 4 slaves from the descendants of Ismail, 10 good deeds recorded, 10 sins erased, and protection from Shaytan until evening.",
+    virtue: "Whoever says it 10 times in the morning will have the reward of freeing 4 slaves, 10 good deeds recorded, 10 sins erased, and protection from Shaytan until evening.",
     color: '#1a1a3a',
     glow: '#5a5ab5',
   },
@@ -283,7 +223,7 @@ export const AZKARS: Azkar[] = [
     translation: "O Allah, I ask You for pardon and well-being in this life and the next. O Allah, I ask You for pardon and well-being in my religious and worldly affairs, and my family and my wealth. O Allah, veil my weaknesses and calm my fears. O Allah, guard me from before me and behind me, from my right and my left, and from above me, and I seek refuge in Your greatness from being unexpectedly overcome from below me.",
     defaultCount: 1,
     source: "Sunan Abu Dawud 5074",
-    virtue: "Ibn Umar never abandoned these words morning and evening.",
+    virtue: "Ibn Umar said: The Messenger of Allah never abandoned these words morning and evening.",
     color: '#2a1a0a',
     glow: '#c87a2a',
   },
@@ -298,7 +238,7 @@ export const AZKARS: Azkar[] = [
     translation: "O Allah, grant me health in my body. O Allah, grant me health in my hearing. O Allah, grant me health in my sight. None has the right to be worshipped except You. O Allah, I seek refuge with You from disbelief and poverty, and I seek refuge with You from the punishment of the grave. None has the right to be worshipped except You.",
     defaultCount: 3,
     source: "Sunan Abu Dawud 5090",
-    virtue: "Abu Bakr As-Siddiq asked the Prophet (SAW) to teach him a supplication for morning and evening.",
+    virtue: "Abu Bakr As-Siddiq asked the Prophet (SAW) to teach him a supplication for morning and evening, and the Prophet taught him this.",
     color: '#1a2a1a',
     glow: '#4ab54a',
   },
@@ -333,7 +273,7 @@ export const AZKARS: Azkar[] = [
     glow: '#d4803a',
   },
 
-  // ─── SALAWAT 'ALA AL-NABI ─────────────────────────────────────
+  // ─── SALAWAT IBRAHIMIYYA ──────────────────────────────────────
   {
     id: 'salawat_ibrahim',
     period: ['morning', 'evening'],
@@ -343,22 +283,22 @@ export const AZKARS: Azkar[] = [
     translation: "O Allah, bestow Your favor on Muhammad and on the family of Muhammad as You have bestowed Your favor on Ibrahim and on the family of Ibrahim. You are praiseworthy and glorious. O Allah, bless Muhammad and the family of Muhammad as You have blessed Ibrahim and the family of Ibrahim. You are praiseworthy and glorious.",
     defaultCount: 10,
     source: "Sahih Bukhari 3370",
-    virtue: "Sending blessings upon the Prophet (SAW) ten times earns ten blessings from Allah.",
+    virtue: "Sending blessings upon the Prophet (SAW) ten times earns ten blessings from Allah, ten sins are erased, and he is elevated ten degrees.",
     color: '#1a2a3a',
     glow: '#4a8ab5',
   },
 
-  // ─── SUBHAN ALLAH 33 / ALHAMDULILLAH 33 / ALLAHU AKBAR 34 ───
+  // ─── TASBIH / TAHMID / TAKBIR ────────────────────────────────
   {
     id: 'tasbih_tahmid_takbir',
     period: ['morning', 'evening'],
     category: 'praise',
-    arabic: 'سُبْحَانَ اللَّهِ',
-    transliteration: "Subhanallah / Alhamdulillah / Allahu Akbar",
-    translation: "Glory be to Allah (33x) / All praise is for Allah (33x) / Allah is the Greatest (34x)",
+    arabic: 'سُبْحَانَ اللَّهِ — الْحَمْدُ لِلَّهِ — اللَّهُ أَكْبَرُ',
+    transliteration: "Subhanallah (33x) — Alhamdulillah (33x) — Allahu Akbar (34x)",
+    translation: "Glory be to Allah (33 times) — All praise is for Allah (33 times) — Allah is the Greatest (34 times)",
     defaultCount: 33,
     source: "Sahih Muslim 597",
-    virtue: "Reciting tasbeeh, tahmid and takbeer 33, 33 and 34 times respectively – sins will be forgiven even if they are like the foam of the sea.",
+    virtue: "Sins will be forgiven even if they are like the foam of the sea.",
     color: '#1a3a1a',
     glow: '#3ab53a',
   },
@@ -378,7 +318,7 @@ export const AZKARS: Azkar[] = [
     glow: '#b54a4a',
   },
 
-  // ─── ALLAHUMMA BIKA ASBAHNA ──────────────────────────────────
+  // ─── ALLAHUMMA BIKA ASBAHNA (morning) ────────────────────────
   {
     id: 'allahumma_bika_asbahna',
     period: ['morning'],
@@ -393,7 +333,7 @@ export const AZKARS: Azkar[] = [
     glow: '#5a5ab5',
   },
 
-  // ─── ALLAHUMMA BIKA AMSAYNA ───────────────────────────────────
+  // ─── ALLAHUMMA BIKA AMSAYNA (evening) ────────────────────────
   {
     id: 'allahumma_bika_amsayna',
     period: ['evening'],
@@ -408,7 +348,7 @@ export const AZKARS: Azkar[] = [
     glow: '#5a5ab5',
   },
 
-  // ─── PROTECTION OF FAMILY/WEALTH ─────────────────────────────
+  // ─── ALLAHUMMA INNI AS'ALUKA 'ILMAN ─────────────────────────
   {
     id: 'protection_family',
     period: ['morning', 'evening'],
@@ -453,7 +393,7 @@ export const AZKARS: Azkar[] = [
     glow: '#b5602a',
   },
 
-  // ─── DU'A FOR PROTECTION OF CHILDREN ─────────────────────────
+  // ─── A'UDHU BI KALIMATILLAH AL-TAMMAH ────────────────────────
   {
     id: 'protection_verse',
     period: ['morning', 'evening'],
@@ -482,6 +422,326 @@ export const AZKARS: Azkar[] = [
     color: '#1a2a3a',
     glow: '#3a7ab5',
   },
+
+  // ════════════════════════════════════════════════════════════
+  // AZKARS COMPLÉTÉS — absents du fichier original
+  // ════════════════════════════════════════════════════════════
+
+  // ─── SURAH AL-FATIHA ─────────────────────────────────────────
+  {
+    id: 'surah_fatiha',
+    period: ['morning', 'evening'],
+    category: 'praise',
+    arabic: 'بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ ۝ الْحَمْدُ لِلَّهِ رَبِّ الْعَالَمِينَ ۝ الرَّحْمَٰنِ الرَّحِيمِ ۝ مَالِكِ يَوْمِ الدِّينِ ۝ إِيَّاكَ نَعْبُدُ وَإِيَّاكَ نَسْتَعِينُ ۝ اهْدِنَا الصِّرَاطَ الْمُسْتَقِيمَ ۝ صِرَاطَ الَّذِينَ أَنْعَمْتَ عَلَيْهِمْ غَيْرِ الْمَغْضُوبِ عَلَيْهِمْ وَلَا الضَّالِّينَ',
+    transliteration: "Bismillahir rahmanir rahim. Alhamdu lillahi rabbil 'alamin. Ar-rahmanir rahim. Maliki yawmid din. Iyyaka na'budu wa iyyaka nasta'in. Ihdinas siratal mustaqim. Siratal ladhina an'amta 'alayhim ghayril maghdubi 'alayhim wa lad dallin.",
+    translation: "In the name of Allah, the Most Gracious, the Most Merciful. All praise is for Allah, Lord of all worlds. The Most Gracious, the Most Merciful. Master of the Day of Judgment. You alone we worship, and You alone we ask for help. Guide us to the straight path — the path of those You have blessed, not those You are angry with, or those who are astray.",
+    defaultCount: 1,
+    source: "Surah Al-Fatiha (1)",
+    virtue: "Umm Al-Quran (The Mother of the Quran). There is no prayer without it. Whoever recites it in the morning and evening has praised Allah perfectly.",
+    color: '#2a1a3a',
+    glow: '#7a4ab5',
+  },
+
+  // ─── ALLAHUMMA MA ASBAHA BI MIN NI'MATIN ─────────────────────
+  {
+    id: 'allahumma_ni_mah_morning',
+    period: ['morning'],
+    category: 'praise',
+    arabic: 'اللَّهُمَّ مَا أَصْبَحَ بِي مِنْ نِعْمَةٍ أَوْ بِأَحَدٍ مِنْ خَلْقِكَ فَمِنْكَ وَحْدَكَ لَا شَرِيكَ لَكَ، فَلَكَ الْحَمْدُ وَلَكَ الشُّكْرُ',
+    transliteration: "Allahumma ma asbaha bi min ni'matin aw bi ahadin min khalqika fa minka wahdaka la sharika lak, falakal hamdu wa lakash shukr.",
+    translation: "O Allah, whatever blessing I or any of Your creation have received this morning is from You alone, You have no partner. To You belongs all praise and thanks.",
+    defaultCount: 1,
+    source: "Sunan Abu Dawud 5073",
+    virtue: "Whoever says this in the morning has fulfilled the gratitude due for that day.",
+    color: '#3a2a0a',
+    glow: '#c8922a',
+  },
+
+  // ─── ALLAHUMMA MA AMSA BI MIN NI'MATIN ───────────────────────
+  {
+    id: 'allahumma_ni_mah_evening',
+    period: ['evening'],
+    category: 'praise',
+    arabic: 'اللَّهُمَّ مَا أَمْسَى بِي مِنْ نِعْمَةٍ أَوْ بِأَحَدٍ مِنْ خَلْقِكَ فَمِنْكَ وَحْدَكَ لَا شَرِيكَ لَكَ، فَلَكَ الْحَمْدُ وَلَكَ الشُّكْرُ',
+    transliteration: "Allahumma ma amsa bi min ni'matin aw bi ahadin min khalqika fa minka wahdaka la sharika lak, falakal hamdu wa lakash shukr.",
+    translation: "O Allah, whatever blessing I or any of Your creation have received this evening is from You alone, You have no partner. To You belongs all praise and thanks.",
+    defaultCount: 1,
+    source: "Sunan Abu Dawud 5073",
+    virtue: "Whoever says this in the evening has fulfilled the gratitude due for that night.",
+    color: '#0a1a3a',
+    glow: '#4a6ab5',
+  },
+
+  // ─── LA HAWLA WA LA QUWWATA ILLA BILLAH ──────────────────────
+  {
+    id: 'la_hawla_wa_la_quwwata',
+    period: ['morning', 'evening'],
+    category: 'tawhid',
+    arabic: 'لاَ حَوْلَ وَلاَ قُوَّةَ إِلاَّ بِاللَّهِ الْعَلِيِّ الْعَظِيمِ',
+    transliteration: "La hawla wa la quwwata illa billahil 'aliyyil 'azim.",
+    translation: "There is no might nor power except with Allah, the Most High, the Most Great.",
+    defaultCount: 10,
+    source: "Sahih Bukhari 6384",
+    virtue: "It is a treasure from the treasures of Paradise. Whoever says it, Allah removes seventy calamities from him.",
+    color: '#1a3d2e',
+    glow: '#3aab6a',
+  },
+
+  // ─── ALLAHUMMA INNI A'UDHU BIKA MIN AL-HAMM ─────────────────
+  {
+    id: 'allahumma_audhu_hamm',
+    period: ['morning', 'evening'],
+    category: 'dua',
+    arabic: 'اللَّهُمَّ إِنِّي أَعُوذُ بِكَ مِنَ الْهَمِّ وَالْحَزَنِ، وَأَعُوذُ بِكَ مِنَ الْعَجْزِ وَالْكَسَلِ، وَأَعُوذُ بِكَ مِنَ الْجُبْنِ وَالْبُخْلِ، وَأَعُوذُ بِكَ مِنْ غَلَبَةِ الدَّيْنِ وَقَهْرِ الرِّجَالِ',
+    transliteration: "Allahumma inni a'udhu bika minal hammi wal hazan, wa a'udhu bika minal 'ajzi wal kasal, wa a'udhu bika minal jubni wal bukhl, wa a'udhu bika min ghalabatid dayni wa qahrir rijal.",
+    translation: "O Allah, I seek refuge in You from grief and sorrow, from weakness and laziness, from miserliness and cowardice, from the burden of debts and from being overpowered by men.",
+    defaultCount: 3,
+    source: "Sahih Bukhari 6369",
+    virtue: "The Prophet (SAW) used to seek refuge from these eight things every morning and evening.",
+    color: '#3a1a2a',
+    glow: '#b54a8a',
+  },
+
+  // ─── SUBHAN ALLAH AL-AZIM WA BIHAMDIHI ───────────────────────
+  {
+    id: 'subhanallah_azim',
+    period: ['morning', 'evening'],
+    category: 'praise',
+    arabic: 'سُبْحَانَ اللَّهِ الْعَظِيمِ وَبِحَمْدِهِ',
+    transliteration: "Subhanallahil 'azimi wa bihamdihi.",
+    translation: "Glory be to Allah the Almighty and praise be to Him.",
+    defaultCount: 100,
+    source: "Sahih Muslim 2694",
+    virtue: "Two phrases beloved to Allah, light on the tongue, heavy on the scales — Glory be to Allah the Almighty and in His praise.",
+    color: '#1a3a1a',
+    glow: '#4ab54a',
+  },
+
+  // ─── ALLAHUMMA ANTAL AWWAL ────────────────────────────────────
+  {
+    id: 'allahumma_awwal_akhir',
+    period: ['morning', 'evening'],
+    category: 'tawhid',
+    arabic: 'اللَّهُمَّ أَنْتَ الأَوَّلُ فَلَيْسَ قَبْلَكَ شَيْءٌ، وَأَنْتَ الآخِرُ فَلَيْسَ بَعْدَكَ شَيْءٌ، وَأَنْتَ الظَّاهِرُ فَلَيْسَ فَوْقَكَ شَيْءٌ، وَأَنْتَ الْبَاطِنُ فَلَيْسَ دُونَكَ شَيْءٌ، اقْضِ عَنَّا الدَّيْنَ وَأَغْنِنَا مِنَ الْفَقْرِ',
+    transliteration: "Allahumma antal awwalu fa laysa qablaka shay', wa antal akhiru fa laysa ba'daka shay', wa antaz zahiru fa laysa fawqaka shay', wa antal batinu fa laysa dunaka shay', iqdi 'annad dayna wa aghinna minal faqr.",
+    translation: "O Allah, You are the First so there is nothing before You. You are the Last so there is nothing after You. You are the Manifest so there is nothing above You. You are the Hidden so there is nothing closer than You. Settle our debts and spare us from poverty.",
+    defaultCount: 1,
+    source: "Sahih Muslim 2713",
+    virtue: "The Prophet (SAW) used to recite this when going to bed, and it is equally recommended in the morning and evening.",
+    color: '#0a0a2a',
+    glow: '#4a4ab5',
+  },
+
+  // ─── ALLAHUMMA INNI ASBAHTU USH-HIDUKA ───────────────────────
+  {
+    id: 'ashhiduka_morning',
+    period: ['morning'],
+    category: 'tawhid',
+    arabic: 'اللَّهُمَّ إِنِّي أَصْبَحْتُ أُشْهِدُكَ وَأُشْهِدُ حَمَلَةَ عَرْشِكَ وَمَلاَئِكَتَكَ وَجَمِيعَ خَلْقِكَ، أَنَّكَ أَنْتَ اللَّهُ لاَ إِلَهَ إِلاَّ أَنْتَ وَحْدَكَ لاَ شَرِيكَ لَكَ، وَأَنَّ مُحَمَّدًا عَبْدُكَ وَرَسُولُكَ',
+    transliteration: "Allahumma inni asbahtu ushhiduka wa ushhidu hamalata 'arshika wa mala'ikataka wa jami'a khalqik, annaka antallahu la ilaha illa anta wahdaka la sharika lak, wa anna Muhammadan 'abduka wa rasuluk.",
+    translation: "O Allah, I have reached the morning calling You to witness, and calling to witness the bearers of Your Throne, Your angels, and all of Your creation, that You are Allah, there is none worthy of worship but You alone, without any partner, and that Muhammad is Your slave and Your messenger.",
+    defaultCount: 4,
+    source: "Sunan Abu Dawud 5069",
+    virtue: "Whoever says this 4 times in the morning, Allah will free one quarter of him from the Fire. Whoever says it 4 times, Allah will free him entirely from the Fire.",
+    color: '#1a2a3d',
+    glow: '#4a7ab5',
+  },
+
+  // ─── ALLAHUMMA INNI AMSAYTU USH-HIDUKA ───────────────────────
+  {
+    id: 'ashhiduka_evening',
+    period: ['evening'],
+    category: 'tawhid',
+    arabic: 'اللَّهُمَّ إِنِّي أَمْسَيْتُ أُشْهِدُكَ وَأُشْهِدُ حَمَلَةَ عَرْشِكَ وَمَلاَئِكَتَكَ وَجَمِيعَ خَلْقِكَ، أَنَّكَ أَنْتَ اللَّهُ لاَ إِلَهَ إِلاَّ أَنْتَ وَحْدَكَ لاَ شَرِيكَ لَكَ، وَأَنَّ مُحَمَّدًا عَبْدُكَ وَرَسُولُكَ',
+    transliteration: "Allahumma inni amsaytu ushhiduka wa ushhidu hamalata 'arshika wa mala'ikataka wa jami'a khalqik, annaka antallahu la ilaha illa anta wahdaka la sharika lak, wa anna Muhammadan 'abduka wa rasuluk.",
+    translation: "O Allah, I have reached the evening calling You to witness, and calling to witness the bearers of Your Throne, Your angels, and all of Your creation, that You are Allah, there is none worthy of worship but You alone, without any partner, and that Muhammad is Your slave and Your messenger.",
+    defaultCount: 4,
+    source: "Sunan Abu Dawud 5069",
+    virtue: "Whoever says this 4 times in the evening, Allah will free one quarter of him from the Fire. Whoever says it 4 times, Allah will free him entirely from the Fire.",
+    color: '#0a1a2a',
+    glow: '#3a5a9b',
+  },
+
+  // ─── ALLAHUMMA SALLI 'ALA MUHAMMAD (courte) ──────────────────
+  {
+    id: 'salawat_short',
+    period: ['morning', 'evening'],
+    category: 'salawat',
+    arabic: 'اللَّهُمَّ صَلِّ وَسَلِّمْ وَبَارِكْ عَلَى نَبِيِّنَا مُحَمَّدٍ',
+    transliteration: "Allahumma salli wa sallim wa barik 'ala nabiyyina Muhammad.",
+    translation: "O Allah, send Your prayers, peace, and blessings upon our Prophet Muhammad.",
+    defaultCount: 10,
+    source: "Sahih Muslim 408",
+    virtue: "Whoever sends blessings upon me once, Allah will send blessings upon him ten times.",
+    color: '#1a2535',
+    glow: '#3a7aaa',
+  },
+
+  // ─── DU'A KAFFARAH AL-MAJLIS ─────────────────────────────────
+  {
+    id: 'kaffarah_majlis',
+    period: ['morning', 'evening'],
+    category: 'forgiveness',
+    arabic: 'سُبْحَانَكَ اللَّهُمَّ وَبِحَمْدِكَ، أَشْهَدُ أَنْ لاَ إِلَهَ إِلاَّ أَنْتَ، أَسْتَغْفِرُكَ وَأَتُوبُ إِلَيْكَ',
+    transliteration: "Subhanakallahumma wa bihamdik, ashhadu an la ilaha illa ant, astaghfiruka wa atubu ilayk.",
+    translation: "Glory be to You, O Allah, and in Your praise. I bear witness that there is none worthy of worship but You. I seek Your forgiveness and I repent to You.",
+    defaultCount: 3,
+    source: "Sunan At-Tirmidhi 3433",
+    virtue: "Whoever says this will have their sins from that session forgiven, even if they are like the foam of the sea.",
+    color: '#2a0a1a',
+    glow: '#a53a6a',
+  },
+
+  // ─── ALLAHUMMA INNI A'UDHU BIKA MIN AL-SHIRK ─────────────────
+  {
+    id: 'audhu_min_shirk',
+    period: ['morning', 'evening'],
+    category: 'tawhid',
+    arabic: 'اللَّهُمَّ إِنِّي أَعُوذُ بِكَ أَنْ أُشْرِكَ بِكَ وَأَنَا أَعْلَمُ، وَأَسْتَغْفِرُكَ لِمَا لاَ أَعْلَمُ',
+    transliteration: "Allahumma inni a'udhu bika an ushrika bika wa ana a'lam, wa astaghfiruka lima la a'lam.",
+    translation: "O Allah, I seek refuge in You from knowingly associating partners with You, and I seek Your forgiveness for what I do unknowingly.",
+    defaultCount: 3,
+    source: "Al-Adab Al-Mufrad 716",
+    virtue: "Protection from shirk, both apparent and hidden. The Prophet (SAW) recommended this supplication.",
+    color: '#1a0a0a',
+    glow: '#8a2a2a',
+  },
+
+  // ─── ALLAHUMMA INNI A'UDHU BIKA MIN ZAWAL NI'MAH ─────────────
+  {
+    id: 'audhu_zawal_nimah',
+    period: ['morning', 'evening'],
+    category: 'dua',
+    arabic: 'اللَّهُمَّ إِنِّي أَعُوذُ بِكَ مِنْ زَوَالِ نِعْمَتِكَ، وَتَحَوُّلِ عَافِيَتِكَ، وَفُجَاءَةِ نِقْمَتِكَ، وَجَمِيعِ سَخَطِكَ',
+    transliteration: "Allahumma inni a'udhu bika min zawali ni'matik, wa tahawwuli 'afiyatik, wa fuja'ati niqmatik, wa jami'i sakhatik.",
+    translation: "O Allah, I seek refuge in You from the removal of Your blessing, the change of Your protection, the suddenness of Your punishment, and all of Your anger.",
+    defaultCount: 1,
+    source: "Sahih Muslim 2739",
+    virtue: "Ibn Umar said the Prophet never abandoned these words morning and evening.",
+    color: '#2a1a0a',
+    glow: '#b57a2a',
+  },
+
+  // ─── ALLAHUMMA RABBAS SAMAWAT ─────────────────────────────────
+  {
+    id: 'allahumma_rabb_samawat',
+    period: ['morning', 'evening'],
+    category: 'dua',
+    arabic: 'اللَّهُمَّ رَبَّ السَّمَاوَاتِ وَرَبَّ الأَرْضِ وَرَبَّ الْعَرْشِ الْعَظِيمِ، رَبَّنَا وَرَبَّ كُلِّ شَيْءٍ، فَالِقَ الْحَبِّ وَالنَّوَى، وَمُنَزِّلَ التَّوْرَاةِ وَالإِنْجِيلِ وَالْفُرْقَانِ، أَعُوذُ بِكَ مِنْ شَرِّ كُلِّ شَيْءٍ أَنْتَ آخِذٌ بِنَاصِيَتِهِ، اللَّهُمَّ أَنْتَ الأَوَّلُ فَلَيْسَ قَبْلَكَ شَيْءٌ، وَأَنْتَ الآخِرُ فَلَيْسَ بَعْدَكَ شَيْءٌ، وَأَنْتَ الظَّاهِرُ فَلَيْسَ فَوْقَكَ شَيْءٌ، وَأَنْتَ الْبَاطِنُ فَلَيْسَ دُونَكَ شَيْءٌ، اقْضِ عَنَّا الدَّيْنَ وَأَغْنِنَا مِنَ الْفَقْرِ',
+    transliteration: "Allahumma rabbas samawati wa rabbal ardi wa rabbal 'arshil 'azim, rabbana wa rabba kulli shay', faliqal habbi wan nawa, wa munazzilat tawrati wal injili wal furqan, a'udhu bika min sharri kulli shay'in anta akhidhun binasiyatih. Allahumma antal awwalu fa laysa qablaka shay', wa antal akhiru fa laysa ba'daka shay', wa antaz zahiru fa laysa fawqaka shay', wa antal batinu fa laysa dunaka shay', iqdi 'annad dayna wa aghinna minal faqr.",
+    translation: "O Allah, Lord of the heavens and Lord of the earth and Lord of the Magnificent Throne. Our Lord and Lord of everything. Splitter of the grain and the date-stone. Revealer of the Torah, the Gospel and the Criterion. I seek refuge in You from the evil of everything that You have in Your grip. O Allah, You are the First and nothing comes before You, You are the Last and nothing comes after You, You are the Manifest and there is nothing above You, You are the Hidden and there is nothing beyond You. Pay off our debt for us and spare us from poverty.",
+    defaultCount: 1,
+    source: "Sahih Muslim 2713",
+    virtue: "Comprehensive supplication acknowledging Allah's dominion over all creation.",
+    color: '#0a1a2a',
+    glow: '#3a6aab',
+  },
+
+  // ─── TAWAKKUL DU'A ────────────────────────────────────────────
+  {
+    id: 'tawakkul_dua',
+    period: ['morning', 'evening'],
+    category: 'dua',
+    arabic: 'حَسْبُنَا اللَّهُ وَنِعْمَ الْوَكِيلُ، نِعْمَ الْمَوْلَى وَنِعْمَ النَّصِيرُ',
+    transliteration: "Hasbunallahu wa ni'mal wakil, ni'mal mawla wa ni'man nasir.",
+    translation: "Allah is sufficient for us, and He is the best Disposer of affairs. How excellent a Protector, and how excellent a Helper.",
+    defaultCount: 3,
+    source: "Al-Baqarah 2:173 / Al-Anfal 8:40",
+    virtue: "The words of Ibrahim (AS) when he was cast into the fire. Allah's help follows its recitation.",
+    color: '#1a2a0a',
+    glow: '#5ab52a',
+  },
+
+  // ─── ALLAHUMMA IHDINI WA SADDIDNI ────────────────────────────
+  {
+    id: 'allahumma_ihdini',
+    period: ['morning', 'evening'],
+    category: 'dua',
+    arabic: 'اللَّهُمَّ اهْدِنِي وَسَدِّدْنِي',
+    transliteration: "Allahummahdini wa saddidni.",
+    translation: "O Allah, guide me and keep me steadfast.",
+    defaultCount: 3,
+    source: "Sahih Muslim 2725",
+    virtue: "A concise and comprehensive supplication the Prophet (SAW) taught Ali (RA).",
+    color: '#1a3a2a',
+    glow: '#3aab5a',
+  },
+
+  // ─── ALLAHUMMA INNI AS'ALUKA AL-SABATA ───────────────────────
+  {
+    id: 'allahumma_thabat',
+    period: ['morning', 'evening'],
+    category: 'dua',
+    arabic: 'اللَّهُمَّ إِنِّي أَسْأَلُكَ الثَّبَاتَ فِي الأَمْرِ، وَالْعَزِيمَةَ عَلَى الرُّشْدِ، وَأَسْأَلُكَ شُكْرَ نِعْمَتِكَ، وَحُسْنَ عِبَادَتِكَ، وَأَسْأَلُكَ قَلْبًا سَلِيمًا، وَلِسَانًا صَادِقًا، وَأَسْأَلُكَ مِنْ خَيْرِ مَا تَعْلَمُ، وَأَعُوذُ بِكَ مِنْ شَرِّ مَا تَعْلَمُ، وَأَسْتَغْفِرُكَ لِمَا تَعْلَمُ',
+    transliteration: "Allahumma inni as'alukat thabata fil amr, wal 'azimata 'alar rushd, wa as'aluka shukra ni'matik, wa husna 'ibadatik, wa as'aluka qalban salima, wa lisanan sadiqan, wa as'aluka min khayri ma ta'lam, wa a'udhu bika min sharri ma ta'lam, wa astaghfiruka lima ta'lam.",
+    translation: "O Allah, I ask You for steadfastness in my affairs, and determination in guidance, and I ask You to make me grateful for Your blessings and to worship You in the best manner. I ask You for a sound heart and a truthful tongue. I ask You for the best of what You know, I seek refuge with You from the worst of what You know, and I seek Your forgiveness for what You know.",
+    defaultCount: 1,
+    source: "Sunan An-Nasa'i 1304",
+    virtue: "A comprehensive supplication for steadfastness, worship, and protection.",
+    color: '#2a1a3a',
+    glow: '#8a5ab5',
+  },
+
+  // ─── ALLAHUMMA INNAKA 'AFUWWUN ────────────────────────────────
+  {
+    id: 'allahumma_afuwwun',
+    period: ['morning', 'evening'],
+    category: 'forgiveness',
+    arabic: 'اللَّهُمَّ إِنَّكَ عَفُوٌّ كَرِيمٌ تُحِبُّ الْعَفْوَ فَاعْفُ عَنِّي',
+    transliteration: "Allahumma innaka 'afuwwun karimun tuhibbul 'afwa fa'fu 'anni.",
+    translation: "O Allah, You are Pardoning and Generous, and You love to pardon, so pardon me.",
+    defaultCount: 3,
+    source: "Sunan At-Tirmidhi 3513",
+    virtue: "Aisha (RA) asked the Prophet what to say on Laylatul Qadr, and he taught her this supplication.",
+    color: '#3a2a1a',
+    glow: '#c89a5a',
+  },
+
+  // ─── AYAT 18 AL-IMRAN ─────────────────────────────────────────
+  {
+    id: 'shahida_allah',
+    period: ['morning', 'evening'],
+    category: 'tawhid',
+    arabic: 'شَهِدَ اللَّهُ أَنَّهُ لاَ إِلَهَ إِلاَّ هُوَ وَالْمَلاَئِكَةُ وَأُولُو الْعِلْمِ قَائِمًا بِالْقِسْطِ، لاَ إِلَهَ إِلاَّ هُوَ الْعَزِيزُ الْحَكِيمُ',
+    transliteration: "Shahidallahu annahu la ilaha illa huwa, wal mala'ikatu wa ulul 'ilmi qa'iman bil qist, la ilaha illa huwal 'azizul hakim.",
+    translation: "Allah bears witness that there is no deity except Him, and so do the angels and those of knowledge — upholding justice. There is no deity except Him, the Almighty, the Wise.",
+    defaultCount: 1,
+    source: "Al-Imran 3:18",
+    virtue: "Whoever recites it faithfully, Allah will honor him on the Day of Resurrection.",
+    color: '#0a1a3a',
+    glow: '#3a5ab5',
+  },
+
+  // ─── THAL THALATHA WA THALATHIN ──────────────────────────────
+  {
+    id: 'tasbih_33_hamd_33_akbar_34',
+    period: ['morning', 'evening'],
+    category: 'praise',
+    arabic: 'سُبْحَانَ اللَّهِ ۝ الْحَمْدُ لِلَّهِ ۝ اللَّهُ أَكْبَرُ',
+    transliteration: "Subhanallah (33x) / Alhamdulillah (33x) / Allahu Akbar (34x) = 100",
+    translation: "Glory be to Allah (33 times) / All praise is for Allah (33 times) / Allah is the Greatest (34 times) — total 100",
+    defaultCount: 33,
+    source: "Sahih Muslim 597",
+    virtue: "No one will come on the Day of Resurrection with anything better than one who said Subhanallah 33 times, Alhamdulillah 33 times, and Allahu Akbar 34 times.",
+    color: '#1a2a0a',
+    glow: '#5ab53a',
+  },
+
+  // ─── DU'A POUR LA FAMILLE ET LA SANTÉ ────────────────────────
+  {
+    id: 'dua_afia_complete',
+    period: ['morning', 'evening'],
+    category: 'dua',
+    arabic: 'اللَّهُمَّ إِنِّي أَسْأَلُكَ الصِّحَّةَ وَالْعِفَّةَ وَالأَمَانَةَ وَحُسْنَ الْخُلُقِ وَالرِّضَا بِالْقَدَرِ',
+    transliteration: "Allahumma inni as'alukas sihhata wal 'iffata wal amanata wa husnal khuluqi war rida bil qadar.",
+    translation: "O Allah, I ask You for health, chastity, trustworthiness, good character, and contentment with Your decree.",
+    defaultCount: 1,
+    source: "Al-Adab Al-Mufrad 310",
+    virtue: "A complete supplication covering the fundamental qualities of a righteous believer.",
+    color: '#1a3a2a',
+    glow: '#4aab7a',
+  },
+
 ];
 
 export type CustomAzkar = {
