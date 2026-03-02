@@ -231,12 +231,12 @@ export default function HadraScreen() {
           }}
         />
 
-        <View style={styles.progressWrap}>
+        {/* <View style={styles.progressWrap}>
           <View style={[styles.progressTrack, dark && styles.progressTrackDark]}>
             <Animated.View style={[styles.progressFill, { width: `${progress}%` }, progress >= 100 && styles.progressComplete]} />
           </View>
           <Text style={[styles.progressLabel, dark && styles.progressLabelDark]}>Overall Hadra progress</Text>
-        </View>
+        </View> */}
 
         {isHadraComplete && !showCompletionModal && (
           <TouchableOpacity style={[styles.pill, dark && styles.pillDark]} onPress={() => setShowCompletionModal(true)} activeOpacity={0.85}>
