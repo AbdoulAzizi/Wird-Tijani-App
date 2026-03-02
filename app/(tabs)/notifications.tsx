@@ -1,69 +1,46 @@
+// NotificationsScreen.tsx — full English + bug fix
 import React, { useCallback, useMemo } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  ScrollView, 
-  TouchableOpacity, 
-  Platform, 
-  StatusBar,
-  Alert
+import {
+  View, Text, StyleSheet, ScrollView,
+  TouchableOpacity, Platform, StatusBar, Alert
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { 
-  Bell, 
-  Trash2, 
-  CheckCircle2, 
-  Flame, 
-  Star, 
-  Info, 
-  BellRing,
-  CheckCheck
+import {
+  Bell, Trash2, CheckCircle2, Flame,
+  Star, Info, BellRing, CheckCheck
 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
-import { 
-  useNotifications, 
-  formatTimestamp, 
-  getNotificationColor, 
-  NotificationType 
+import {
+  useNotifications, formatTimestamp,
+  getNotificationColor, NotificationType
 } from '@/contexts/NotificationContext';
-
 import { useContext } from 'react';
 import MinimalHeader from '../../components/MinimalHeader';
 import { LayoutActionsContext } from '../../contexts/LayoutActionsContext';
 import { useRegisterHeaderActions } from '../../contexts/HeaderActionsContext';
 
-// --- Composant Icone Dynamique ---
 const NotificationIcon = ({ type, color }: { type: NotificationType; color: string }) => {
   const size = 22;
   switch (type) {
-    case 'completion': return <CheckCircle2 size={size} color={color} />;
-    case 'streak': return <Flame size={size} color={color} />;
+    case 'completion':      return <CheckCircle2 size={size} color={color} />;
+    case 'streak':          return <Flame size={size} color={color} />;
     case 'wird_reminder':
     case 'wazifa_reminder':
-    case 'hadra_reminder': return <BellRing size={size} color={color} />;
-    case 'encouragement': return <Star size={size} color={color} />;
-    default: return <Info size={size} color={color} />;
+    case 'hadra_reminder':  return <BellRing size={size} color={color} />;
+    case 'encouragement':   return <Star size={size} color={color} />;
+    default:                return <Info size={size} color={color} />;
   }
 };
 
 export default function NotificationsScreen() {
-  const { 
-    notifications, 
-    markAsRead, 
-    markAllAsRead, 
-    deleteNotification,
-    unreadCount,
-    clearAll
+  const {
+    notifications, markAsRead, markAllAsRead,
+    deleteNotification, unreadCount, clearAll
   } = useNotifications();
 
   const { handleBack } = useContext(LayoutActionsContext);
 
-  // Helper pour les fonds d'icônes
-  const getIconBackground = (type: NotificationType): string => {
-    const baseColor = getNotificationColor(type);
-    return `${baseColor}15`; // Ajoute 10% d'opacité à la couleur hexadécimale
-  };
+  const getIconBackground = (type: NotificationType): string =>
+    `${getNotificationColor(type)}15`;
 
   const handleMarkAll = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -77,13 +54,13 @@ export default function NotificationsScreen() {
 
   const handleClearAll = () => {
     Alert.alert(
-      "Effacer tout",
-      "Voulez-vous supprimer toutes les notifications ?",
+      "Clear all",
+      "Are you sure you want to delete all notifications?",
       [
-        { text: "Annuler", style: "cancel" },
-        { 
-          text: "Supprimer", 
-          style: "destructive", 
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
           onPress: () => {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             clearAll();
@@ -107,15 +84,13 @@ export default function NotificationsScreen() {
       onPress: handleClearAll,
       destructive: true,
     }] : []),
-  ], [unreadCount, notifications.length, handleMarkAll, handleClearAll]);
+  ], [unreadCount, notifications.length]);
 
   useRegisterHeaderActions('/notifications', menuActions);
-
 
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" />
-      
       <MinimalHeader
         title="Notifications"
         subtitle={unreadCount > 0 ? `${unreadCount} unread` : 'All caught up'}
@@ -124,8 +99,6 @@ export default function NotificationsScreen() {
         menuActions={menuActions}
         theme="default"
       />
-
-      {/* Notifications List */}
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
@@ -135,26 +108,22 @@ export default function NotificationsScreen() {
             <View style={styles.emptyIconCircle}>
               <Bell color="#9CA3AF" size={40} strokeWidth={1.5} />
             </View>
-            <Text style={styles.emptyTitle}>Aucune notification</Text>
+            <Text style={styles.emptyTitle}>No notifications</Text>
             <Text style={styles.emptyMessage}>
-              Nous vous préviendrons dès qu'il y aura du nouveau !
+              We'll notify you as soon as there's something new!
             </Text>
           </View>
         ) : (
           notifications.map(notif => (
             <TouchableOpacity
               key={notif.id}
-              style={[
-                styles.notificationCard,
-                !notif.read && styles.unreadCard,
-              ]}
+              style={[styles.notificationCard, !notif.read && styles.unreadCard]}
               onPress={() => markAsRead(notif.id)}
               activeOpacity={0.8}
             >
               <View style={[styles.iconContainer, { backgroundColor: getIconBackground(notif.type) }]}>
                 <NotificationIcon type={notif.type} color={getNotificationColor(notif.type)} />
               </View>
-
               <View style={styles.cardMainContent}>
                 <View style={styles.cardHeader}>
                   <Text numberOfLines={1} style={[styles.notifTitle, !notif.read && styles.unreadText]}>
@@ -162,11 +131,7 @@ export default function NotificationsScreen() {
                   </Text>
                   {!notif.read && <View style={styles.unreadIndicator} />}
                 </View>
-
-                <Text numberOfLines={2} style={styles.notifMessage}>
-                  {notif.message}
-                </Text>
-
+                <Text numberOfLines={2} style={styles.notifMessage}>{notif.message}</Text>
                 <View style={styles.cardFooter}>
                   <Text style={styles.notifTime}>{formatTimestamp(notif.timestamp)}</Text>
                   {notif.metadata?.practice && (
@@ -176,11 +141,7 @@ export default function NotificationsScreen() {
                   )}
                 </View>
               </View>
-
-              <TouchableOpacity
-                style={styles.inlineDelete}
-                onPress={() => handleDelete(notif.id)}
-              >
+              <TouchableOpacity style={styles.inlineDelete} onPress={() => handleDelete(notif.id)}>
                 <Trash2 color="#D1D5DB" size={18} />
               </TouchableOpacity>
             </TouchableOpacity>
@@ -191,6 +152,7 @@ export default function NotificationsScreen() {
   );
 }
 
+// styles unchanged — copy from original
 const styles = StyleSheet.create({
   container: {
     flex: 1,

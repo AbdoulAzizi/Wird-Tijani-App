@@ -1,4 +1,7 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
+import React, {
+  createContext, useContext, useState,
+  useEffect, useCallback, useRef
+} from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
@@ -76,8 +79,18 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   // ── Guard: don't save until initial load is done ──────────────────────────
   const isLoaded = useRef(false);
 
+  // ── Promise that resolves once persisted data is loaded ───────────────────
+  // This prevents addNotification from prepending to [] before the load
+  // completes and getting overwritten.
+  const loadedResolveRef = useRef<() => void>(() => {});
+  const loadedPromise = useRef<Promise<void>>(
+    new Promise<void>(resolve => {
+      loadedResolveRef.current = resolve;
+    })
+  );
+
   // ============================================================================
-  // LOAD — runs once on mount
+  // INIT
   // ============================================================================
 
   useEffect(() => {
@@ -93,11 +106,13 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   // ============================================================================
 
   useEffect(() => {
-    // Skip the first render / before load completes to avoid overwriting
-    // persisted data with an empty array.
     if (!isLoaded.current) return;
     saveNotifications(notifications);
   }, [notifications]);
+
+  // ============================================================================
+  // LOAD
+  // ============================================================================
 
   const loadNotifications = async () => {
     try {
@@ -109,8 +124,9 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     } catch (error) {
       console.error('[NotificationContext] Error loading notifications:', error);
     } finally {
-      // Mark as loaded whether we found data or not — safe to save from now on
+      // Mark as loaded and unblock any pending addNotification calls
       isLoaded.current = true;
+      loadedResolveRef.current();
     }
   };
 
@@ -165,7 +181,9 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
 
   // Use a ref for permissionsGranted so addNotification never has a stale closure
   const permissionsRef = useRef(permissionsGranted);
-  useEffect(() => { permissionsRef.current = permissionsGranted; }, [permissionsGranted]);
+  useEffect(() => {
+    permissionsRef.current = permissionsGranted;
+  }, [permissionsGranted]);
 
   const addNotification = useCallback((
     notification: Omit<NotificationData, 'id' | 'timestamp' | 'read'>
@@ -177,7 +195,12 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
       read: false,
     };
 
-    setNotifications(prev => [newNotification, ...prev]);
+    // ✅ Wait for persisted data to be loaded before prepending.
+    // If load is already done (promise resolved), this executes synchronously
+    // on the next microtask — no visible delay.
+    loadedPromise.current.then(() => {
+      setNotifications(prev => [newNotification, ...prev]);
+    });
 
     // Fire a local push notification if permissions are granted
     if (permissionsRef.current) {
@@ -193,7 +216,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
         console.error('[NotificationContext] scheduleNotificationAsync error:', err)
       );
     }
-  }, []); // stable — reads permissions via ref
+  }, []); // stable — reads permissions via ref, awaits load via promise ref
 
   const markAsRead = useCallback((id: string) => {
     setNotifications(prev =>
@@ -259,6 +282,32 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   const unreadCount = notifications.filter(n => !n.read).length;
 
   // ============================================================================
+  // INCOMING PUSH — sync device notifications into the in-app list
+  // ============================================================================
+
+  useEffect(() => {
+    // When the app receives a push while foregrounded, add it to the list
+    const subscription = Notifications.addNotificationReceivedListener(notification => {
+      const { title, body, data } = notification.request.content;
+
+      // Avoid duplicates: addNotification already fires scheduleNotificationAsync
+      // for in-app actions, so only add items that come from the OS directly
+      // (i.e. scheduled reminders from ReminderService).
+      // We detect those by checking if `data.type` is set without a custom id.
+      if (data?.type && !data?.inApp) {
+        addNotification({
+          type: (data.type as NotificationType) ?? 'info',
+          title: title ?? 'Notification',
+          message: body ?? '',
+          metadata: data?.metadata as NotificationData['metadata'],
+        });
+      }
+    });
+
+    return () => subscription.remove();
+  }, [addNotification]);
+
+  // ============================================================================
   // RENDER
   // ============================================================================
 
@@ -300,25 +349,25 @@ export function useNotifications() {
 
 export const getNotificationIcon = (type: NotificationType) => {
   switch (type) {
-    case 'completion':                                    return 'checkmark-circle';
-    case 'streak':                                        return 'flame';
+    case 'completion':      return 'checkmark-circle';
+    case 'streak':          return 'flame';
     case 'wird_reminder':
     case 'wazifa_reminder':
-    case 'hadra_reminder':                                return 'notifications';
-    case 'encouragement':                                 return 'star';
-    default:                                              return 'information-circle';
+    case 'hadra_reminder':  return 'notifications';
+    case 'encouragement':   return 'star';
+    default:                return 'information-circle';
   }
 };
 
 export const getNotificationColor = (type: NotificationType) => {
   switch (type) {
-    case 'completion':                                    return '#10B981';
-    case 'streak':                                        return '#F59E0B';
+    case 'completion':      return '#10B981';
+    case 'streak':          return '#F59E0B';
     case 'wird_reminder':
     case 'wazifa_reminder':
-    case 'hadra_reminder':                                return '#3B82F6';
-    case 'encouragement':                                 return '#8B5CF6';
-    default:                                              return '#6B7280';
+    case 'hadra_reminder':  return '#3B82F6';
+    case 'encouragement':   return '#8B5CF6';
+    default:                return '#6B7280';
   }
 };
 
