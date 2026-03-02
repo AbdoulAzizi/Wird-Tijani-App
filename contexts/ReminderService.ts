@@ -8,11 +8,11 @@ import { NotificationType } from './NotificationContext';
 // ============================================================================
 
 export interface ReminderConfig {
-  morning:      string;  // "05:30" — Wird morning
-  evening:      string;  // "18:45" — Wird evening
-  wazifa:       string;  // "15:30" — Wazifa (was hardcoded before, now configurable)
-  friday:       string;  // "15:30" — Hadra
-  encouragement:string;  // "14:00" — Weekly encouragement base time
+  morning:       string;  // "05:30" — Wird morning
+  evening:       string;  // "18:45" — Wird evening
+  wazifa:        string;  // "15:30" — Wazifa
+  friday:        string;  // "15:30" — Hadra
+  encouragement: string;  // "14:00" — Weekly encouragement base time
 }
 
 export const DEFAULT_REMINDER_CONFIG: ReminderConfig = {
@@ -54,12 +54,11 @@ type ScheduledIdMap = Partial<Record<ReminderKey, string>>;
 
 // ============================================================================
 // WEEKDAY CONSTANTS
-// ============================================================================
-// expo-notifications uses the same convention on both iOS and Android:
+// expo-notifications convention (iOS & Android):
 //   1 = Sunday  2 = Monday  3 = Tuesday  4 = Wednesday
 //   5 = Thursday  6 = Friday  7 = Saturday
-//
-// The original code applied a wrong platform-specific remap — removed.
+// ============================================================================
+
 const WEEKDAY = {
   SUNDAY:    1,
   MONDAY:    2,
@@ -102,7 +101,6 @@ const STORAGE_KEY = 'reminder_scheduled_ids_v2';
 export class ReminderService {
   private static instance: ReminderService;
 
-  /** In-memory cache of scheduled notification IDs (also persisted via AsyncStorage). */
   private scheduledIds: ScheduledIdMap = {};
   private loaded = false;
 
@@ -119,7 +117,6 @@ export class ReminderService {
   // PERMISSIONS
   // ============================================================================
 
-  /** Returns true when push notification permissions are currently granted. */
   async isPermissionGranted(): Promise<boolean> {
     try {
       const { status } = await Notifications.getPermissionsAsync();
@@ -129,7 +126,6 @@ export class ReminderService {
     }
   }
 
-  /** Requests permissions if not already granted. Returns final granted state. */
   async ensurePermissions(): Promise<boolean> {
     try {
       const { status: existing } = await Notifications.getPermissionsAsync();
@@ -142,7 +138,7 @@ export class ReminderService {
   }
 
   // ============================================================================
-  // PERSISTENCE — track scheduled IDs for selective cancellation
+  // PERSISTENCE
   // ============================================================================
 
   private async loadIds(): Promise<void> {
@@ -169,10 +165,6 @@ export class ReminderService {
   // SCHEDULE ALL
   // ============================================================================
 
-  /**
-   * Cancels all existing reminders and reschedules from scratch.
-   * Safe to call multiple times — deduplication is handled automatically.
-   */
   async scheduleAllReminders(
     config:      ReminderConfig      = DEFAULT_REMINDER_CONFIG,
     preferences: ReminderPreferences = DEFAULT_PREFERENCES,
@@ -184,7 +176,6 @@ export class ReminderService {
     }
 
     await this.loadIds();
-    // Cancel first to avoid duplicates on repeated calls
     await this.cancelAllReminders();
 
     const tasks: Promise<void>[] = [];
@@ -203,7 +194,6 @@ export class ReminderService {
   // RESCHEDULE A SINGLE REMINDER
   // ============================================================================
 
-  /** Update one reminder time without touching the others. */
   async rescheduleWirdMorning(newTime: string): Promise<void> {
     await this.loadIds();
     await this._cancelKey('wird_morning');
@@ -236,10 +226,6 @@ export class ReminderService {
   // ENABLE / DISABLE INDIVIDUAL REMINDERS
   // ============================================================================
 
-  /**
-   * Toggle a single reminder category on or off without touching the rest.
-   * Pass the current config so times are preserved when re-enabling.
-   */
   async setReminderEnabled(
     key:     'wird_morning' | 'wird_evening' | 'wazifa' | 'hadra' | 'encouragement',
     enabled: boolean,
@@ -284,10 +270,6 @@ export class ReminderService {
   // CANCEL
   // ============================================================================
 
-  /**
-   * Cancel every reminder this service has ever scheduled.
-   * Does NOT touch notifications scheduled by other parts of the app.
-   */
   async cancelAllReminders(): Promise<void> {
     await this.loadIds();
     const ids = Object.values(this.scheduledIds).filter(Boolean) as string[];
@@ -302,27 +284,24 @@ export class ReminderService {
   // DEBUG / UTILITY
   // ============================================================================
 
-  /** Fire an immediate notification to verify the system works end-to-end. */
   async scheduleTestNotification(): Promise<void> {
     const granted = await this.isPermissionGranted();
     if (!granted) {
       console.warn('[ReminderService] Cannot send test — permissions not granted.');
       return;
     }
+    // ✅ data.type est défini, data.inApp est absent → sera capté par le listener
     await Notifications.scheduleNotificationAsync({
       content: {
         title: '✅ Reminders working!',
         body:  'Your notification system is set up correctly.',
         sound: true,
+        data:  { type: 'info' satisfies NotificationType },
       },
-      trigger: null, // immediate
+      trigger: null,
     });
   }
 
-  /**
-   * Returns a human-readable summary of currently active scheduled reminders.
-   * Useful for a debug screen or "notification settings" page.
-   */
   async getStatus(): Promise<{
     permissionsGranted: boolean;
     scheduledCount:     number;
@@ -343,7 +322,6 @@ export class ReminderService {
     };
   }
 
-  /** Returns the raw expo-notifications list (unchanged from original). */
   async getScheduledNotifications() {
     try {
       return await Notifications.getAllScheduledNotificationsAsync();
@@ -406,13 +384,6 @@ export class ReminderService {
     if (id) this.scheduledIds['hadra_friday'] = id;
   }
 
-  /**
-   * Schedules all 3 encouragement messages on different weekdays (Wed / Thu / Fri)
-   * so the user receives a different message each week instead of the same one.
-   *
-   * Original bug: a single random index was picked at schedule time, meaning
-   * the same message repeated forever every week.
-   */
   private async _scheduleEncouragements(baseTime: string): Promise<void> {
     const [hour, minute] = parseTime(baseTime);
     const weekdays = [WEEKDAY.WEDNESDAY, WEEKDAY.THURSDAY, WEEKDAY.FRIDAY];
@@ -462,7 +433,9 @@ export class ReminderService {
           body:     params.body,
           sound:    true,
           priority: Notifications.AndroidNotificationPriority.HIGH,
-          data:     { type: params.type },
+          // ✅ data.type défini, data.inApp absent
+          // → le listener de NotificationContext l'ajoutera à la liste
+          data: { type: params.type },
         },
         trigger: {
           type:    Notifications.SchedulableTriggerInputTypes.DAILY,
@@ -478,7 +451,7 @@ export class ReminderService {
   }
 
   private async _scheduleWeekly(params: {
-    weekday: number;  // Use WEEKDAY constants — identical on iOS & Android
+    weekday: number;
     hour:    number;
     minute:  number;
     title:   string;
@@ -492,11 +465,13 @@ export class ReminderService {
           body:     params.body,
           sound:    true,
           priority: Notifications.AndroidNotificationPriority.HIGH,
-          data:     { type: params.type },
+          // ✅ data.type défini, data.inApp absent
+          // → le listener de NotificationContext l'ajoutera à la liste
+          data: { type: params.type },
         },
         trigger: {
           type:    Notifications.SchedulableTriggerInputTypes.WEEKLY,
-          weekday: params.weekday, // ✅ no platform remap — same on iOS & Android
+          weekday: params.weekday,
           hour:    params.hour,
           minute:  params.minute,
           repeats: true,
@@ -513,7 +488,6 @@ export class ReminderService {
 // HELPERS
 // ============================================================================
 
-/** Parse "HH:MM" → [hour, minute]. Throws a clear error on bad input. */
 function parseTime(time: string): [number, number] {
   const parts = time.split(':').map(Number);
   if (
