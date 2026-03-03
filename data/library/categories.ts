@@ -22,6 +22,16 @@ export const categories: Category[] = [
     count: 3,
   },
   {
+    id: 'annashid',
+    title: 'Annashid',
+    arabicTitle: 'الأناشيد الروحية',
+    emoji: '🎶',
+    color: '#0369A1',
+    gradient: ['#0C4A6E', '#0369A1', '#0284C7'],
+    description: 'Spiritual compositions by the great scholars',
+    count: 7,
+  },
+  {
     id: 'books',
     title: 'Sacred Books',
     arabicTitle: 'الكتب المقدسة',
