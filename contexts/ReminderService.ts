@@ -104,6 +104,9 @@ export class ReminderService {
   private scheduledIds: ScheduledIdMap = {};
   private loaded = false;
 
+  // Guard against concurrent scheduleAllReminders calls
+  private scheduling = false;
+
   private constructor() {}
 
   static getInstance(): ReminderService {
@@ -117,12 +120,6 @@ export class ReminderService {
   // TIMEZONE
   // ============================================================================
 
-  /**
-   * Returns the device timezone string used when scheduling notifications.
-   * expo-notifications' DAILY and WEEKLY triggers already fire in device-local
-   * time automatically, so no manual offset calculation is needed.
-   * This helper is exposed for display purposes (settings screen, etc.).
-   */
   getTimezone(): string {
     return getDeviceTimezone();
   }
@@ -177,33 +174,51 @@ export class ReminderService {
 
   // ============================================================================
   // SCHEDULE ALL
+  // FIX: Cancel ALL OS-scheduled notifications (not just tracked IDs) before
+  // rescheduling, so stale notifs from lost/corrupted ID maps can't survive.
+  // Also guard against concurrent calls with a scheduling lock.
   // ============================================================================
 
   async scheduleAllReminders(
     config:      ReminderConfig      = DEFAULT_REMINDER_CONFIG,
     preferences: ReminderPreferences = DEFAULT_PREFERENCES,
   ): Promise<void> {
-    const granted = await this.ensurePermissions();
-    if (!granted) {
-      console.warn('[ReminderService] Permissions not granted — skipping schedule.');
+    if (this.scheduling) {
+      console.warn('[ReminderService] scheduleAllReminders already in progress — skipping.');
       return;
     }
+    this.scheduling = true;
 
-    console.log(`[ReminderService] Scheduling in timezone: ${this.getTimezone()}`);
+    try {
+      const granted = await this.ensurePermissions();
+      if (!granted) {
+        console.warn('[ReminderService] Permissions not granted — skipping schedule.');
+        return;
+      }
 
-    await this.loadIds();
-    await this.cancelAllReminders();
+      console.log(`[ReminderService] Scheduling in timezone: ${this.getTimezone()}`);
 
-    const tasks: Promise<void>[] = [];
+      await this.loadIds();
 
-    if (preferences.wirdMorning)   tasks.push(this._scheduleWirdMorning(config.morning));
-    if (preferences.wirdEvening)   tasks.push(this._scheduleWirdEvening(config.evening));
-    if (preferences.wazifa)        tasks.push(this._scheduleWazifa(config.wazifa));
-    if (preferences.hadra)         tasks.push(this._scheduleHadra(config.friday));
-    if (preferences.encouragement) tasks.push(this._scheduleEncouragements(config.encouragement));
+      // FIX: Cancel every notification the OS knows about, not just our tracked
+      // IDs. This prevents duplicates when IDs were lost or corrupted.
+      await this._cancelAllOsNotifications();
 
-    await Promise.allSettled(tasks);
-    await this.saveIds();
+      this.scheduledIds = {};
+
+      const tasks: Promise<void>[] = [];
+
+      if (preferences.wirdMorning)   tasks.push(this._scheduleWirdMorning(config.morning));
+      if (preferences.wirdEvening)   tasks.push(this._scheduleWirdEvening(config.evening));
+      if (preferences.wazifa)        tasks.push(this._scheduleWazifa(config.wazifa));
+      if (preferences.hadra)         tasks.push(this._scheduleHadra(config.friday));
+      if (preferences.encouragement) tasks.push(this._scheduleEncouragements(config.encouragement));
+
+      await Promise.allSettled(tasks);
+      await this.saveIds();
+    } finally {
+      this.scheduling = false;
+    }
   }
 
   // ============================================================================
@@ -288,10 +303,7 @@ export class ReminderService {
 
   async cancelAllReminders(): Promise<void> {
     await this.loadIds();
-    const ids = Object.values(this.scheduledIds).filter(Boolean) as string[];
-    await Promise.allSettled(
-      ids.map(id => Notifications.cancelScheduledNotificationAsync(id))
-    );
+    await this._cancelAllOsNotifications();
     this.scheduledIds = {};
     await this.saveIds();
   }
@@ -355,15 +367,6 @@ export class ReminderService {
   // ============================================================================
   // PRIVATE — individual schedulers
   // ============================================================================
-  //
-  // NOTE ON TIMEZONES
-  // expo-notifications interprets `hour` and `minute` in the device's local
-  // timezone for both DAILY and WEEKLY triggers.  No UTC offset maths needed.
-  // Source: https://docs.expo.dev/versions/latest/sdk/notifications/#schedulablenotificationtrigger
-  //
-  // If you ever need cross-timezone scheduling (e.g. "always at 14:00 Paris
-  // time regardless of where the user is"), you would need to compute the UTC
-  // offset yourself and adjust hour/minute accordingly.
 
   private async _scheduleWirdMorning(time: string): Promise<void> {
     const [hour, minute] = parseTime(time);
@@ -429,6 +432,19 @@ export class ReminderService {
     );
   }
 
+  // ── Cancel ALL notifications at the OS level (nuclear option) ──────────────
+  // FIX: This is the key fix. Instead of only cancelling our tracked IDs
+  // (which may be stale/lost), we cancel every scheduled notification the
+  // OS knows about. This guarantees no duplicates can survive.
+
+  private async _cancelAllOsNotifications(): Promise<void> {
+    try {
+      await Notifications.cancelAllScheduledNotificationsAsync();
+    } catch (e) {
+      console.error('[ReminderService] _cancelAllOsNotifications error:', e);
+    }
+  }
+
   // ── Cancel a single tracked key ────────────────────────────────────────────
 
   private async _cancelKey(key: ReminderKey): Promise<void> {
@@ -459,9 +475,7 @@ export class ReminderService {
           body:     params.body,
           sound:    true,
           priority: Notifications.AndroidNotificationPriority.HIGH,
-          // No data.inApp here — these come from the OS, not from addNotification,
-          // so the NotificationContext listener should pick them up.
-          data: { type: params.type },
+          data:     { type: params.type },
         },
         trigger: {
           type:    Notifications.SchedulableTriggerInputTypes.DAILY,

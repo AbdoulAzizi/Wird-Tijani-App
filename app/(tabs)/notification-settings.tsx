@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
   Switch, Alert, Platform, Linking,
@@ -99,6 +99,17 @@ export default function NotificationSettingsScreen() {
   const [hasChanges, setHasChanges] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
+  // FIX: Track the saved/baseline values so hasChanges compares against what
+  // was actually persisted, not against DEFAULT_PREFERENCES (which would make
+  // hasChanges true immediately on mount and trigger phantom saves).
+  const savedPrefs = useRef<ReminderPreferences>({
+    wirdMorning:   DEFAULT_PREFERENCES.wirdMorning,
+    wirdEvening:   DEFAULT_PREFERENCES.wirdEvening,
+    wazifa:        DEFAULT_PREFERENCES.wazifa,
+    hadra:         DEFAULT_PREFERENCES.hadra,
+    encouragement: DEFAULT_PREFERENCES.encouragement,
+  });
+
   useEffect(() => { loadSettings(); }, []);
 
   const loadSettings = async () => {
@@ -106,27 +117,42 @@ export default function NotificationSettingsScreen() {
       const raw = await AsyncStorage.getItem(PREFS_KEY);
       if (!raw) return;
       const saved: Partial<ReminderPreferences> = JSON.parse(raw);
-      if (saved.wirdMorning !== undefined) setWirdMorningEnabled(saved.wirdMorning);
-      if (saved.wirdEvening !== undefined) setWirdEveningEnabled(saved.wirdEvening);
-      if (saved.wazifa !== undefined) setWazifaEnabled(saved.wazifa);
-      if (saved.hadra !== undefined) setHadraEnabled(saved.hadra);
+
+      // Apply to state
+      if (saved.wirdMorning   !== undefined) setWirdMorningEnabled(saved.wirdMorning);
+      if (saved.wirdEvening   !== undefined) setWirdEveningEnabled(saved.wirdEvening);
+      if (saved.wazifa        !== undefined) setWazifaEnabled(saved.wazifa);
+      if (saved.hadra         !== undefined) setHadraEnabled(saved.hadra);
       if (saved.encouragement !== undefined) setEncouragementEnabled(saved.encouragement);
+
+      // FIX: Mirror loaded values into the baseline ref so hasChanges starts false
+      savedPrefs.current = {
+        wirdMorning:   saved.wirdMorning   ?? DEFAULT_PREFERENCES.wirdMorning,
+        wirdEvening:   saved.wirdEvening   ?? DEFAULT_PREFERENCES.wirdEvening,
+        wazifa:        saved.wazifa        ?? DEFAULT_PREFERENCES.wazifa,
+        hadra:         saved.hadra         ?? DEFAULT_PREFERENCES.hadra,
+        encouragement: saved.encouragement ?? DEFAULT_PREFERENCES.encouragement,
+      };
     } catch (e) { console.error(e); }
   };
 
+  // FIX: Compare against savedPrefs.current (the actual persisted state)
+  // instead of DEFAULT_PREFERENCES, so we only show "Save" when the user
+  // has genuinely changed something since the last save.
   useEffect(() => {
+    const sp = savedPrefs.current;
     const changed =
       notificationsEnabled !== state.settings.notificationsEnabled ||
-      soundEnabled !== state.settings.audioEnabled ||
-      morningTime !== (state.settings.reminderTimes?.morning ?? DEFAULT_REMINDER_CONFIG.morning) ||
-      eveningTime !== (state.settings.reminderTimes?.evening ?? DEFAULT_REMINDER_CONFIG.evening) ||
-      wazifaTime !== (state.settings.reminderTimes?.wazifa ?? DEFAULT_REMINDER_CONFIG.wazifa) ||
-      fridayTime !== (state.settings.reminderTimes?.friday ?? DEFAULT_REMINDER_CONFIG.friday) ||
-      wirdMorningEnabled !== DEFAULT_PREFERENCES.wirdMorning ||
-      wirdEveningEnabled !== DEFAULT_PREFERENCES.wirdEvening ||
-      wazifaEnabled !== DEFAULT_PREFERENCES.wazifa ||
-      hadraEnabled !== DEFAULT_PREFERENCES.hadra ||
-      encouragementEnabled !== DEFAULT_PREFERENCES.encouragement;
+      soundEnabled         !== state.settings.audioEnabled         ||
+      morningTime          !== (state.settings.reminderTimes?.morning ?? DEFAULT_REMINDER_CONFIG.morning) ||
+      eveningTime          !== (state.settings.reminderTimes?.evening ?? DEFAULT_REMINDER_CONFIG.evening) ||
+      wazifaTime           !== (state.settings.reminderTimes?.wazifa  ?? DEFAULT_REMINDER_CONFIG.wazifa)  ||
+      fridayTime           !== (state.settings.reminderTimes?.friday  ?? DEFAULT_REMINDER_CONFIG.friday)  ||
+      wirdMorningEnabled   !== sp.wirdMorning   ||
+      wirdEveningEnabled   !== sp.wirdEvening   ||
+      wazifaEnabled        !== sp.wazifa        ||
+      hadraEnabled         !== sp.hadra         ||
+      encouragementEnabled !== sp.encouragement;
     setHasChanges(changed);
   }, [notificationsEnabled, soundEnabled, morningTime, eveningTime, wazifaTime, fridayTime, wirdMorningEnabled, wirdEveningEnabled, wazifaEnabled, hadraEnabled, encouragementEnabled]);
 
@@ -147,8 +173,8 @@ export default function NotificationSettingsScreen() {
       switch (prev.key) {
         case 'morning': setMorningTime(value); break;
         case 'evening': setEveningTime(value); break;
-        case 'wazifa': setWazifaTime(value); break;
-        case 'friday': setFridayTime(value); break;
+        case 'wazifa':  setWazifaTime(value);  break;
+        case 'friday':  setFridayTime(value);  break;
       }
       return { ...prev, value: selectedDate };
     });
@@ -164,19 +190,30 @@ export default function NotificationSettingsScreen() {
       dispatch({ type: 'UPDATE_REMINDER_TIME', reminderType: 'evening', time: eveningTime });
       dispatch({ type: 'UPDATE_REMINDER_TIME', reminderType: 'wazifa', time: wazifaTime });
       dispatch({ type: 'UPDATE_REMINDER_TIME', reminderType: 'friday', time: fridayTime });
+
       const prefs: ReminderPreferences = {
         wirdMorning: wirdMorningEnabled, wirdEvening: wirdEveningEnabled,
         wazifa: wazifaEnabled, hadra: hadraEnabled, encouragement: encouragementEnabled,
       };
       await AsyncStorage.setItem(PREFS_KEY, JSON.stringify(prefs));
+
       if (notificationsEnabled) {
-        const config: ReminderConfig = { morning: morningTime, evening: eveningTime, wazifa: wazifaTime, friday: fridayTime, encouragement: DEFAULT_REMINDER_CONFIG.encouragement };
+        const config: ReminderConfig = {
+          morning: morningTime, evening: eveningTime,
+          wazifa: wazifaTime, friday: fridayTime,
+          encouragement: DEFAULT_REMINDER_CONFIG.encouragement,
+        };
+        // scheduleAllReminders now cancels ALL OS notifs before re-scheduling,
+        // so duplicates are impossible even if IDs were previously lost.
         await ReminderService.scheduleAllReminders(config, prefs);
         Alert.alert('Saved', 'Your reminders have been updated.', [{ text: 'OK' }]);
       } else {
         await ReminderService.cancelAllReminders();
         Alert.alert('Saved', 'Notifications disabled.', [{ text: 'OK' }]);
       }
+
+      // FIX: Update the baseline so hasChanges goes back to false after saving
+      savedPrefs.current = { ...prefs };
       setHasChanges(false);
     } catch (err) {
       Alert.alert('Error', 'Failed to save settings.');
@@ -188,11 +225,15 @@ export default function NotificationSettingsScreen() {
       { text: 'Cancel', style: 'cancel' },
       { text: 'Reset', style: 'destructive', onPress: () => {
         setNotificationsEnabled(true); setSoundEnabled(true);
-        setWirdMorningEnabled(DEFAULT_PREFERENCES.wirdMorning); setWirdEveningEnabled(DEFAULT_PREFERENCES.wirdEvening);
-        setWazifaEnabled(DEFAULT_PREFERENCES.wazifa); setHadraEnabled(DEFAULT_PREFERENCES.hadra);
+        setWirdMorningEnabled(DEFAULT_PREFERENCES.wirdMorning);
+        setWirdEveningEnabled(DEFAULT_PREFERENCES.wirdEvening);
+        setWazifaEnabled(DEFAULT_PREFERENCES.wazifa);
+        setHadraEnabled(DEFAULT_PREFERENCES.hadra);
         setEncouragementEnabled(DEFAULT_PREFERENCES.encouragement);
-        setMorningTime(DEFAULT_REMINDER_CONFIG.morning); setEveningTime(DEFAULT_REMINDER_CONFIG.evening);
-        setWazifaTime(DEFAULT_REMINDER_CONFIG.wazifa); setFridayTime(DEFAULT_REMINDER_CONFIG.friday);
+        setMorningTime(DEFAULT_REMINDER_CONFIG.morning);
+        setEveningTime(DEFAULT_REMINDER_CONFIG.evening);
+        setWazifaTime(DEFAULT_REMINDER_CONFIG.wazifa);
+        setFridayTime(DEFAULT_REMINDER_CONFIG.friday);
       }},
     ]);
   }, []);

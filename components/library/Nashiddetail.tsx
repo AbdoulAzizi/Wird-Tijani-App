@@ -1,12 +1,16 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
   TouchableOpacity, Modal, Platform,
-  Animated, StatusBar,
+  Animated, Pressable, Dimensions,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { X, BookOpen, MapPin, Star, Clock, Music2, Globe, Eye, EyeOff } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Nashid } from '../../data/library/types';
+
+const { height: SCREEN_H } = Dimensions.get('window');
+const SHEET_H = SCREEN_H;
 
 // ─── Multi-language translation type ─────────────────────────────────────────
 export interface NashidTranslation {
@@ -160,15 +164,8 @@ function CoupletRow({ arabic, translation, index, isOpen, forceOpen, onPress }: 
   arabic: string; translation: string; index: number;
   isOpen: boolean; forceOpen: boolean; onPress: () => void;
 }) {
-  const entryAnim = useRef(new Animated.Value(0)).current;
-  const transAnim = useRef(new Animated.Value(0)).current;
+  const transAnim = useRef(new Animated.Value(isOpen || forceOpen ? 1 : 0)).current;
   const showTrans = isOpen || forceOpen;
-
-  useEffect(() => {
-    Animated.timing(entryAnim, {
-      toValue: 1, duration: 320, delay: Math.min(index * 25, 500), useNativeDriver: true,
-    }).start();
-  }, []);
 
   useEffect(() => {
     Animated.timing(transAnim, {
@@ -177,35 +174,33 @@ function CoupletRow({ arabic, translation, index, isOpen, forceOpen, onPress }: 
   }, [showTrans]);
 
   return (
-    <Animated.View style={{ opacity: entryAnim }}>
-      <TouchableOpacity
-        onPress={onPress}
-        activeOpacity={forceOpen ? 1 : 0.75}
-        style={[cr.row, (isOpen && !forceOpen) && cr.rowActive]}
-      >
-        <View style={cr.numWrap}>
-          <Text style={cr.num}>{String(index + 1).padStart(2, '0')}</Text>
-        </View>
+    <TouchableOpacity
+      onPress={onPress}
+      activeOpacity={forceOpen ? 1 : 0.75}
+      style={[cr.row, (isOpen && !forceOpen) && cr.rowActive]}
+    >
+      <View style={cr.numWrap}>
+        <Text style={cr.num}>{String(index + 1).padStart(2, '0')}</Text>
+      </View>
 
-        <View style={cr.body}>
-          <Text style={cr.arabic}>{arabic}</Text>
-          <Animated.View style={{ opacity: transAnim }}>
-            {showTrans && translation ? (
-              <>
-                <View style={cr.divider} />
-                <Text style={cr.translation}>{translation}</Text>
-              </>
-            ) : null}
-          </Animated.View>
-        </View>
+      <View style={cr.body}>
+        <Text style={cr.arabic}>{arabic}</Text>
+        <Animated.View style={{ opacity: transAnim }}>
+          {showTrans && translation ? (
+            <>
+              <View style={cr.divider} />
+              <Text style={cr.translation}>{translation}</Text>
+            </>
+          ) : null}
+        </Animated.View>
+      </View>
 
-        {!forceOpen && (
-          <View style={cr.indWrap}>
-            <View style={[cr.indDot, isOpen && cr.indDotOn]} />
-          </View>
-        )}
-      </TouchableOpacity>
-    </Animated.View>
+      {!forceOpen && (
+        <View style={cr.indWrap}>
+          <View style={[cr.indDot, isOpen && cr.indDotOn]} />
+        </View>
+      )}
+    </TouchableOpacity>
   );
 }
 
@@ -235,209 +230,272 @@ const cr = StyleSheet.create({
 
 // ─── Main component ───────────────────────────────────────────────────────────
 export default function NashidDetail({ nashid, visible, onClose }: NashidDetailProps) {
+  const insets = useSafeAreaInsets();
+  const topInset   = insets.top;          // exact safe area top
+  const heroPadTop = insets.top + 52;     // status bar + generous breathing room
+  const closeBtnTop = insets.top + 48;    // status bar + comfortable offset
   const [tab,     setTab]     = useState<'poem' | 'info'>('poem');
   const [openIdx, setOpenIdx] = useState<number | null>(null);
   const [showAll, setShowAll] = useState(false);
   const [langKey, setLangKey] = useState('');
+  const [mounted, setMounted] = useState(false);
 
+  const translateY = useRef(new Animated.Value(SHEET_H)).current;
+  const opacity    = useRef(new Animated.Value(0)).current;
+
+  // Animate in/out
+  useEffect(() => {
+    if (visible) {
+      setMounted(true);
+      requestAnimationFrame(() => {
+        Animated.parallel([
+          Animated.spring(translateY, {
+            toValue: 0, useNativeDriver: true,
+            damping: 26, stiffness: 220, mass: 0.85,
+          }),
+          Animated.timing(opacity, {
+            toValue: 1, duration: 200, useNativeDriver: true,
+          }),
+        ]).start();
+      });
+    } else {
+      Animated.parallel([
+        Animated.timing(translateY, {
+          toValue: SHEET_H, duration: 260, useNativeDriver: true,
+        }),
+        Animated.timing(opacity, {
+          toValue: 0, duration: 200, useNativeDriver: true,
+        }),
+      ]).start(() => {
+        setMounted(false);
+        setTab('poem'); setOpenIdx(null); setShowAll(false);
+      });
+    }
+  }, [visible]);
+
+  // Reset state when nashid changes (new item opened)
   useEffect(() => {
     if (visible && nashid) {
       setTab('poem'); setOpenIdx(null); setShowAll(false);
       const ls = buildLangs(nashid);
       setLangKey(ls.length > 0 ? ls[0].lang : '');
     }
-  }, [visible, nashid]);
+  }, [nashid]);
 
-  if (!nashid) return null;
+  const langs    = useMemo(() => nashid ? buildLangs(nashid) : [], [nashid]);
+  const activeTr = useMemo(() => langs.find(l => l.lang === langKey) ?? langs[0], [langs, langKey]);
 
-  const langs    = buildLangs(nashid);
-  const activeTr = langs.find(l => l.lang === langKey) ?? langs[0];
+  const arabicLines = useMemo(
+    () => nashid?.arabicText ? nashid.arabicText.split('\n') : [],
+    [nashid?.arabicText]
+  );
+  const transLines = useMemo(
+    () => activeTr ? activeTr.text.split('\n') : [],
+    [activeTr]
+  );
+  const couplets = useMemo(() => {
+    const result: { arabic: string; trans: string }[] = [];
+    for (let i = 0; i < arabicLines.length; i += 2) {
+      result.push({
+        arabic: arabicLines.slice(i, i + 2).join('\n'),
+        trans:  transLines.slice(i, i + 2).join('\n'),
+      });
+    }
+    return result;
+  }, [arabicLines, transLines]);
 
-  const arabicLines = nashid.arabicText ? nashid.arabicText.split('\n') : [];
-  const transLines  = activeTr ? activeTr.text.split('\n') : [];
-
-  const couplets = [];
-  for (let i = 0; i < arabicLines.length; i += 2) {
-    couplets.push({
-      arabic: arabicLines.slice(i, i + 2).join('\n'),
-      trans:  transLines.slice(i, i + 2).join('\n'),
-    });
-  }
-
-  const toggleCouplet = (i: number) => {
+  const toggleCouplet = useCallback((i: number) => {
     if (showAll) return;
     setOpenIdx(p => p === i ? null : i);
-  };
+  }, [showAll]);
+
+  const handleLangChange = useCallback((l: string) => {
+    setLangKey(l); setOpenIdx(null);
+  }, []);
+
+  if (!mounted && !visible) return null;
 
   return (
-    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
-      <View style={s.root}>
-        <StatusBar barStyle="light-content" />
+    <Modal transparent visible={mounted} animationType="none" onRequestClose={onClose} statusBarTranslucent>
 
-        {/* ── HERO — annashid blue gradient ─────────────────────────────── */}
-        <LinearGradient colors={[HERO_DARK, NAVY, BLUE_MID]} style={s.hero}>
+      {/* Backdrop */}
+      <Animated.View style={[s.backdrop, { opacity }]}>
+        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
+      </Animated.View>
 
-          {/* Close button */}
-          <TouchableOpacity style={s.closeBtn} onPress={onClose} activeOpacity={0.7}>
-            <X size={14} color={BLUE_MUTED} strokeWidth={2.5} />
-          </TouchableOpacity>
-
-          {/* Arabic title — dominant */}
-          {nashid.arabicTitle ? (
-            <Text style={s.heroArabic} numberOfLines={2}>{nashid.arabicTitle}</Text>
-          ) : null}
-
-          {/* Thin separator */}
-          <View style={s.ornRow}>
-            <View style={s.ornLine} />
-            <View style={s.ornDot} />
-            <View style={s.ornLine} />
-          </View>
-
-          {/* Latin title */}
-          <Text style={s.heroTitle} numberOfLines={1}>{nashid.title}</Text>
-
-          {/* Meta: composer · origin inline, no chips */}
-          <View style={s.heroMeta}>
-            <Music2 size={10} color={BLUE_MUTED} strokeWidth={2} />
-            <Text style={s.metaTxt} numberOfLines={1}>{nashid.composer}</Text>
-            <View style={s.metaDot} />
-            <MapPin size={10} color={BLUE_MUTED} strokeWidth={2} />
-            <Text style={s.metaTxt} numberOfLines={1}>{nashid.origin}</Text>
-          </View>
-
-          {/* Bottom accent line */}
-          <LinearGradient
-            colors={['transparent', BLUE_LIGHT, BLUE_DIM, BLUE_LIGHT, 'transparent']}
-            start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-            style={s.heroLine}
-          />
-        </LinearGradient>
-
-        {/* ── TABS — annashid dark ───────────────────────────────────────── */}
-        <View style={s.tabBar}>
-          <TouchableOpacity style={[s.tab, tab === 'poem' && s.tabActive]} onPress={() => setTab('poem')} activeOpacity={0.8}>
-            <BookOpen size={13} color={tab === 'poem' ? BLUE_DIM : BLUE_MUTED} strokeWidth={2} />
-            <Text style={[s.tabTxt, tab === 'poem' && s.tabTxtActive]}>Poem</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={[s.tab, tab === 'info' && s.tabActive]} onPress={() => setTab('info')} activeOpacity={0.8}>
-            <Star size={13} color={tab === 'info' ? BLUE_DIM : BLUE_MUTED} strokeWidth={2} />
-            <Text style={[s.tabTxt, tab === 'info' && s.tabTxtActive]}>About</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* ── SUB-BAR — neutral white ────────────────────────────────────── */}
-        {tab === 'poem' && (
+      {/* Sheet */}
+      <Animated.View style={[s.sheet, { transform: [{ translateY }] }]}>
+        {nashid && (
           <>
-            <LangSelector langs={langs} selected={langKey} onSelect={(l) => { setLangKey(l); setOpenIdx(null); }} />
-            <PoemToolbar
-              showAll={showAll}
-              onToggleAll={() => { setShowAll(v => !v); setOpenIdx(null); }}
-              versCount={arabicLines.length}
-              coupletCount={couplets.length}
-            />
-          </>
-        )}
+            {/* Close button — absolute on sheet, above hero */}
+            <TouchableOpacity style={[s.closeBtn, { top: closeBtnTop }]} onPress={onClose} activeOpacity={0.7}>
+              <X size={14} color={BLUE_MUTED} strokeWidth={2.5} />
+            </TouchableOpacity>
 
-        {/* ── BODY — neutral light ───────────────────────────────────────── */}
-        <ScrollView style={s.scroll} contentContainerStyle={s.scrollContent} showsVerticalScrollIndicator={false}>
-          {tab === 'poem' ? (
-            <>
-              {!showAll && (
-                <Text style={s.tapHint}>Tap a couplet to reveal the translation</Text>
-              )}
-              {couplets.map((c, i) => (
-                <CoupletRow
-                  key={`${langKey}-${i}`}
-                  arabic={c.arabic}
-                  translation={c.trans}
-                  index={i}
-                  isOpen={openIdx === i}
-                  forceOpen={showAll}
-                  onPress={() => toggleCouplet(i)}
+            {/* ── HERO — annashid blue gradient ───────────────────────────── */}
+            <LinearGradient colors={[HERO_DARK, NAVY, BLUE_MID]} style={[s.hero, { paddingTop: heroPadTop }]}>
+
+              {nashid.arabicTitle ? (
+                <Text style={s.heroArabic} numberOfLines={2}>{nashid.arabicTitle}</Text>
+              ) : null}
+
+              <View style={s.ornRow}>
+                <View style={s.ornLine} />
+                <View style={s.ornDot} />
+                <View style={s.ornLine} />
+              </View>
+
+              <Text style={s.heroTitle} numberOfLines={1}>{nashid.title}</Text>
+
+              <View style={s.heroMeta}>
+                <Music2 size={10} color={BLUE_MUTED} strokeWidth={2} />
+                <Text style={s.metaTxt} numberOfLines={1}>{nashid.composer}</Text>
+                <View style={s.metaDot} />
+                <MapPin size={10} color={BLUE_MUTED} strokeWidth={2} />
+                <Text style={s.metaTxt} numberOfLines={1}>{nashid.origin}</Text>
+              </View>
+
+              <LinearGradient
+                colors={['transparent', BLUE_LIGHT, BLUE_DIM, BLUE_LIGHT, 'transparent']}
+                start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                style={s.heroLine}
+              />
+            </LinearGradient>
+
+            {/* ── TABS ────────────────────────────────────────────────────── */}
+            <View style={s.tabBar}>
+              <TouchableOpacity style={[s.tab, tab === 'poem' && s.tabActive]} onPress={() => setTab('poem')} activeOpacity={0.8}>
+                <BookOpen size={13} color={tab === 'poem' ? BLUE_DIM : BLUE_MUTED} strokeWidth={2} />
+                <Text style={[s.tabTxt, tab === 'poem' && s.tabTxtActive]}>Poem</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[s.tab, tab === 'info' && s.tabActive]} onPress={() => setTab('info')} activeOpacity={0.8}>
+                <Star size={13} color={tab === 'info' ? BLUE_DIM : BLUE_MUTED} strokeWidth={2} />
+                <Text style={[s.tabTxt, tab === 'info' && s.tabTxtActive]}>About</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* ── SUB-BAR ─────────────────────────────────────────────────── */}
+            {tab === 'poem' && (
+              <>
+                <LangSelector langs={langs} selected={langKey} onSelect={handleLangChange} />
+                <PoemToolbar
+                  showAll={showAll}
+                  onToggleAll={() => { setShowAll(v => !v); setOpenIdx(null); }}
+                  versCount={arabicLines.length}
+                  coupletCount={couplets.length}
                 />
-              ))}
-              <View style={{ height: 48 }} />
-            </>
-          ) : (
-            <>
-              <View style={s.infoCard}>
-                <View style={s.infoHeader}>
-                  <GeomOrnament size={15} color={SECTION_TXT} />
-                  <Text style={s.infoTitle}>Overview</Text>
-                </View>
-                <Text style={s.infoBody}>{nashid.fullDescription}</Text>
-              </View>
+              </>
+            )}
 
-              <OrnamentalDivider />
-
-              <View style={s.sigCard}>
-                <Star size={14} color={BLUE_MID} strokeWidth={2} style={{ marginTop: 1 }} />
-                <Text style={s.sigText}>{nashid.significance}</Text>
-              </View>
-
-              <OrnamentalDivider />
-
-              <View style={s.infoCard}>
-                <View style={s.infoHeader}>
-                  <GeomOrnament size={15} color={SECTION_TXT} />
-                  <Text style={s.infoTitle}>Themes</Text>
-                </View>
-                <View style={s.tagWrap}>
-                  {nashid.themes.map(t => (
-                    <View key={t} style={s.tag}><Text style={s.tagTxt}>{t}</Text></View>
-                  ))}
-                </View>
-              </View>
-
-              <OrnamentalDivider />
-
-              <View style={s.infoCard}>
-                <View style={s.infoHeader}>
-                  <GeomOrnament size={15} color={SECTION_TXT} />
-                  <Text style={s.infoTitle}>When to Recite</Text>
-                </View>
-                {nashid.occasions.map((o, i) => (
-                  <View key={i} style={s.occasionRow}>
-                    <Clock size={12} color={BLUE_MID} strokeWidth={2} style={{ marginTop: 3 }} />
-                    <Text style={s.occasionTxt}>{o}</Text>
-                  </View>
-                ))}
-              </View>
-
-              {langs.length > 1 && (
+            {/* ── BODY ────────────────────────────────────────────────────── */}
+            <ScrollView style={s.scroll} contentContainerStyle={s.scrollContent} showsVerticalScrollIndicator={false}>
+              {tab === 'poem' ? (
                 <>
-                  <OrnamentalDivider />
+                  {!showAll && (
+                    <Text style={s.tapHint}>Tap a couplet to reveal the translation</Text>
+                  )}
+                  {couplets.map((c, i) => (
+                    <CoupletRow
+                      key={`${langKey}-${i}`}
+                      arabic={c.arabic}
+                      translation={c.trans}
+                      index={i}
+                      isOpen={openIdx === i}
+                      forceOpen={showAll}
+                      onPress={() => toggleCouplet(i)}
+                    />
+                  ))}
+                  <View style={{ height: 48 }} />
+                </>
+              ) : (
+                <>
                   <View style={s.infoCard}>
                     <View style={s.infoHeader}>
                       <GeomOrnament size={15} color={SECTION_TXT} />
-                      <Text style={s.infoTitle}>Available Translations</Text>
+                      <Text style={s.infoTitle}>Overview</Text>
+                    </View>
+                    <Text style={s.infoBody}>{nashid.fullDescription}</Text>
+                  </View>
+
+                  <OrnamentalDivider />
+
+                  <View style={s.sigCard}>
+                    <Star size={14} color={BLUE_MID} strokeWidth={2} style={{ marginTop: 1 }} />
+                    <Text style={s.sigText}>{nashid.significance}</Text>
+                  </View>
+
+                  <OrnamentalDivider />
+
+                  <View style={s.infoCard}>
+                    <View style={s.infoHeader}>
+                      <GeomOrnament size={15} color={SECTION_TXT} />
+                      <Text style={s.infoTitle}>Themes</Text>
                     </View>
                     <View style={s.tagWrap}>
-                      {langs.map(l => (
-                        <View key={l.lang} style={s.tag}><Text style={s.tagTxt}>{l.label}</Text></View>
+                      {nashid.themes.map(t => (
+                        <View key={t} style={s.tag}><Text style={s.tagTxt}>{t}</Text></View>
                       ))}
                     </View>
                   </View>
+
+                  <OrnamentalDivider />
+
+                  <View style={s.infoCard}>
+                    <View style={s.infoHeader}>
+                      <GeomOrnament size={15} color={SECTION_TXT} />
+                      <Text style={s.infoTitle}>When to Recite</Text>
+                    </View>
+                    {nashid.occasions.map((o, i) => (
+                      <View key={i} style={s.occasionRow}>
+                        <Clock size={12} color={BLUE_MID} strokeWidth={2} style={{ marginTop: 3 }} />
+                        <Text style={s.occasionTxt}>{o}</Text>
+                      </View>
+                    ))}
+                  </View>
+
+                  {langs.length > 1 && (
+                    <>
+                      <OrnamentalDivider />
+                      <View style={s.infoCard}>
+                        <View style={s.infoHeader}>
+                          <GeomOrnament size={15} color={SECTION_TXT} />
+                          <Text style={s.infoTitle}>Available Translations</Text>
+                        </View>
+                        <View style={s.tagWrap}>
+                          {langs.map(l => (
+                            <View key={l.lang} style={s.tag}><Text style={s.tagTxt}>{l.label}</Text></View>
+                          ))}
+                        </View>
+                      </View>
+                    </>
+                  )}
+
+                  <View style={{ height: 48 }} />
                 </>
               )}
-
-              <View style={{ height: 48 }} />
-            </>
-          )}
-        </ScrollView>
-      </View>
+            </ScrollView>
+          </>
+        )}
+      </Animated.View>
     </Modal>
   );
 }
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: BODY_BG },
+  backdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+  },
+  sheet: {
+    position: 'absolute',
+    top: 0, left: 0, right: 0, bottom: 0,
+    backgroundColor: BODY_BG,
+    overflow: 'hidden',
+  },
 
   // Hero — annashid blue, compact & clean
   hero: {
-    paddingTop: Platform.OS === 'ios' ? 52 : 28,
     paddingBottom: 0,
     paddingHorizontal: 20,
     overflow: 'hidden',
@@ -445,7 +503,7 @@ const s = StyleSheet.create({
   },
 
   closeBtn: {
-    position: 'absolute', top: Platform.OS === 'ios' ? 52 : 24, right: 14,
+    position: 'absolute', right: 14,
     width: 28, height: 28, borderRadius: 14,
     backgroundColor: 'rgba(3,105,161,0.2)', borderWidth: 1, borderColor: BORDER_HERO,
     justifyContent: 'center', alignItems: 'center', zIndex: 10,
