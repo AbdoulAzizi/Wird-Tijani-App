@@ -31,9 +31,9 @@ export const formulas: LibraryItem[] = [
     badgeColor: '#D97706',
     description: 'The Opening Prayer — the most distinguished Tijāni prayer upon the Prophet ﷺ.',
     fullDescription: 'Ṣalāt al-Fātiḥ was revealed to Shaykh Ahmad al-Tijāni and possesses extraordinary spiritual power. It opens spiritual doors, removes obstacles, and brings the believer close to the Prophet ﷺ.',
-    arabicText: 'اللَّهُمَّ صَلِّ عَلَى سَيِّدِنَا مُحَمَّدٍ\nالْفَاتِحِ لِمَا أُغْلِقَ\nوَالْخَاتِمِ لِمَا سَبَقَ\nنَاصِرِ الْحَقِّ بِالْحَقِّ\nوَالْهَادِي إِلَى صِرَاطِكَ الْمُسْتَقِيمِ\nوَعَلَى آلِهِ وَصَحْبِهِ\nحَقَّ قَدْرِهِ وَمِقْدَارِهِ الْعَظِيمِ',
-    transliteration: 'Allāhumma ṣalli ʿalā sayyidinā Muḥammad\nal-fātiḥi limā ughliqa\nwa al-khātimi limā sabaqa\nnāṣiri al-ḥaqqi bi-al-ḥaqqi\nwa al-hādī ilā ṣirāṭika al-mustaqīm\nwa ʿalā ālihi wa ṣaḥbihi\nḥaqqa qadrihi wa miqdārihi al-ʿaẓīm',
-    translation: 'O Allah, send prayers upon our master Muhammad,\nthe opener of what was closed,\nand the seal of what preceded,\nthe supporter of truth by truth,\nand the guide to Your straight path,\nand upon his family and companions,\naccording to his rightful due and his magnificent status.',
+    arabicText: 'اللَّهُمَّ صَلِّ عَلَى سَيِّدِنَا مُحَمَّدٍ\nالْفَاتِحِ لِمَا أُغْلِقَ\nوَالْخَاتِمِ لِمَا سَبَقَ\nنَاصِرِ الْحَقِّ بِالْحَقِّ\nوَالْهَادِي إِلَى صِرَاطِكَ الْمُسْتَقِيمِ\nوَعَلَى آلِهِ\nحَقَّ قَدْرِهِ وَمِقْدَارِهِ الْعَظِيمِ',
+    transliteration: 'Allāhumma ṣalli ʿalā sayyidinā Muḥammad\nal-fātiḥi limā ughliqa\nwa al-khātimi limā sabaqa\nnāṣiri al-ḥaqqi bi-al-ḥaqqi\nwa al-hādī ilā ṣirāṭika al-mustaqīm\nwa ʿalā ālihi\nḥaqqa qadrihi wa miqdārihi al-ʿaẓīm',
+    translation: 'O Allah, send prayers upon our master Muhammad,\nthe opener of what was closed,\nand the seal of what preceded,\nthe supporter of truth by truth,\nand the guide to Your straight path,\nand upon his family,\naccording to his rightful due and his magnificent status.',
     benefits: [
       'Opens spiritual doors and removes obstacles',
       'Brings the believer closer to the Prophet ﷺ',
