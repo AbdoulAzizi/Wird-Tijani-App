@@ -34,15 +34,16 @@ export interface NotificationData {
 }
 
 interface NotificationContextValue {
-  notifications: NotificationData[];
-  unreadCount: number;
-  addNotification: (notification: Omit<NotificationData, 'id' | 'timestamp' | 'read'>) => void;
-  markAsRead: (id: string) => void;
-  markAllAsRead: () => void;
+  notifications:      NotificationData[];
+  unreadCount:        number;
+  timezone:           string;
+  addNotification:    (notification: Omit<NotificationData, 'id' | 'timestamp' | 'read'>) => void;
+  markAsRead:         (id: string) => void;
+  markAllAsRead:      () => void;
   deleteNotification: (id: string) => void;
-  clearAll: () => void;
+  clearAll:           () => void;
   requestPermissions: () => Promise<boolean>;
-  scheduleReminder: (type: NotificationType, title: string, body: string, time: Date) => Promise<void>;
+  scheduleReminder:   (type: NotificationType, title: string, body: string, time: Date) => Promise<void>;
   cancelAllScheduled: () => Promise<void>;
 }
 
@@ -58,15 +59,57 @@ const NotificationContext = createContext<NotificationContextValue | null>(null)
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: true,
+    shouldShowAlert:  true,
+    shouldPlaySound:  true,
+    shouldSetBadge:   true,
     shouldShowBanner: true,
-    shouldShowList: true,
+    shouldShowList:   true,
   }),
 });
 
 const STORAGE_KEY = 'app_notifications_v2';
+
+// ============================================================================
+// TIMEZONE UTILITY
+// ============================================================================
+
+/**
+ * Returns the device's IANA timezone string (e.g. "Europe/Paris", "America/New_York").
+ * Falls back to UTC if the API is unavailable.
+ */
+export function getDeviceTimezone(): string {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone ?? 'UTC';
+  } catch {
+    return 'UTC';
+  }
+}
+
+/**
+ * Format a timestamp in the device's local timezone, e.g. "14:30 · Mon 2 Jun"
+ */
+export function formatLocalTime(timestamp: number): string {
+  try {
+    const tz = getDeviceTimezone();
+    return new Intl.DateTimeFormat(undefined, {
+      timeZone:   tz,
+      hour:       '2-digit',
+      minute:     '2-digit',
+      weekday:    'short',
+      day:        'numeric',
+      month:      'short',
+    }).format(new Date(timestamp));
+  } catch {
+    return new Date(timestamp).toLocaleString();
+  }
+}
+
+// ============================================================================
+// DEDUP HELPER
+// ============================================================================
+
+/** Rolling window (ms) within which two notifications with the same title+type are considered duplicates */
+const DEDUP_WINDOW_MS = 3_000;
 
 // ============================================================================
 // PROVIDER
@@ -75,19 +118,22 @@ const STORAGE_KEY = 'app_notifications_v2';
 export function NotificationProvider({ children }: { children: React.ReactNode }) {
   const [notifications, setNotifications] = useState<NotificationData[]>([]);
   const [permissionsGranted, setPermissionsGranted] = useState(false);
+  const timezone = getDeviceTimezone();
 
   // ── Guard: don't save until initial load is done ──────────────────────────
   const isLoaded = useRef(false);
 
   // ── Promise that resolves once persisted data is loaded ───────────────────
-  // This prevents addNotification from prepending to [] before the load
-  // completes and getting overwritten.
   const loadedResolveRef = useRef<() => void>(() => {});
   const loadedPromise = useRef<Promise<void>>(
     new Promise<void>(resolve => {
       loadedResolveRef.current = resolve;
     })
   );
+
+  // ── Recent-notification dedup registry ────────────────────────────────────
+  // Maps `type:title` → timestamp of the last time it was added.
+  const recentlyAddedRef = useRef<Map<string, number>>(new Map());
 
   // ============================================================================
   // INIT
@@ -124,7 +170,6 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     } catch (error) {
       console.error('[NotificationContext] Error loading notifications:', error);
     } finally {
-      // Mark as loaded and unblock any pending addNotification calls
       isLoaded.current = true;
       loadedResolveRef.current();
     }
@@ -161,10 +206,10 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
 
       if (Platform.OS === 'android') {
         await Notifications.setNotificationChannelAsync('default', {
-          name: 'default',
-          importance: Notifications.AndroidImportance.MAX,
+          name:             'default',
+          importance:       Notifications.AndroidImportance.MAX,
           vibrationPattern: [0, 250, 250, 250],
-          lightColor: '#059669',
+          lightColor:       '#059669',
         });
       }
 
@@ -179,44 +224,61 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   // NOTIFICATION MANAGEMENT
   // ============================================================================
 
-  // Use a ref for permissionsGranted so addNotification never has a stale closure
   const permissionsRef = useRef(permissionsGranted);
-  useEffect(() => {
-    permissionsRef.current = permissionsGranted;
-  }, [permissionsGranted]);
+  useEffect(() => { permissionsRef.current = permissionsGranted; }, [permissionsGranted]);
 
+  // ── Internal: in-app list ONLY, zero OS push ──────────────────────────────
+  //
+  // Called by the OS listener when a scheduled reminder fires.
+  // The OS already showed the notification in the tray — we just need to
+  // mirror it into the in-app list.  Calling scheduleNotificationAsync here
+  // would fire a SECOND OS notification → duplicate in the tray.
+  //
+  const _syncToList = useCallback((
+    notification: Omit<NotificationData, 'id' | 'timestamp' | 'read'>
+  ) => {
+    const dedupKey = `${notification.type}:${notification.title}`;
+    const lastAdded = recentlyAddedRef.current.get(dedupKey) ?? 0;
+    if (Date.now() - lastAdded < DEDUP_WINDOW_MS) return;
+    recentlyAddedRef.current.set(dedupKey, Date.now());
+
+    const entry: NotificationData = {
+      ...notification,
+      id:        `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      timestamp: Date.now(),
+      read:      false,
+    };
+    loadedPromise.current.then(() => {
+      setNotifications(prev => [entry, ...prev]);
+    });
+  }, []);
+
+  // ── Public: in-app list + immediate OS push ────────────────────────────────
+  //
+  // For events triggered inside the app (completion, streak, etc.).
+  // Marks the OS push with data.inApp = true so the listener skips it
+  // and does NOT call _syncToList again (avoiding a second OS push).
+  //
   const addNotification = useCallback((
     notification: Omit<NotificationData, 'id' | 'timestamp' | 'read'>
   ) => {
-    const newNotification: NotificationData = {
-      ...notification,
-      id: `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      timestamp: Date.now(),
-      read: false,
-    };
+    _syncToList(notification);
 
-    // ✅ Wait for persisted data to be loaded before prepending.
-    // If load is already done (promise resolved), this executes synchronously
-    // on the next microtask — no visible delay.
-    loadedPromise.current.then(() => {
-      setNotifications(prev => [newNotification, ...prev]);
-    });
-
-    // Fire a local push notification if permissions are granted
     if (permissionsRef.current) {
       Notifications.scheduleNotificationAsync({
         content: {
-          title: notification.title,
-          body: notification.message,
-          sound: true,
+          title:    notification.title,
+          body:     notification.message,
+          sound:    true,
           priority: Notifications.AndroidNotificationPriority.HIGH,
+          data:     { type: notification.type, inApp: true },
         },
-        trigger: null, // immediate
+        trigger: null,
       }).catch(err =>
         console.error('[NotificationContext] scheduleNotificationAsync error:', err)
       );
     }
-  }, []); // stable — reads permissions via ref, awaits load via promise ref
+  }, [_syncToList]);
 
   const markAsRead = useCallback((id: string) => {
     setNotifications(prev =>
@@ -241,10 +303,10 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   // ============================================================================
 
   const scheduleReminder = async (
-    type: NotificationType,
+    type:  NotificationType,
     title: string,
-    body: string,
-    time: Date
+    body:  string,
+    time:  Date,
   ) => {
     if (!permissionsRef.current) return;
     try {
@@ -252,13 +314,16 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
         content: {
           title,
           body,
-          sound: true,
+          sound:    true,
           priority: Notifications.AndroidNotificationPriority.HIGH,
-          data: { type },
+          data:     { type },
+          // Note: expo-notifications fires DAILY/WEEKLY triggers in device-local
+          // time automatically. For DATE triggers the JS Date is UTC-based so
+          // no extra conversion is needed.
         },
         trigger: {
-          type: Notifications.SchedulableTriggerInputTypes.DATE,
-          date: time,
+          type:    Notifications.SchedulableTriggerInputTypes.DATE,
+          date:    time,
           repeats: false,
         } as Notifications.DateTriggerInput,
       });
@@ -282,30 +347,34 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   const unreadCount = notifications.filter(n => !n.read).length;
 
   // ============================================================================
-  // INCOMING PUSH — sync device notifications into the in-app list
+  // INCOMING PUSH — sync OS-originated notifications into the in-app list
   // ============================================================================
 
   useEffect(() => {
-    // When the app receives a push while foregrounded, add it to the list
     const subscription = Notifications.addNotificationReceivedListener(notification => {
       const { title, body, data } = notification.request.content;
 
-      // Avoid duplicates: addNotification already fires scheduleNotificationAsync
-      // for in-app actions, so only add items that come from the OS directly
-      // (i.e. scheduled reminders from ReminderService).
-      // We detect those by checking if `data.type` is set without a custom id.
-      if (data?.type && !data?.inApp) {
-        addNotification({
-          type: (data.type as NotificationType) ?? 'info',
-          title: title ?? 'Notification',
-          message: body ?? '',
+      // Notifications fired by addNotification() itself carry inApp: true.
+      // The OS echo must be ignored entirely — the list was already updated
+      // synchronously and firing addNotification() again would produce a
+      // second OS push (= duplicate in the device tray).
+      if (data?.inApp) return;
+
+      // Scheduled reminders from ReminderService arrive here.
+      // Use _syncToList — NOT addNotification — so we only mirror the item
+      // into the in-app list without triggering any new OS notification.
+      if (data?.type) {
+        _syncToList({
+          type:     (data.type as NotificationType) ?? 'info',
+          title:    title ?? 'Notification',
+          message:  body ?? '',
           metadata: data?.metadata as NotificationData['metadata'],
         });
       }
     });
 
     return () => subscription.remove();
-  }, [addNotification]);
+  }, [_syncToList]);
 
   // ============================================================================
   // RENDER
@@ -316,6 +385,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
       value={{
         notifications,
         unreadCount,
+        timezone,
         addNotification,
         markAsRead,
         markAllAsRead,
@@ -359,7 +429,7 @@ export const getNotificationIcon = (type: NotificationType) => {
   }
 };
 
-export const getNotificationColor = (type: NotificationType) => {
+export const getNotificationColor = (type: NotificationType): string => {
   switch (type) {
     case 'completion':      return '#10B981';
     case 'streak':          return '#F59E0B';
@@ -372,14 +442,14 @@ export const getNotificationColor = (type: NotificationType) => {
 };
 
 export const formatTimestamp = (timestamp: number): string => {
-  const diff = Date.now() - timestamp;
+  const diff    = Date.now() - timestamp;
   const seconds = Math.floor(diff / 1000);
   const minutes = Math.floor(seconds / 60);
   const hours   = Math.floor(minutes / 60);
   const days    = Math.floor(hours / 24);
 
-  if (days > 0)    return days    === 1 ? '1 day ago'    : `${days} days ago`;
-  if (hours > 0)   return hours   === 1 ? '1 hour ago'   : `${hours} hours ago`;
-  if (minutes > 0) return minutes === 1 ? '1 min ago'    : `${minutes} mins ago`;
+  if (days > 0)    return days    === 1 ? '1 day ago'  : `${days} days ago`;
+  if (hours > 0)   return hours   === 1 ? '1 hr ago'   : `${hours} hrs ago`;
+  if (minutes > 0) return minutes === 1 ? '1 min ago'  : `${minutes} min ago`;
   return 'Just now';
 };

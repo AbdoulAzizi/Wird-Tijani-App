@@ -1,7 +1,7 @@
 import * as Notifications from 'expo-notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
-import { NotificationType } from './NotificationContext';
+import { NotificationType, getDeviceTimezone } from './NotificationContext';
 
 // ============================================================================
 // TYPES
@@ -114,6 +114,20 @@ export class ReminderService {
   }
 
   // ============================================================================
+  // TIMEZONE
+  // ============================================================================
+
+  /**
+   * Returns the device timezone string used when scheduling notifications.
+   * expo-notifications' DAILY and WEEKLY triggers already fire in device-local
+   * time automatically, so no manual offset calculation is needed.
+   * This helper is exposed for display purposes (settings screen, etc.).
+   */
+  getTimezone(): string {
+    return getDeviceTimezone();
+  }
+
+  // ============================================================================
   // PERMISSIONS
   // ============================================================================
 
@@ -174,6 +188,8 @@ export class ReminderService {
       console.warn('[ReminderService] Permissions not granted — skipping schedule.');
       return;
     }
+
+    console.log(`[ReminderService] Scheduling in timezone: ${this.getTimezone()}`);
 
     await this.loadIds();
     await this.cancelAllReminders();
@@ -290,11 +306,10 @@ export class ReminderService {
       console.warn('[ReminderService] Cannot send test — permissions not granted.');
       return;
     }
-    // ✅ data.type est défini, data.inApp est absent → sera capté par le listener
     await Notifications.scheduleNotificationAsync({
       content: {
         title: '✅ Reminders working!',
-        body:  'Your notification system is set up correctly.',
+        body:  `Notifications set up correctly (${this.getTimezone()}).`,
         sound: true,
         data:  { type: 'info' satisfies NotificationType },
       },
@@ -307,6 +322,7 @@ export class ReminderService {
     scheduledCount:     number;
     trackedKeys:        string[];
     activeIds:          ScheduledIdMap;
+    timezone:           string;
   }> {
     const [permissionsGranted, all] = await Promise.all([
       this.isPermissionGranted(),
@@ -319,6 +335,7 @@ export class ReminderService {
       scheduledCount: all.length,
       trackedKeys:    Object.keys(this.scheduledIds),
       activeIds:      { ...this.scheduledIds },
+      timezone:       this.getTimezone(),
     };
   }
 
@@ -338,6 +355,15 @@ export class ReminderService {
   // ============================================================================
   // PRIVATE — individual schedulers
   // ============================================================================
+  //
+  // NOTE ON TIMEZONES
+  // expo-notifications interprets `hour` and `minute` in the device's local
+  // timezone for both DAILY and WEEKLY triggers.  No UTC offset maths needed.
+  // Source: https://docs.expo.dev/versions/latest/sdk/notifications/#schedulablenotificationtrigger
+  //
+  // If you ever need cross-timezone scheduling (e.g. "always at 14:00 Paris
+  // time regardless of where the user is"), you would need to compute the UTC
+  // offset yourself and adjust hour/minute accordingly.
 
   private async _scheduleWirdMorning(time: string): Promise<void> {
     const [hour, minute] = parseTime(time);
@@ -433,8 +459,8 @@ export class ReminderService {
           body:     params.body,
           sound:    true,
           priority: Notifications.AndroidNotificationPriority.HIGH,
-          // ✅ data.type défini, data.inApp absent
-          // → le listener de NotificationContext l'ajoutera à la liste
+          // No data.inApp here — these come from the OS, not from addNotification,
+          // so the NotificationContext listener should pick them up.
           data: { type: params.type },
         },
         trigger: {
@@ -465,9 +491,7 @@ export class ReminderService {
           body:     params.body,
           sound:    true,
           priority: Notifications.AndroidNotificationPriority.HIGH,
-          // ✅ data.type défini, data.inApp absent
-          // → le listener de NotificationContext l'ajoutera à la liste
-          data: { type: params.type },
+          data:     { type: params.type },
         },
         trigger: {
           type:    Notifications.SchedulableTriggerInputTypes.WEEKLY,
