@@ -476,7 +476,7 @@ export default function WazifaScreen() {
           completionsToday={wazifaCompletionsToday}
           targetPerDay={state.frequencySettings.wazifaPerDay}
           streak={state.streak ?? 0}
-          hadith="Whoever is faithful to the Wazifa, Allah sends upon him lights that illuminate his heart and his path."
+          // hadith="Whoever is faithful to the Wazifa, Allah sends upon him lights that illuminate his heart and his path."
           confirmLabel="Record Completion"
           onComplete={handleCompleteWazifa}
           onClose={() => setShowCompletionModal(false)}

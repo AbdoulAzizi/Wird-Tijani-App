@@ -306,7 +306,7 @@ export default function HadraScreen() {
           completionsToday={hadraCompletionsToday}
           targetPerDay={state.frequencySettings.hadraPerDay}
           streak={state.streak ?? 0}
-          hadith="The gathering of dhikr is a garden of Paradise. Whoever enters it is immersed in the mercy of Allah."
+          // hadith="The gathering of dhikr is a garden of Paradise. Whoever enters it is immersed in the mercy of Allah."
           confirmLabel="Record Completion"
           onComplete={handleCompleteHadra}
           onClose={() => setShowCompletionModal(false)}

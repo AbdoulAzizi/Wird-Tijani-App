@@ -312,7 +312,7 @@ export default function WirdScreen() {
           completionsToday={wirdCompletionsToday}
           targetPerDay={state.frequencySettings.wirdPerDay}
           streak={state.streak ?? 0}
-          hadith="Whoever perseveres in the Wird, Allah provides from where he does not expect, and opens the doors of nearness."
+          // hadith="Whoever perseveres in the Wird, Allah provides from where he does not expect, and opens the doors of nearness."
           confirmLabel="Record Completion"
           onComplete={handleCompleteWird}
           onClose={() => setShowCompletionModal(false)}
