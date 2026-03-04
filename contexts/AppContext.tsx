@@ -33,11 +33,10 @@ interface WirdSettings {
   salawatFormula: 'salatulFatih' | 'salatulIbrahimiyya' | 'salawatSimple' | 'salatulKamila';
 }
 
-// ── NEW: Frequency Settings ──────────────────────────────────────────────────
 export interface FrequencySettings {
-  wirdPerDay: 1 | 2;       // Wird: 1 or 2 times/day (default 2)
-  wazifaPerDay: 1 | 2;     // Wazifa: 1 or 2 times/day (default 1)
-  hadraPerDay: 1;           // Hadra: always 1 (Friday only) — kept for consistency
+  wirdPerDay: 1 | 2;
+  wazifaPerDay: 1 | 2;
+  hadraPerDay: 1;
 }
 
 interface AppSettings {
@@ -52,6 +51,8 @@ interface AppSettings {
     wazifa: string;
     friday: string;
   };
+  // ── Card theme ──────────────────────────────────────────────────────────────
+  dhikrCardTheme?: string;   // key from DHIKR_CARD_THEMES registry
 }
 
 interface AppState {
@@ -62,12 +63,9 @@ interface AppState {
   wazifaSettings: WazifaSettings;
   wirdSettings: WirdSettings;
   frequencySettings: FrequencySettings;
-  // completedWirds / completedWazifas / completedHadras now store entries like
-  // "2025-01-01" (once) or "2025-01-01", "2025-01-01" (twice = two entries with same date)
   completedWirds: string[];
   completedWazifas: string[];
   completedHadras: string[];
-  // Duration history in seconds — parallel arrays, index-aligned with completed* arrays
   wirdDurations: number[];
   wazifaDurations: number[];
   hadraDurations: number[];
@@ -100,6 +98,7 @@ type AppAction =
   | { type: 'COMPLETE_HADRA';  duration?: number }
   | { type: 'LOAD_STATE'; state: AppState }
   | { type: 'UPDATE_SETTINGS'; settings: Partial<AppSettings> }
+  | { type: 'SET_DHIKR_CARD_THEME'; themeKey: string }   // ← new
   | { type: 'SET_WIRD_STEP'; step: number }
   | { type: 'SET_WAZIFA_STEP'; step: number }
   | { type: 'SET_HADRA_STEP'; step: number }
@@ -131,6 +130,7 @@ const initialState: AppState = {
     language: 'en',
     fontSize: 'medium',
     reminderTimes: { morning: '05:30', evening: '18:45', wazifa: '15:30', friday: '15:30' },
+    dhikrCardTheme: 'white',   // ← default theme
   },
   currentWirdStep: 0,
   currentWazifaStep: 0,
@@ -173,7 +173,6 @@ export const SALAWAT_FORMULAS = {
   },
 };
 
-// ── Helper: count entries for a given date ───────────────────────────────────
 export function countForDate(entries: string[], date: string): number {
   return entries.filter(d => d === date).length;
 }
@@ -301,13 +300,14 @@ function appReducer(state: AppState, action: AppAction): AppState {
         wirdSettings: action.state.wirdSettings || initialState.wirdSettings,
         completedHadras: action.state.completedHadras || [],
         currentHadraStep: action.state.currentHadraStep || 0,
-        // Migrate: ensure duration arrays exist for users upgrading from older builds
         wirdDurations:  action.state.wirdDurations  ?? [],
         wazifaDurations: action.state.wazifaDurations ?? [],
         hadraDurations:  action.state.hadraDurations  ?? [],
         settings: {
           ...initialState.settings,
           ...action.state.settings,
+          // Preserve dhikrCardTheme if saved, else fall back to initial default
+          dhikrCardTheme: action.state.settings?.dhikrCardTheme ?? initialState.settings.dhikrCardTheme,
           reminderTimes: {
             ...initialState.settings.reminderTimes,
             ...(action.state.settings?.reminderTimes || {}),
@@ -322,6 +322,13 @@ function appReducer(state: AppState, action: AppAction): AppState {
 
     case 'UPDATE_SETTINGS':
       return { ...state, settings: { ...state.settings, ...action.settings } };
+
+    // ── Card theme ────────────────────────────────────────────────────────────
+    case 'SET_DHIKR_CARD_THEME':
+      return {
+        ...state,
+        settings: { ...state.settings, dhikrCardTheme: action.themeKey },
+      };
 
     case 'UPDATE_REMINDER_TIME':
       return {
@@ -367,12 +374,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const today = getTodayDate();
 
-  // How many completions today
   const wirdCompletionsToday  = countForDate(state.completedWirds,  today);
   const wazifaCompletionsToday = countForDate(state.completedWazifas, today);
   const hadraCompletionsToday  = countForDate(state.completedHadras,  today);
 
-  // Is the current session complete (dhikr counters all maxed)
   const getWazifaJawharaTarget = () =>
     state.wazifaSettings.useJawhara ? state.wazifaSettings.jawharaCount : WAZIFA_SALAT_FATIH_TARGET;
 
@@ -393,7 +398,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     state.hadra.tahlil >= state.hadraTargets.tahlil &&
     state.hadra.ismuLlah >= state.hadraTargets.ismuLlah;
 
-  // "Fully done today" = completed the required number of times
   const isWirdFullyDoneToday   = wirdCompletionsToday  >= state.frequencySettings.wirdPerDay;
   const isWazifaFullyDoneToday = wazifaCompletionsToday >= state.frequencySettings.wazifaPerDay;
   const isHadraFullyDoneToday  = hadraCompletionsToday  >= state.frequencySettings.hadraPerDay;
