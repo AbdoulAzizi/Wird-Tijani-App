@@ -57,26 +57,22 @@ const haptic = (type: 'light' | 'success' | 'warning') => {
 };
 
 // ─── DESIGN TOKENS ─────────────────────────────────────────────────────────────
-// Palette matin : ambre chaud, profond et lumineux
-const MORNING_ACCENT   = '#D4913A';   // ambre vif, lisible
-const MORNING_DEEP     = '#8B5A1C';   // ambre sombre pour gradients
-const MORNING_GLOW     = '#E8B96044'; // halo ambiant translucide
-const MORNING_BG1      = '#070401';   // fond très sombre teinté brun
-const MORNING_BG2      = '#0D0802';   // fond medium brun
+const MORNING_ACCENT   = '#D4913A';
+const MORNING_DEEP     = '#8B5A1C';
+const MORNING_GLOW     = '#E8B96044';
+const MORNING_BG1      = '#070401';
+const MORNING_BG2      = '#0D0802';
 
-// Palette soir : bleu nuit indigo, élégant
-const EVENING_ACCENT   = '#6B8FC4';   // bleu-ardoise lumineux
-const EVENING_DEEP     = '#2E4A78';   // bleu nuit profond
-const EVENING_GLOW     = '#4A6EA844'; // halo bleu translucide
-const EVENING_BG1      = '#010209';   // fond quasi-noir teinté bleu
-const EVENING_BG2      = '#02050F';   // fond medium bleu-nuit
+const EVENING_ACCENT   = '#6B8FC4';
+const EVENING_DEEP     = '#2E4A78';
+const EVENING_GLOW     = '#4A6EA844';
+const EVENING_BG1      = '#010209';
+const EVENING_BG2      = '#02050F';
 
-// Vert de complétion : sauge douce, non agressive
-const GREEN            = '#4CAF7A';   // vert menthe apaisé
-const GREEN_BG         = '#1A3D2A';   // fond vert très sombre
+const GREEN            = '#4CAF7A';
+const GREEN_BG         = '#1A3D2A';
 const GREEN_GLOW       = '#4CAF7A18';
 
-// Neutres raffinés
 const WHITE_90         = 'rgba(255,255,255,0.90)';
 const WHITE_65         = 'rgba(255,255,255,0.65)';
 const WHITE_40         = 'rgba(255,255,255,0.40)';
@@ -137,7 +133,6 @@ const SessionSelector = memo(({ onSelect, onBack }: {
       )}
 
       <Animated.View style={[ss.content, { opacity: fade }]}>
-        {/* Eyebrow */}
         <View style={ss.eyebrowRow}>
           <View style={ss.eyebrowLine} />
           <Text style={ss.eyebrow}>Daily Remembrance</Text>
@@ -277,10 +272,7 @@ const OpeningCeremony = memo(({ period, onEnter, onChangePeriod, onBack }: {
   }, [period]);
 
   return (
-    <LinearGradient
-      colors={[bg1, bg2, bg1]}
-      style={oc.root}
-    >
+    <LinearGradient colors={[bg1, bg2, bg1]} style={oc.root}>
       <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
 
       {[ring1, ring2, ring3].map((a, i) => (
@@ -290,13 +282,11 @@ const OpeningCeremony = memo(({ period, onEnter, onChangePeriod, onBack }: {
         }]} />
       ))}
 
-      {/* Back */}
       <TouchableOpacity onPress={() => { haptic('light'); onBack(); }} style={oc.backBtn}>
         <ChevronLeft size={20} color={WHITE_40} />
       </TouchableOpacity>
 
       <Animated.View style={[oc.content, { opacity: fade }]}>
-        {/* Period toggle */}
         <TouchableOpacity onPress={() => { haptic('light'); onChangePeriod(); }} style={[oc.toggle, { borderColor: `${accent}28`, backgroundColor: `${accent}0C` }]}>
           {isMorning
             ? <Sun  size={11} color={`${accent}99`} />
@@ -305,7 +295,6 @@ const OpeningCeremony = memo(({ period, onEnter, onChangePeriod, onBack }: {
           <Text style={oc.toggleChange}>change ›</Text>
         </TouchableOpacity>
 
-        {/* Icon */}
         <Animated.View style={[oc.iconWrap, { transform: [{ scale }], borderColor: accent, backgroundColor: `${accent}14` }]}>
           {isMorning
             ? <Sun  size={32} color={accent} strokeWidth={1.6} />
@@ -321,9 +310,7 @@ const OpeningCeremony = memo(({ period, onEnter, onChangePeriod, onBack }: {
           backgroundColor: accent,
         }]} />
 
-        {/* Opening dua */}
         <View style={[oc.duaCard, { borderColor: `${accent}20`, backgroundColor: `${accent}07` }]}>
-          {/* Inner top accent line */}
           <View style={[oc.duaCardAccent, { backgroundColor: accent }]} />
           <Text style={oc.duaArabic}>{data.arabic}</Text>
           <View style={[oc.duaDivider, { backgroundColor: `${accent}30` }]} />
@@ -331,7 +318,6 @@ const OpeningCeremony = memo(({ period, onEnter, onChangePeriod, onBack }: {
           <Text style={oc.duaTrans}>{data.translation}</Text>
         </View>
 
-        {/* CTA */}
         <Animated.View style={{ opacity: btnFade, width: '100%' }}>
           <TouchableOpacity onPress={() => { haptic('success'); onEnter(); }} activeOpacity={0.78} style={oc.cta}>
             <LinearGradient
@@ -486,16 +472,23 @@ const AzkarCard = memo(({
         style={[ac.root, { opacity: cardFade, transform: [{ translateY: cardSlide }] }]}
         {...pan.panHandlers}
       >
-        {/* ── Text Zone ── */}
+        {/* ════════════════════════════════════════════════════
+             ZONE TEXTE
+            ════════════════════════════════════════════════════ */}
         <ScrollView
           style={ac.textZone}
           contentContainerStyle={ac.textContent}
           showsVerticalScrollIndicator={false}
           bounces={false}
         >
+          {/* ── Meta row ── */}
           <View style={ac.metaRow}>
             {!isCustom && (
-              <View style={[ac.categoryPill, { backgroundColor: `${CATEGORY_COLORS[(azkar as Azkar).category]}18`, borderWidth: 1, borderColor: `${CATEGORY_COLORS[(azkar as Azkar).category]}28` }]}>
+              <View style={[ac.categoryPill, {
+                backgroundColor: `${CATEGORY_COLORS[(azkar as Azkar).category]}18`,
+                borderWidth: 1,
+                borderColor: `${CATEGORY_COLORS[(azkar as Azkar).category]}28`,
+              }]}>
                 <View style={[ac.categoryDot, { backgroundColor: CATEGORY_COLORS[(azkar as Azkar).category] }]} />
                 <Text style={[ac.categoryLabel, { color: CATEGORY_COLORS[(azkar as Azkar).category] }]}>
                   {getCategoryLabel((azkar as Azkar).category).toUpperCase()}
@@ -511,103 +504,105 @@ const AzkarCard = memo(({
             </TouchableOpacity>
           </View>
 
-          <Text style={[ac.arabic, { textShadowColor: glow }]}>{azkar.arabic}</Text>
+          {/* ── Texte arabe — centré, grand, lumineux ── */}
+          <Text style={[ac.arabic, { textShadowColor: glow }]}>
+            {azkar.arabic}
+          </Text>
 
-          <View style={ac.dividerRow}>
-            <View style={[ac.dividerLine, { backgroundColor: `${accent}28` }]} />
-            <Text style={[ac.dividerDot, { color: `${accent}80` }]}>✦</Text>
-            <View style={[ac.dividerLine, { backgroundColor: `${accent}28` }]} />
+          {/* ── Séparateur ornemental arabe → translittération ── */}
+          <View style={ac.ornamentRow}>
+            <View style={[ac.ornamentLine, { backgroundColor: `${accent}20` }]} />
+            <View style={[ac.ornamentDiamond, { borderColor: `${accent}55` }]} />
+            <View style={[ac.ornamentLine, { backgroundColor: `${accent}20` }]} />
           </View>
 
+          {/* ── Translittération — centré, italique ── */}
           {!!azkar.transliteration && (
-            <Text style={[ac.translit, { color: `${color}CC` }]}>{azkar.transliteration}</Text>
+            <Text style={[ac.translit, { color: `${accent}EE` }]}>
+              {azkar.transliteration}
+            </Text>
           )}
 
-          <Text style={ac.translation}>{azkar.translation}</Text>
+          {/* ── Traduction — justifiée ── */}
+          <Text style={ac.translation}>
+            {azkar.translation}
+          </Text>
 
+          {/* ── Source — encadrée par deux traits fins ── */}
           {!isCustom && (azkar as Azkar).source && (
-            <Text style={ac.source}>{(azkar as Azkar).source}</Text>
+            <View style={ac.sourceRow}>
+              <View style={[ac.sourceDash, { backgroundColor: `${accent}30` }]} />
+              <Text style={ac.source}>{(azkar as Azkar).source}</Text>
+              <View style={[ac.sourceDash, { backgroundColor: `${accent}30` }]} />
+            </View>
           )}
 
+          {/* ── Vertu ── */}
           {!isCustom && (azkar as Azkar).virtue && (
-            <View style={[ac.virtueCard, { borderColor: `${accent}18`, backgroundColor: `${accent}07` }]}>
-              {/* Accent line top */}
+            <View style={[ac.virtueCard, { borderColor: `${accent}1A`, backgroundColor: `${accent}07` }]}>
               <View style={[ac.virtueAccentLine, { backgroundColor: accent }]} />
-              <Text style={[ac.virtueLabel, { color: accent }]}>✧ VIRTUE</Text>
+              <Text style={[ac.virtueLabel, { color: `${accent}CC` }]}>✧  VIRTUE  ✧</Text>
               <Text style={ac.virtueText}>{(azkar as Azkar).virtue}</Text>
             </View>
           )}
         </ScrollView>
 
-        {/* ════════════════════════════════════════════════════════
-             COUNTER ZONE — design entièrement refait
-             • Pas d'overflow:hidden sur le parent (évite le clipping du texte)
-             • Fond solide opaque garanti (LinearGradient position absolute)
-             • isDone : panneau vert sombre + cercle blanc mat + check vert vif
-             • Comptage : fond teinté + cercle transparent + chiffres blancs
-             ════════════════════════════════════════════════════════ */}
+        {/* ════════════════════════════════════════════════════
+             SÉPARATEUR  texte → compteur
+             Ligne colorée + pillule centrale flottante
+            ════════════════════════════════════════════════════ */}
+        <View style={ac.zoneSeparator}>
+          <View style={[ac.separatorLine, { backgroundColor: `${accent}28` }]} />
+          <View style={[ac.separatorPill, { borderColor: `${accent}40`, backgroundColor: `${accent}12` }]}>
+            <Text style={[ac.separatorPillText, { color: `${accent}CC` }]}>
+              {isDone ? '✓' : `${remaining}×`}
+            </Text>
+          </View>
+        </View>
+
+        {/* ════════════════════════════════════════════════════
+             ZONE COMPTEUR
+            ════════════════════════════════════════════════════ */}
         <TouchableOpacity
           onPress={isDone ? onNext : handleCount}
           activeOpacity={0.88}
           style={ac.counterZone}
-          disabled={false}
         >
-          {/* Fond : couleur unie pleine opacité selon état */}
-          <View
-            pointerEvents="none"
-            style={[
-              ac.counterBg,
-              { backgroundColor: isDone ? '#07160F' : '#0A0A0A' },
-            ]}
-          />
-          {/* Surimpression teintée selon la couleur active */}
-          <View
-            pointerEvents="none"
-            style={[
-              ac.counterTint,
-              { backgroundColor: isDone ? GREEN : color },
-            ]}
-          />
-          {/* Border coloré */}
-          <View
-            pointerEvents="none"
-            style={[
-              ac.counterBorder,
-              { borderColor: isDone ? GREEN : color },
-            ]}
-          />
-
-          {/* Flash tap */}
-          <Animated.View
-            pointerEvents="none"
-            style={[ac.tapGlow, { backgroundColor: isDone ? GREEN : color, opacity: tapGlow }]}
-          />
+          {/* Couches de fond */}
+          <View style={[ac.counterBg, { backgroundColor: isDone ? '#07160F' : '#0A0A0A' }]} />
+          <View style={[ac.counterTint, { backgroundColor: isDone ? GREEN : color }]} />
+          <View style={[ac.counterBorder, { borderColor: isDone ? `${GREEN}60` : `${color}60` }]} />
+          <Animated.View style={[ac.tapGlow, { backgroundColor: isDone ? GREEN : color, opacity: tapGlow }]} />
 
           {/* ── État TERMINÉ ── */}
           {isDone && (
             <Animated.View style={[ac.doneState, { transform: [{ scale: doneScale }] }]}>
-              {/* Cercle check : fond blanc mat pour que le check vert ressorte */}
               <View style={ac.doneCircle}>
-                <Check size={36} color={GREEN} strokeWidth={2.5} />
+                <Check size={32} color={GREEN} strokeWidth={2.5} />
               </View>
-              <Text style={ac.doneLabel}>Completed</Text>
-              <Text style={ac.doneNext}>Tap for next →</Text>
+              <View style={ac.doneTextGroup}>
+                <Text style={ac.doneLabel}>Completed</Text>
+                <Text style={ac.doneNext}>tap to continue  →</Text>
+              </View>
             </Animated.View>
           )}
 
           {/* ── État COMPTAGE ── */}
           {!isDone && (
             <Animated.View style={[ac.countState, { transform: [{ scale: tapScale }] }]}>
-              <View style={[ac.countCircle, { borderColor: color }]}>
+              <View style={[ac.countCircle, { borderColor: `${color}80` }]}>
                 <Text style={ac.countNum}>{completedCount}</Text>
-                <View style={[ac.countSep, { backgroundColor: `${color}CC` }]} />
+                <View style={[ac.countSep, { backgroundColor: `${color}BB` }]} />
                 <Text style={[ac.countTarget, { color }]}>{userCount}</Text>
               </View>
-              <Text style={[ac.remainingText, {
-                color: remaining === userCount ? WHITE_65 : WHITE_90,
-              }]}>
-                {remaining === userCount ? 'Tap to begin' : `${remaining} left`}
-              </Text>
+              <View style={ac.countInfo}>
+                <Text style={[ac.remainingBig, { color: isDone ? GREEN : WHITE_90 }]}>
+                  {remaining}
+                </Text>
+                <Text style={[ac.remainingLabel, { color: WHITE_40 }]}>
+                  {remaining === userCount ? 'tap to begin' : 'remaining'}
+                </Text>
+              </View>
             </Animated.View>
           )}
         </TouchableOpacity>
@@ -654,83 +649,229 @@ const AzkarCard = memo(({
 });
 
 const ac = StyleSheet.create({
-  root:            { flex: 1 },
-  textZone:        { flex: 1 },
-  textContent:     { paddingHorizontal: 24, paddingTop: 10, paddingBottom: 16 },
-  metaRow:         { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 22 },
-  categoryPill:    { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 12, gap: 6 },
-  categoryDot:     { width: 5, height: 5, borderRadius: 2.5 },
-  categoryLabel:   { fontSize: 9, fontWeight: '800', letterSpacing: 1 },
-  presenceBtn:     { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 14, borderWidth: 1.5 },
-  presenceBtnText: { fontSize: 9, fontWeight: '900', letterSpacing: 1.5 },
-  arabic:          { color: WHITE_90, fontSize: 26, fontWeight: '300', lineHeight: 50, textAlign: 'center', textShadowRadius: 22, textShadowOffset: { width: 0, height: 0 }, marginBottom: 18 },
-  dividerRow:      { flexDirection: 'row', alignItems: 'center', marginBottom: 16, gap: 10 },
-  dividerLine:     { flex: 1, height: 1 },
-  dividerDot:      { fontSize: 10 },
-  translit:        { fontSize: 13, lineHeight: 22, textAlign: 'center', fontStyle: 'italic', marginBottom: 10 },
-  translation:     { color: WHITE_65, fontSize: 14, lineHeight: 24, textAlign: 'center', marginBottom: 10 },
-  source:          { color: WHITE_22, fontSize: 11, textAlign: 'center', marginBottom: 12 },
-  virtueCard:      { borderWidth: 1, borderRadius: 14, padding: 14, marginTop: 6, overflow: 'hidden' },
-  virtueAccentLine:{ position: 'absolute', top: 0, left: 20, right: 20, height: 1 },
-  virtueLabel:     { fontSize: 9, fontWeight: '800', letterSpacing: 2, marginBottom: 7, marginTop: 4 },
-  virtueText:      { color: WHITE_40, fontSize: 12, lineHeight: 20 },
-  // ═══════════════════════════════════════════════════════════════════════════
-  // COUNTER ZONE — système de couches explicites, 0 ambiguïté
-  // counterZone   : le conteneur cliquable (pas d'overflow hidden ici)
-  // counterBg     : fond opaque de base (noir teinté)
-  // counterTint   : surimpression colorée opacity fixe
-  // counterBorder : border coloré en position absolute (évite overflow:hidden sur parent)
-  // tapGlow       : flash au tap
-  // ═══════════════════════════════════════════════════════════════════════════
-  counterZone:     {
-    marginHorizontal: 20,
+  root:             { flex: 1 },
+
+  // ── Zone texte ────────────────────────────────────────────────────────────
+  textZone:         { flex: 1 },
+  textContent:      {
+    paddingHorizontal: 22,
+    paddingTop: 12,
+    paddingBottom: 8,
+  },
+
+  metaRow:          {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+  },
+  categoryPill:     {
+    flexDirection: 'row', alignItems: 'center',
+    paddingHorizontal: 10, paddingVertical: 5,
+    borderRadius: 12, gap: 6,
+  },
+  categoryDot:      { width: 5, height: 5, borderRadius: 2.5 },
+  categoryLabel:    { fontSize: 9, fontWeight: '800', letterSpacing: 1 },
+  presenceBtn:      {
+    flexDirection: 'row', alignItems: 'center', gap: 5,
+    paddingHorizontal: 12, paddingVertical: 7,
+    borderRadius: 14, borderWidth: 1.5,
+  },
+  presenceBtnText:  { fontSize: 9, fontWeight: '900', letterSpacing: 1.5 },
+
+  // Arabe : centré, grand, lumineux
+  arabic:           {
+    color: WHITE_90,
+    fontSize: 26,
+    fontWeight: '300',
+    lineHeight: 52,
+    textAlign: 'center',
+    textShadowRadius: 22,
+    textShadowOffset: { width: 0, height: 0 },
+    marginBottom: 20,
+    letterSpacing: 0.5,
+  },
+
+  // Séparateur ornemental arabe → translittération
+  ornamentRow:      {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+    paddingHorizontal: 8,
+    gap: 10,
+  },
+  ornamentLine:     { flex: 1, height: 1 },
+  ornamentDiamond:  {
+    width: 7, height: 7,
+    borderWidth: 1,
+    transform: [{ rotate: '45deg' }],
+  },
+
+  // Translittération : centré, italique
+ translit: {
+  fontSize: 13,
+  lineHeight: 22,
+  textAlign: 'center',
+  fontStyle: 'italic',
+  marginBottom: 12,
+  paddingHorizontal: 8,
+  letterSpacing: 0.3,
+  color: 'rgba(255,255,255,0.72)',   // ← valeur par défaut fallback
+},
+
+  // Traduction : JUSTIFIÉE
+  translation:      {
+    color: WHITE_65,
+    fontSize: 14,
+    lineHeight: 25,
+    textAlign: 'justify',
     marginBottom: 12,
+    paddingHorizontal: 2,
+  },
+
+  // Source encadrée
+  sourceRow:        {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 14,
+  },
+  sourceDash:       { flex: 1, height: 1 },
+  source:           {
+    color: WHITE_22,
+    fontSize: 10,
+    textAlign: 'center',
+    letterSpacing: 0.5,
+  },
+
+  // Vertu
+  virtueCard:       {
+    borderWidth: 1,
+    borderRadius: 14,
+    padding: 14,
+    paddingTop: 18,
+    marginTop: 4,
+    overflow: 'hidden',
+  },
+  virtueAccentLine: { position: 'absolute', top: 0, left: 20, right: 20, height: 1 },
+  virtueLabel:      {
+    fontSize: 9, fontWeight: '800', letterSpacing: 3,
+    marginBottom: 8, textAlign: 'center',
+  },
+  virtueText:       {
+    color: WHITE_40,
+    fontSize: 12.5,
+    lineHeight: 21,
+    textAlign: 'justify',
+  },
+
+  // ── Séparateur zone texte / compteur ──────────────────────────────────────
+  zoneSeparator:    {
+    marginHorizontal: 20,
+    marginBottom: 10,
+    alignItems: 'center',
+    position: 'relative',
+  },
+  separatorLine:    {
+    width: '100%',
+    height: 1,
+  },
+  separatorPill:    {
+    position: 'absolute',
+    top: -13,
+    paddingHorizontal: 14,
+    paddingVertical: 4,
+    borderRadius: 20,
+    borderWidth: 1,
+    minWidth: 52,
+    alignItems: 'center',
+  },
+  separatorPillText: {
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+
+  // ── Zone compteur ──────────────────────────────────────────────────────────
+  counterZone:      {
+    marginHorizontal: 20,
+    marginTop: 14,
+    marginBottom: 10,
     borderRadius: 22,
-    minHeight: 152,
-    paddingVertical: 28,
-    paddingHorizontal: 16,
+    minHeight: 130,
+    paddingVertical: 22,
+    paddingHorizontal: 20,
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
   },
-  counterBg:       { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, borderRadius: 22 },
-  counterTint:     { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, borderRadius: 22, opacity: 0.12 },
-  counterBorder:   { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, borderRadius: 22, borderWidth: 1.5 },
-  tapGlow:         { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, borderRadius: 22, opacity: 0 },
-  // ── État terminé ────────────────────────────────────────────────────────────
-  doneState:       { alignItems: 'center', gap: 10 },
-  doneCircle:      {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#FFFFFF',        // fond blanc opaque — le check vert ressort parfaitement
+  counterBg:        { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, borderRadius: 22 },
+  counterTint:      { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, borderRadius: 22, opacity: 0.10 },
+  counterBorder:    { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, borderRadius: 22, borderWidth: 1.5 },
+  tapGlow:          { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, borderRadius: 22, opacity: 0 },
+
+  // État terminé — layout horizontal
+  doneState:        {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 20,
+  },
+  doneCircle:       {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 2,
   },
-  doneLabel:       { fontSize: 15, fontWeight: '700', color: '#FFFFFF', letterSpacing: 0.5 },
-  doneNext:        { fontSize: 13, fontWeight: '400', color: 'rgba(255,255,255,0.55)', marginTop: 2 },
-  // ── État comptage ───────────────────────────────────────────────────────────
-  countState:      { alignItems: 'center', gap: 10 },
-  countCircle:     {
-    width: 110,
-    height: 110,
-    borderRadius: 55,
+  doneTextGroup:    { gap: 4 },
+  doneLabel:        { fontSize: 16, fontWeight: '700', color: '#FFFFFF', letterSpacing: 0.3 },
+  doneNext:         { fontSize: 12, fontWeight: '400', color: 'rgba(255,255,255,0.50)' },
+
+  // État comptage — layout horizontal : cercle à gauche, texte à droite
+  countState:       {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 24,
+  },
+  countCircle:      {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
     borderWidth: 1.5,
-    backgroundColor: 'rgba(0,0,0,0.35)',  // fond noir semi-transparent — chiffres blancs toujours visibles
+    backgroundColor: 'rgba(0,0,0,0.38)',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  countNum:        { fontSize: 44, fontWeight: '200', lineHeight: 48, color: '#FFFFFF' },
-  countSep:        { width: 36, height: 1, marginVertical: 3 },
-  countTarget:     { fontSize: 16, fontWeight: '700' },
-  remainingText:   { fontSize: 13, fontWeight: '500', letterSpacing: 0.3 },
-  navBar:          { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingBottom: Platform.OS === 'ios' ? 28 : 16, paddingTop: 8, gap: 12 },
-  navBtn:          { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: WHITE_10, backgroundColor: WHITE_06 },
-  navBtnAccent:    {},
-  dots:            { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, flexWrap: 'wrap' },
-  dot:             { height: 6, width: 6, borderRadius: 3 },
-  dotsCount:       { fontSize: 16, fontWeight: '700' },
+  countNum:         { fontSize: 38, fontWeight: '200', lineHeight: 42, color: '#FFFFFF' },
+  countSep:         { width: 30, height: 1, marginVertical: 3 },
+  countTarget:      { fontSize: 14, fontWeight: '700' },
+
+  // Partie droite du comptage
+  countInfo:        { alignItems: 'flex-start', gap: 2 },
+  remainingBig:     { fontSize: 42, fontWeight: '200', lineHeight: 46 },
+  remainingLabel:   { fontSize: 11, fontWeight: '500', letterSpacing: 0.5 },
+
+  // Nav
+  navBar:           {
+    flexDirection: 'row', alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingBottom: Platform.OS === 'ios' ? 28 : 16,
+    paddingTop: 6,
+    gap: 12,
+  },
+  navBtn:           {
+    width: 44, height: 44, borderRadius: 22,
+    alignItems: 'center', justifyContent: 'center',
+    borderWidth: 1, borderColor: WHITE_10, backgroundColor: WHITE_06,
+  },
+  navBtnAccent:     {},
+  dots:             {
+    flex: 1, flexDirection: 'row', alignItems: 'center',
+    justifyContent: 'center', gap: 5, flexWrap: 'wrap',
+  },
+  dot:              { height: 6, width: 6, borderRadius: 3 },
+  dotsCount:        { fontSize: 16, fontWeight: '700' },
 });
 
 // ─── PRESENCE CONTENT ──────────────────────────────────────────────────────────
@@ -770,7 +911,7 @@ const PresenceContent = memo(({ azkar, period, lineWidth }: {
       }]} />
 
       {!!azkar.transliteration && (
-        <Text style={[pc.translit, { color: `${color}EE` }]}>{azkar.transliteration}</Text>
+        <Text style={[pc.translit, { color: `${accent}EE` }]}>{azkar.transliteration}</Text>
       )}
 
       <Text style={pc.translation}>{azkar.translation}</Text>
@@ -1123,7 +1264,6 @@ const CustomizationPage = memo(({ prefs, onUpdate, onClose, period }: {
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={cp.scroll} showsVerticalScrollIndicator={false}>
 
-          {/* Bulk buttons */}
           <View style={cp.bulkRow}>
             <TouchableOpacity
               onPress={() => setLocalPrefs(p => ({ ...p, enabledIds: new Set([...filtered.map(a => a.id), ...customsForPeriod.map(c => c.id)]) }))}
@@ -1225,7 +1365,6 @@ const CustomizationPage = memo(({ prefs, onUpdate, onClose, period }: {
             </>
           )}
 
-          {/* Add custom dhikr */}
           <View style={{ marginTop: 24 }}>
             {!showAdd ? (
               <TouchableOpacity onPress={() => setShowAdd(true)} style={[cp.addBtn, { borderColor: `${accent}30` }]}>
@@ -1394,7 +1533,6 @@ const CompletionScreen = memo(({ period, count, total, onRestart, onChangeSessio
             May Allah accept your dhikr.
           </Text>
 
-          {/* Stats row */}
           <View style={{ flexDirection: 'row', gap: 0, marginBottom: 42, borderWidth: 1, borderColor: WHITE_06, borderRadius: 20, overflow: 'hidden' }}>
             {[
               { n: String(count),  l: 'completed' },

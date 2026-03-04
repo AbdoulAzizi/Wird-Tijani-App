@@ -32,6 +32,36 @@ export const EVENING_OPENING = {
 };
 
 export const AZKARS: Azkar[] = [
+
+  // ─── ASBAHNA WAL MULKU LILLAH (MORNING - VERSION COMPLÈTE) ───
+  {
+    id: 'asbahna_mulk_lillah',
+    period: ['morning'],
+    category: 'dua',
+    arabic: 'أَصْبَحْنَا وَأَصْبَحَ الْمُلْكُ لِلَّهِ وَالْحَمْدُ لِلَّهِ، لاَ إِلَهَ إِلاَّ اللَّهُ وَحْدَهُ لاَ شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ، وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ، رَبِّ أَسْأَلُكَ خَيْرَ مَا فِي هَذَا الْيَوْمِ وَخَيْرَ مَا بَعْدَهُ، وَأَعُوذُ بِكَ مِنْ شَرِّ مَا فِي هَذَا الْيَوْمِ وَشَرِّ مَا بَعْدَهُ، رَبِّ أَعُوذُ بِكَ مِنَ الْكَسَلِ وَسُوءِ الْكِبَرِ، رَبِّ أَعُوذُ بِكَ مِنْ عَذَابٍ فِي النَّارِ وَعَذَابٍ فِي الْقَبْرِ',
+    transliteration: "Asbahna wa asbahal mulku lillahi wal hamdu lillah, la ilaha illallahu wahdahu la sharika lah, lahul mulku wa lahul hamd, wa huwa 'ala kulli shay'in qadir. Rabbi as'aluka khayra ma fi hazal yawmi wa khayra ma ba'dah, wa a'udhu bika min sharri ma fi hazal yawmi wa sharri ma ba'dah. Rabbi a'udhu bika minal kasali wa su'il kibar. Rabbi a'udhu bika min 'azabin fin nari wa 'azabin fil qabr.",
+    translation: "We have reached the morning and at this very time all sovereignty belongs to Allah, and all praise is for Allah. None has the right to be worshipped except Allah, alone, without partner. To Him belongs all sovereignty and praise, and He is over all things omnipotent. My Lord, I ask You for the good of this day and the good of what follows it, and I seek refuge in You from the evil of this day and the evil of what follows it. My Lord, I seek refuge in You from laziness and the misery of old age. My Lord, I seek refuge in You from torment in the Fire and torment in the grave.",
+    defaultCount: 1,
+    source: "Sahih Muslim 2723",
+    virtue: "A comprehensive morning opening supplication of the Prophet (SAW), combining praise, hope, and seeking refuge from the evils of the day.",
+    color: '#1a2a0a',
+    glow: '#6ab52a',
+  },
+
+  // ─── AMSAYNA WAL MULKU LILLAH (EVENING - VERSION COMPLÈTE) ───
+  {
+    id: 'amsayna_mulk_lillah',
+    period: ['evening'],
+    category: 'dua',
+    arabic: 'أَمْسَيْنَا وَأَمْسَى الْمُلْكُ لِلَّهِ وَالْحَمْدُ لِلَّهِ، لاَ إِلَهَ إِلاَّ اللَّهُ وَحْدَهُ لاَ شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ، وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ، رَبِّ أَسْأَلُكَ خَيْرَ مَا فِي هَذِهِ اللَّيْلَةِ وَخَيْرَ مَا بَعْدَهَا، وَأَعُوذُ بِكَ مِنْ شَرِّ مَا فِي هَذِهِ اللَّيْلَةِ وَشَرِّ مَا بَعْدَهَا، رَبِّ أَعُوذُ بِكَ مِنَ الْكَسَلِ وَسُوءِ الْكِبَرِ، رَبِّ أَعُوذُ بِكَ مِنْ عَذَابٍ فِي النَّارِ وَعَذَابٍ فِي الْقَبْرِ',
+    transliteration: "Amsayna wa amsal mulku lillahi wal hamdu lillah, la ilaha illallahu wahdahu la sharika lah, lahul mulku wa lahul hamd, wa huwa 'ala kulli shay'in qadir. Rabbi as'aluka khayra ma fi hazihil laylati wa khayra ma ba'daha, wa a'udhu bika min sharri ma fi hazihil laylati wa sharri ma ba'daha. Rabbi a'udhu bika minal kasali wa su'il kibari. Rabbi a'udhu bika min 'azabin fin nari wa 'azabin fil qabr.",
+    translation: "We have reached the evening and at this very time all sovereignty belongs to Allah, and all praise is for Allah. None has the right to be worshipped except Allah, alone, without partner. To Him belongs all sovereignty and praise, and He is over all things omnipotent. My Lord, I ask You for the good of this night and the good of what follows it, and I seek refuge in You from the evil of this night and the evil of what follows it. My Lord, I seek refuge in You from laziness and the misery of old age. My Lord, I seek refuge in You from torment in the Fire and torment in the grave.",
+    defaultCount: 1,
+    source: "Sahih Muslim 2723",
+    virtue: "A comprehensive evening opening supplication of the Prophet (SAW), combining praise, hope, and seeking refuge from the evils of the night.",
+    color: '#0a1a2a',
+    glow: '#3a5a9b',
+  },
   // ─── AYAT AL-KURSI ───────────────────────────────────────────
   {
     id: 'ayat_kursi',
@@ -348,20 +378,6 @@ export const AZKARS: Azkar[] = [
     glow: '#4a8ab5',
   },
 
-  // ─── SUBHAN ALLAH 33 / ALHAMDULILLAH 33 / ALLAHU AKBAR 34 ───
-  {
-    id: 'tasbih_tahmid_takbir',
-    period: ['morning', 'evening'],
-    category: 'praise',
-    arabic: 'سُبْحَانَ اللَّهِ',
-    transliteration: "Subhanallah / Alhamdulillah / Allahu Akbar",
-    translation: "Glory be to Allah (33x) / All praise is for Allah (33x) / Allah is the Greatest (34x)",
-    defaultCount: 33,
-    source: "Sahih Muslim 597",
-    virtue: "Reciting tasbeeh, tahmid and takbeer 33, 33 and 34 times respectively – sins will be forgiven even if they are like the foam of the sea.",
-    color: '#1a3a1a',
-    glow: '#3ab53a',
-  },
 
   // ─── A'UDHU BILLAHI MIN AL-SHAYTAN ───────────────────────────
   {
@@ -407,6 +423,126 @@ export const AZKARS: Azkar[] = [
     color: '#1a1a2a',
     glow: '#5a5ab5',
   },
+
+  // ─── SUBHAN ALLAH ADAD KHALQ ─────────────────────────────────
+{
+  id: 'subhanallah_adad_khalq',
+  period: ['morning', 'evening'],
+  category: 'praise',
+  arabic: 'سُبْحَانَ اللَّهِ وَبِحَمْدِهِ عَدَدَ خَلْقِهِ، وَرِضَا نَفْسِهِ، وَزِنَةَ عَرْشِهِ، وَمِدَادَ كَلِمَاتِهِ',
+  transliteration: "Subhanallahi wa bihamdihi 'adada khalqihi, wa rida nafsihi, wa zinata 'arshihi, wa midada kalimatihi.",
+  translation: "Glory be to Allah and praise be to Him, by the number of His creation, by His pleasure, by the weight of His Throne, and by the ink of His words.",
+  defaultCount: 3,
+  source: "Sahih Muslim 2726",
+  virtue: "These words are heavier on the scale than saying Subhanallah wa bihamdihi 100 times.",
+  color: '#1a3a2a',
+  glow: '#2aab6a',
+},
+
+// ─── ASBAHNA MULK RABBIL ALAMIN (MORNING) ────────────────────
+{
+  id: 'asbahna_mulk_rabbil_alamin',
+  period: ['morning'],
+  category: 'dua',
+  arabic: 'أَصْبَحْنَا وَأَصْبَحَ الْمُلْكُ لِلَّهِ رَبِّ الْعَالَمِينَ، اللَّهُمَّ إِنِّي أَسْأَلُكَ خَيْرَ هَذَا الْيَوْمِ، فَتْحَهُ وَنَصْرَهُ وَنُورَهُ وَبَرَكَتَهُ وَهُدَاهُ، وَأَعُوذُ بِكَ مِنْ شَرِّ مَا فِيهِ وَشَرِّ مَا بَعْدَهُ',
+  transliteration: "Asbahna wa asbahal mulku lillahi rabbil 'alamin. Allahumma inni as'aluka khayra hazal yawm, fathahu wa nasrahu wa nurahu wa barakatahu wa hudah, wa a'udhu bika min sharri ma fihi wa sharri ma ba'dah.",
+  translation: "We have reached the morning and sovereignty belongs to Allah, Lord of all worlds. O Allah, I ask You for the good of this day, its victory, its light, its blessing and its guidance. And I seek refuge in You from the evil of what it contains and the evil of what comes after it.",
+  defaultCount: 1,
+  source: "Sunan Abu Dawud 5084",
+  virtue: "A comprehensive morning supplication asking for all the good of the day ahead.",
+  color: '#3a2a0a',
+  glow: '#c8922a',
+},
+
+// ─── AMSAYNA MULK RABBIL ALAMIN (EVENING) ────────────────────
+{
+  id: 'amsayna_mulk_rabbil_alamin',
+  period: ['evening'],
+  category: 'dua',
+  arabic: 'أَمْسَيْنَا وَأَمْسَى الْمُلْكُ لِلَّهِ رَبِّ الْعَالَمِينَ، اللَّهُمَّ إِنِّي أَسْأَلُكَ خَيْرَ هَذِهِ اللَّيْلَةِ، فَتْحَهَا وَنَصْرَهَا وَنُورَهَا وَبَرَكَتَهَا وَهُدَاهَا، وَأَعُوذُ بِكَ مِنْ شَرِّ مَا فِيهَا وَشَرِّ مَا بَعْدَهَا',
+  transliteration: "Amsayna wa amsal mulku lillahi rabbil 'alamin. Allahumma inni as'aluka khayra hazihil laylah, fathaha wa nasraha wa nuraha wa barakataha wa hudaha, wa a'udhu bika min sharri ma fiha wa sharri ma ba'daha.",
+  translation: "We have reached the evening and sovereignty belongs to Allah, Lord of all worlds. O Allah, I ask You for the good of this night, its victory, its light, its blessing and its guidance. And I seek refuge in You from the evil of what it contains and the evil of what comes after it.",
+  defaultCount: 1,
+  source: "Sunan Abu Dawud 5084",
+  virtue: "A comprehensive evening supplication asking for all the good of the night ahead.",
+  color: '#0a1a3a',
+  glow: '#4a6ab5',
+},
+
+// ─── ALLAHUMMA 'ALIM AL-GHAYB ────────────────────────────────
+{
+  id: 'allahumma_alim_ghayb',
+  period: ['morning', 'evening'],
+  category: 'protection',
+  arabic: 'اللَّهُمَّ عَالِمَ الْغَيْبِ وَالشَّهَادَةِ فَاطِرَ السَّمَاوَاتِ وَالأَرْضِ، رَبَّ كُلِّ شَيْءٍ وَمَلِيكَهُ، أَشْهَدُ أَنْ لاَ إِلَهَ إِلاَّ أَنْتَ، أَعُوذُ بِكَ مِنْ شَرِّ نَفْسِي، وَمِنْ شَرِّ الشَّيْطَانِ وَشِرْكِهِ، وَأَنْ أَقْتَرِفَ عَلَى نَفْسِي سُوءًا أَوْ أَجُرَّهُ إِلَى مُسْلِمٍ',
+  transliteration: "Allahumma 'alimal ghaybi wash shahadah, fatiras samawati wal ard, rabba kulli shay'in wa malikah, ashhadu an la ilaha illa ant, a'udhu bika min sharri nafsi, wa min sharrish shaytani wa shirkihi, wa an aqtarifa 'ala nafsi su'an aw ajurrahu ila muslim.",
+  translation: "O Allah, Knower of the unseen and the witnessed, Creator of the heavens and earth, Lord and Sovereign of all things, I bear witness that there is none worthy of worship but You. I seek refuge in You from the evil of my soul, from the evil of Shaytan and his polytheism, and from committing evil against myself or bringing it upon a Muslim.",
+  defaultCount: 1,
+  source: "Sunan At-Tirmidhi 3392",
+  virtue: "To be said every morning and evening for protection from the self and from Shaytan.",
+  color: '#2a0a0a',
+  glow: '#b54a4a',
+},
+
+// ─── ALLAHUMMA INNA NA'UDHU BIK MIN AN NUSHRIK ───────────────
+{
+  id: 'allahumma_naoudhu_shirk',
+  period: ['morning', 'evening'],
+  category: 'forgiveness',
+  arabic: 'اللَّهُمَّ إِنَّا نَعُوذُ بِكَ مِنْ أَنْ نُشْرِكَ بِكَ شَيْئًا نَعْلَمُهُ، وَنَسْتَغْفِرُكَ لِمَا لاَ نَعْلَمُهُ',
+  transliteration: "Allahumma inna na'udhu bika min an nushrika bika shay'an na'lamuh, wa nastaghfiruka lima la na'lamuh.",
+  translation: "O Allah, we seek refuge in You from knowingly associating partners with You, and we seek Your forgiveness for what we do not know.",
+  defaultCount: 3,
+  source: "Musnad Ahmad 19606",
+  virtue: "Seeking refuge from all forms of shirk, both known and unknown.",
+  color: '#3d2a0a',
+  glow: '#c87a2a',
+},
+
+// ─── ALLAHUMMA INNI A'UDHU BIK MIN AL-HAMM ──────────────────
+{
+  id: 'allahumma_hamm_hazan',
+  period: ['morning', 'evening'],
+  category: 'dua',
+  arabic: 'اللَّهُمَّ إِنِّي أَعُوذُ بِكَ مِنَ الْهَمِّ وَالْحَزَنِ، وَأَعُوذُ بِكَ مِنَ الْعَجْزِ وَالْكَسَلِ، وَأَعُوذُ بِكَ مِنَ الْجُبْنِ وَالْبُخْلِ، وَأَعُوذُ بِكَ مِنْ غَلَبَةِ الدَّيْنِ وَقَهْرِ الرِّجَالِ',
+  transliteration: "Allahumma inni a'udhu bika minal hammi wal hazan, wa a'udhu bika minal 'ajzi wal kasal, wa a'udhu bika minal jubni wal bukhl, wa a'udhu bika min ghalabatid dayni wa qahrir rijal.",
+  translation: "O Allah, I seek refuge in You from anxiety and grief, and I seek refuge in You from incapacity and laziness, and I seek refuge in You from cowardice and miserliness, and I seek refuge in You from being overcome by debt and overpowered by men.",
+  defaultCount: 3,
+  source: "Sahih Al-Bukhari 6369",
+  virtue: "The Prophet (SAW) recited this supplication regularly to seek protection from eight harmful traits.",
+  color: '#1a2a3a',
+  glow: '#4a7ab5',
+},
+
+// ─── YA RABBI LAKA AL-HAMD ───────────────────────────────────
+{
+  id: 'ya_rabbi_laka_alhamd',
+  period: ['morning', 'evening'],
+  category: 'praise',
+  arabic: 'يَا رَبِّ، لَكَ الْحَمْدُ كَمَا يَنْبَغِي لِجَلاَلِ وَجْهِكَ، وَلِعَظِيمِ سُلْطَانِكَ',
+  transliteration: "Ya Rabbi, lakal hamdu kama yanbaghi li jalali wajhika, wa li 'azimi sultanik.",
+  translation: "O my Lord, all praise belongs to You as befits the majesty of Your face and the greatness of Your authority.",
+  defaultCount: 3,
+  source: "Sunan Ibn Majah 3801",
+  virtue: "A praise that befits the greatness and majesty of Allah.",
+  color: '#1a3a2a',
+  glow: '#4aab6d',
+},
+
+// ─── ASTAGHFIR ALLAH AL-AZIM (3x) ────────────────────────────
+{
+  id: 'astaghfir_allah_azim',
+  period: ['morning', 'evening'],
+  category: 'forgiveness',
+  arabic: 'أَسْتَغْفِرُ اللَّهَ الْعَظِيمَ الَّذِي لاَ إِلَهَ إِلاَّ هُوَ، الْحَيَّ الْقَيُّومَ، وَأَتُوبُ إِلَيْهِ',
+  transliteration: "Astaghfirullaahal 'azimal lazi la ilaha illa huwwal hayyul qayyumu wa atubu ilayh.",
+  translation: "I seek forgiveness from Allah the Magnificent, besides Whom none has the right to be worshipped, the Ever-Living, the Sustainer, and I turn to Him in repentance.",
+  defaultCount: 3,
+  source: "Sunan Abu Dawud 1517",
+  virtue: "Whoever says this, Allah will forgive him even if he fled from the battlefield.",
+  color: '#3a1a0a',
+  glow: '#b5602a',
+},
 
   // ─── PROTECTION OF FAMILY/WEALTH ─────────────────────────────
   {
