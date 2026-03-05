@@ -234,7 +234,7 @@ export default function HadraScreen() {
             </Text>
             <View style={styles.instructionsList}>
               <Text style={[styles.instruction, darkMode && styles.instructionDark]}>
-                • Typically performed on Fridays after Maghrib
+                • Typically performed on Fridays between Asr and Maghrib
               </Text>
               <Text style={[styles.instruction, darkMode && styles.instructionDark]}>
                 • Best practiced in congregation

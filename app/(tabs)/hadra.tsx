@@ -101,7 +101,7 @@ const csm = StyleSheet.create({
 
 function Instructions({ dark }: { dark: boolean }) {
   const items = [
-    { icon: '🌙', text: 'Typically performed on Fridays after Maghrib' },
+    { icon: '🌙', text: 'Typically performed on Fridays between Asr and Maghrib' },
     { icon: '👥', text: 'Best practiced in congregation' },
     { icon: '🔢', text: 'Complete each dhikr sequentially' },
     { icon: '⚙️', text: 'Customize target numbers in settings' },

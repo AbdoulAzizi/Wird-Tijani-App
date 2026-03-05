@@ -1,6 +1,6 @@
 // components/layout/AnimatedTabBar.tsx
 
-import { Heart, Star, Moon, Grid3X3, X } from 'lucide-react-native';
+import { Heart, Timer, BookOpen, Grid3X3, X, Sun } from 'lucide-react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import {
   View, Text, TouchableOpacity, Animated,
@@ -21,11 +21,11 @@ const ICON_SIZE     = 40;
 const TAB_PX = (i: number) => (i + 0.5) * (SW / TAB_COUNT);
 
 const TABS_DISPLAY = [
-  { routeName: 'index',  label: 'Home',   logIdx: 0, isBurger: false },
-  { routeName: 'wird',   label: 'Wird',   logIdx: 1, isBurger: false },
-  { routeName: '__menu', label: 'Menu',   logIdx: 2, isBurger: true  },
-  { routeName: 'wazifa', label: 'Wazifa', logIdx: 3, isBurger: false },
-  { routeName: 'hadra',  label: 'Haḍra',  logIdx: 4, isBurger: false },
+  { routeName: 'index',         label: 'Home',          logIdx: 0, isBurger: false, isWird: false },
+  { routeName: 'wird',          label: 'Wird & Wazifa', logIdx: 1, isBurger: false, isWird: true  },
+  { routeName: '__menu',        label: 'Menu',          logIdx: 2, isBurger: true,  isWird: false },
+  { routeName: 'dhikr-counter', label: 'Dhikr Counter', logIdx: 3, isBurger: false, isWird: false },
+  { routeName: 'azkars',        label: 'Azkaars',       logIdx: 4, isBurger: false, isWird: false },
 ];
 
 // ─── Notch SVG ────────────────────────────────────────────────────────────────
@@ -92,10 +92,10 @@ function TabIcon({ routeName, isActive }: { routeName: string; isActive: boolean
   const size  = 20;
   const sw    = isActive ? 2.2 : 1.8;
 
-  if (routeName === 'index')  return <Ionicons name="home" color={color} size={size} />;
-  if (routeName === 'wird')   return <Heart  color={color} size={size} strokeWidth={sw} />;
-  if (routeName === 'wazifa') return <Star   color={color} size={size} strokeWidth={sw} />;
-  if (routeName === 'hadra')  return <Moon   color={color} size={size} strokeWidth={sw} />;
+  if (routeName === 'index')         return <Ionicons name="home" color={color} size={size} />;
+  if (routeName === 'wird')          return <Heart  color={color} size={size} strokeWidth={sw} />;
+  if (routeName === 'dhikr-counter') return <Timer  color={color} size={size} strokeWidth={sw} />;
+  if (routeName === 'azkars')        return <Sun   color={color} size={size} strokeWidth={sw} />;
   return null;
 }
 
@@ -104,18 +104,19 @@ interface Props {
   state:         any;
   navigation:    any;
   onBurgerPress: () => void;
+  onWirdPress:   () => void;
   burgerActive:  boolean;
   unreadCount:   number;
 }
 
-export function AnimatedTabBar({ state, navigation, onBurgerPress, burgerActive, unreadCount }: Props) {
+export function AnimatedTabBar({ state, navigation, onBurgerPress, onWirdPress, burgerActive, unreadCount }: Props) {
   const focusedRoute = state.routes[state.index]?.name ?? 'index';
 
   const logicalIndex = (() => {
-    if (focusedRoute === 'index')  return 0;
-    if (focusedRoute === 'wird')   return 1;
-    if (focusedRoute === 'wazifa') return 3;
-    if (focusedRoute === 'hadra')  return 4;
+    if (focusedRoute === 'index')         return 0;
+    if (focusedRoute === 'wird')          return 1;
+    if (focusedRoute === 'dhikr-counter') return 3;
+    if (focusedRoute === 'azkars')        return 4;
     return 0;
   })();
 
@@ -190,7 +191,7 @@ export function AnimatedTabBar({ state, navigation, onBurgerPress, burgerActive,
             <TouchableOpacity
               key={tab.routeName}
               style={[s.tabBtn, isActive && s.tabBtnActive]}
-              onPress={() => navigateTo(tab.routeName)}
+              onPress={() => tab.isWird ? onWirdPress() : navigateTo(tab.routeName)}
               activeOpacity={0.8}
             >
               <View style={[s.iconCircle, isActive && s.iconCircleActive]}>

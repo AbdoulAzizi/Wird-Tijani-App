@@ -12,16 +12,18 @@ import { LayoutActionsContext }  from '@/contexts/LayoutActionsContext';
 import { AnimatedTabBar }        from '@/components/layout/AnimatedTabBar';
 import { BottomMenuSheet }       from '@/components/layout/BottomMenuSheet';
 import { SideDrawer }            from '@/components/layout/SideDrawer';
+import { WirdPickerSheet }       from '@/components/layout/WirdPickerSheet';
 import { MENU_ITEMS }            from '@/constants/menuItems';
 import { useSwipeDrawer }        from '@/hooks/useSwipeDrawer';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-const MAIN_PAGES = ['/', '/wird', '/wazifa', '/hadra'];
+const MAIN_PAGES = ['/', '/wird', '/dhikr-counter', '/azkars'];
 
 const HIDDEN_TABS = [
-  'suwar', 'hadra-station', 'asmaa-alhusna', 'dhikr-counter',
+  'suwar', 'hadra-station', 'asmaa-alhusna',
+  'wazifa', 'hadra',
   'stats', 'settings', 'about', 'library', 'notifications',
-  'notification-settings', 'azkars', 'notification-test',
+  'notification-settings', 'notification-test',
   'daily-achievements', 'asmaa-nabi', 'contact',
 ];
 
@@ -44,6 +46,7 @@ function useHaptic() {
 function InnerTabLayout() {
   const [drawerOpen,      setDrawerOpen]      = useState(false);
   const [bottomSheetOpen, setBottomSheetOpen] = useState(false);
+  const [wirdPickerOpen,  setWirdPickerOpen]  = useState(false);
 
   const router   = useRouter();
   const pathname = usePathname();
@@ -75,6 +78,11 @@ function InnerTabLayout() {
   const openSheet  = useCallback(() => { haptic('medium'); setBottomSheetOpen(true);  }, [haptic]);
   const closeSheet = useCallback(() => { haptic('light');  setBottomSheetOpen(false); }, [haptic]);
   const onSheetNav = useCallback((route: string) => { closeSheet(); navigate(route, 260); }, [closeSheet, navigate]);
+
+  // ── Wird picker ──
+  const openWirdPicker  = useCallback(() => { haptic('medium'); setWirdPickerOpen(true);  }, [haptic]);
+  const closeWirdPicker = useCallback(() => { haptic('light');  setWirdPickerOpen(false); }, [haptic]);
+  const onWirdPickerNav = useCallback((route: string) => { closeWirdPicker(); navigate(route, 240); }, [closeWirdPicker, navigate]);
 
   // ── Swipe to open drawer ──
   const swipeHandlers = useSwipeDrawer({ enabled: isMainPage && !drawerOpen, onOpen: openDrawer });
@@ -108,22 +116,30 @@ function InnerTabLayout() {
           pathname={pathname}
         />
 
+        <WirdPickerSheet
+          visible={wirdPickerOpen}
+          onClose={closeWirdPicker}
+          onNavigate={onWirdPickerNav}
+          pathname={pathname}
+        />
+
         <Tabs
           screenOptions={{ headerShown: false }}
           tabBar={(props) => (
             <AnimatedTabBar
               {...props}
               onBurgerPress={openSheet}
+              onWirdPress={openWirdPicker}
               burgerActive={bottomSheetOpen}
               unreadCount={unreadCount}
             />
           )}
           screenListeners={{ tabPress: () => haptic('light') }}
         >
-          <Tabs.Screen name="index"  options={{ title: 'Home'   }} />
-          <Tabs.Screen name="wird"   options={{ title: 'Wird'   }} />
-          <Tabs.Screen name="wazifa" options={{ title: 'Wazifa' }} />
-          <Tabs.Screen name="hadra"  options={{ title: 'Haḍra'  }} />
+          <Tabs.Screen name="index"         options={{ title: 'Home'   }} />
+          <Tabs.Screen name="wird"          options={{ title: 'Wird'   }} />
+          <Tabs.Screen name="dhikr-counter" options={{ title: 'Dhikr'  }} />
+          <Tabs.Screen name="azkars"        options={{ title: 'Azkars' }} />
 
           {HIDDEN_TABS.map(name => (
             <Tabs.Screen key={name} name={name} options={{ href: null }} />
