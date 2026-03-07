@@ -4,7 +4,10 @@ import {
   ScrollView, TextInput, Alert, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { X, Search, Plus, Trash2, ChevronRight, Check, BookOpen, Sparkles } from 'lucide-react-native';
+import {
+  X, Search, Plus, Trash2, ChevronRight, Check, BookOpen, Sparkles,
+  Heart, Edit2,
+} from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
   AzkarItem, AzkarCategory,
@@ -17,9 +20,12 @@ interface DhikrPickerModalProps {
   visible: boolean;
   dark: boolean;
   customAzkars: AzkarItem[];
+  favoriteIds: string[];
   onSelect: (azkar: AzkarItem, target: number) => void;
   onAddCustom: (item: Omit<AzkarItem, 'id' | 'category' | 'isCustom' | 'createdAt'>) => void;
+  onEditCustom: (id: string, updates: Partial<Omit<AzkarItem, 'id' | 'category' | 'isCustom' | 'createdAt'>>) => void;
   onDeleteCustom: (id: string) => void;
+  onToggleFavorite: (id: string) => void;
   onClose: () => void;
 }
 
@@ -36,19 +42,11 @@ const glassDark = {
 } as const;
 
 // ─── AzkarTextBlock ───────────────────────────────────────────────────────────
-// Affiche le texte arabe + translittération + traduction dans un cadre adaptatif.
-// Si le contenu dépasse MAX_HEIGHT, une hauteur fixe est appliquée et le scroll s'active.
-// Pour les textes courts, le composant s'adapte naturellement sans scroll.
 
 const MAX_TEXT_HEIGHT = 220;
 
 function AzkarTextBlock({
-  dark,
-  accentColor,
-  arabic,
-  transliteration,
-  translation,
-  fontSize = 28,
+  dark, accentColor, arabic, transliteration, translation, fontSize = 28,
 }: {
   dark: boolean;
   accentColor: string;
@@ -58,8 +56,8 @@ function AzkarTextBlock({
   fontSize?: number;
 }) {
   const [contentHeight, setContentHeight] = useState(0);
-  const [showTop, setShowTop]             = useState(false);
-  const [showBottom, setShowBottom]       = useState(false);
+  const [showTop,    setShowTop]           = useState(false);
+  const [showBottom, setShowBottom]        = useState(false);
 
   const needsScroll = contentHeight > MAX_TEXT_HEIGHT;
 
@@ -105,59 +103,32 @@ function AzkarTextBlock({
       </ScrollView>
 
       {showTop && (
-        <LinearGradient
-          colors={topColors}
-          start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }}
-          style={atb.gradTop}
-          pointerEvents="none"
-        />
+        <LinearGradient colors={topColors} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }}
+          style={atb.gradTop} pointerEvents="none" />
       )}
       {showBottom && needsScroll && (
-        <LinearGradient
-          colors={bottomColors}
-          start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }}
-          style={atb.gradBottom}
-          pointerEvents="none"
-        />
+        <LinearGradient colors={bottomColors} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }}
+          style={atb.gradBottom} pointerEvents="none" />
       )}
     </View>
   );
 }
 
 const atb = StyleSheet.create({
-  container: {
-    width: '100%',
-    overflow: 'hidden',
-    borderRadius: 10,
-  },
-  inner: {
-    paddingHorizontal: 8,
-    paddingVertical: 10,
-    alignItems: 'center',
-    gap: 8,
-  },
-  arabic: {
-    textAlign: 'center',
-    color: '#1E293B',
-    fontFamily: 'Amiri_400Regular',
-  },
+  container: { width: '100%', overflow: 'hidden', borderRadius: 10 },
+  inner: { paddingHorizontal: 8, paddingVertical: 10, alignItems: 'center', gap: 8 },
+  arabic: { textAlign: 'center', color: '#1E293B', fontFamily: 'Amiri_400Regular' },
   arabicDark: { color: '#F1F5F9' },
   translit: { fontSize: 13, fontStyle: 'italic', fontWeight: '600', textAlign: 'center' },
   translation: { fontSize: 13, color: '#64748B', textAlign: 'center', lineHeight: 19 },
   translationDark: { color: '#94A3B8' },
-  gradTop: {
-    position: 'absolute', top: 0, left: 0, right: 0, height: 32,
-    zIndex: 10,
-  },
-  gradBottom: {
-    position: 'absolute', bottom: 0, left: 0, right: 0, height: 36,
-    zIndex: 10,
-  },
+  gradTop: { position: 'absolute', top: 0, left: 0, right: 0, height: 32, zIndex: 10 },
+  gradBottom: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 36, zIndex: 10 },
 });
 
 // ─── Target Selector ──────────────────────────────────────────────────────────
 
-const QUICK_TARGETS = [3, 7, 10, 11, 12, 33, 34, 100, 300, 500, 1000];
+const QUICK_TARGETS = [3, 7, 10, 11, 12, 33, 34, 40, 100, 300, 500, 1000];
 
 function TargetSelector({
   value, onChange, dark,
@@ -173,31 +144,18 @@ function TargetSelector({
   return (
     <View style={tgt.wrap}>
       <Text style={[tgt.label, dark && tgt.labelDark]}>Number of recitations</Text>
-
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={tgt.row}
-        nestedScrollEnabled={true}
-      >
+      <ScrollView horizontal showsHorizontalScrollIndicator={false}
+        contentContainerStyle={tgt.row} nestedScrollEnabled={true}>
         {QUICK_TARGETS.map(n => (
-          <TouchableOpacity
-            key={n}
-            onPress={() => onChange(n)}
-            style={[
-              tgt.chip,
-              dark ? tgt.chipDark : tgt.chipLight,
-              value === n && tgt.chipActive,
-            ]}
-            activeOpacity={0.75}
-          >
+          <TouchableOpacity key={n} onPress={() => onChange(n)}
+            style={[tgt.chip, dark ? tgt.chipDark : tgt.chipLight, value === n && tgt.chipActive]}
+            activeOpacity={0.75}>
             <Text style={[tgt.chipText, dark && tgt.chipTextDark, value === n && tgt.chipTextActive]}>
               {n}×
             </Text>
           </TouchableOpacity>
         ))}
       </ScrollView>
-
       <View style={tgt.customRow}>
         <TextInput
           style={[tgt.input, dark ? tgt.inputDark : tgt.inputLight]}
@@ -219,30 +177,18 @@ function TargetSelector({
 
 const tgt = StyleSheet.create({
   wrap: { gap: 10, marginBottom: 24 },
-  label: {
-    fontSize: 12, fontWeight: '700', color: '#64748B',
-    textTransform: 'uppercase', letterSpacing: 1,
-  },
+  label: { fontSize: 12, fontWeight: '700', color: '#64748B', textTransform: 'uppercase', letterSpacing: 1 },
   labelDark: { color: '#475569' },
   row: { gap: 8, paddingBottom: 4 },
-
-  chip: {
-    paddingHorizontal: 14, paddingVertical: 9,
-    borderRadius: 22, borderWidth: 1.5,
-  },
+  chip: { paddingHorizontal: 14, paddingVertical: 9, borderRadius: 22, borderWidth: 1.5 },
   chipLight: { backgroundColor: 'rgba(255,255,255,0.75)', borderColor: 'rgba(255,255,255,0.9)' },
   chipDark:  { backgroundColor: 'rgba(30,41,59,0.70)',   borderColor: 'rgba(255,255,255,0.07)' },
   chipActive: { backgroundColor: '#059669', borderColor: '#059669' },
   chipText: { fontSize: 14, fontWeight: '700', color: '#64748B' },
   chipTextDark: { color: '#94A3B8' },
   chipTextActive: { color: '#FFFFFF' },
-
   customRow: { flexDirection: 'row', gap: 10 },
-  input: {
-    flex: 1, height: 46, borderRadius: 14,
-    borderWidth: 1.5, paddingHorizontal: 14,
-    fontSize: 15, color: '#1E293B',
-  },
+  input: { flex: 1, height: 46, borderRadius: 14, borderWidth: 1.5, paddingHorizontal: 14, fontSize: 15, color: '#1E293B' },
   inputLight: { backgroundColor: 'rgba(255,255,255,0.75)', borderColor: 'rgba(255,255,255,0.9)' },
   inputDark:  { backgroundColor: 'rgba(30,41,59,0.70)',   borderColor: 'rgba(255,255,255,0.07)', color: '#F8FAFC' },
   customBtn: {
@@ -252,34 +198,36 @@ const tgt = StyleSheet.create({
   },
 });
 
-// ─── Add Custom Form ──────────────────────────────────────────────────────────
+// ─── Custom Form (Add & Edit) ─────────────────────────────────────────────────
 
 const CUSTOM_COLORS = [
   '#059669', '#7C3AED', '#0891B2', '#DB2777', '#F59E0B',
   '#6366F1', '#16A34A', '#DC2626', '#0284C7', '#9333EA',
 ];
 
-function AddCustomForm({
-  dark, onAdd, onCancel,
+function CustomForm({
+  dark, onSave, onCancel, editItem,
 }: {
   dark: boolean;
-  onAdd: (item: Omit<AzkarItem, 'id' | 'category' | 'isCustom' | 'createdAt'>) => void;
+  onSave: (item: Omit<AzkarItem, 'id' | 'category' | 'isCustom' | 'createdAt'>) => void;
   onCancel: () => void;
+  editItem?: AzkarItem | null;
 }) {
-  const [title,           setTitle]       = useState('');
-  const [arabic,          setArabic]      = useState('');
-  const [transliteration, setTranslit]    = useState('');
-  const [translation,     setTranslation] = useState('');
-  const [target,          setTarget]      = useState(33);
-  const [color,           setColor]       = useState(CUSTOM_COLORS[0]);
+  const [title,           setTitle]       = useState(editItem?.title          ?? '');
+  const [arabic,          setArabic]      = useState(editItem?.arabic         ?? '');
+  const [transliteration, setTranslit]    = useState(editItem?.transliteration ?? '');
+  const [translation,     setTranslation] = useState(editItem?.translation    ?? '');
+  const [target,          setTarget]      = useState(editItem?.defaultTarget  ?? 33);
+  const [color,           setColor]       = useState(editItem?.color          ?? CUSTOM_COLORS[0]);
 
   const g = dark ? glassDark : glassLight;
+  const isEdit = !!editItem;
 
-  const handleAdd = () => {
+  const handleSave = () => {
     if (!title.trim()) {
       Alert.alert('Name required', 'Please give your dhikr a name.'); return;
     }
-    onAdd({
+    onSave({
       title: title.trim(),
       arabic: arabic.trim(),
       transliteration: transliteration.trim(),
@@ -291,73 +239,56 @@ function AddCustomForm({
 
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 40 }}
-        nestedScrollEnabled={true}
-      >
-        <Text style={[cf.heading, dark && cf.headingDark]}>New Custom Dhikr</Text>
+      <ScrollView showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 40 }} nestedScrollEnabled={true}>
+        <Text style={[cf.heading, dark && cf.headingDark]}>
+          {isEdit ? 'Edit Dhikr' : 'New Custom Dhikr'}
+        </Text>
 
         <Text style={[cf.lbl, dark && cf.lblDark]}>Name *</Text>
-        <TextInput
-          style={[cf.inp, { ...g }]}
-          placeholder="e.g. Morning tasbih"
+        <TextInput style={[cf.inp, { ...g }]} placeholder="e.g. Morning tasbih"
           placeholderTextColor={dark ? '#475569' : '#94A3B8'}
-          value={title} onChangeText={setTitle}
-        />
+          value={title} onChangeText={setTitle} />
 
         <Text style={[cf.lbl, dark && cf.lblDark]}>Arabic text</Text>
-        <TextInput
-          style={[cf.inp, cf.inpArabic, { ...g }]}
-          placeholder="اكتب هنا…"
+        <TextInput style={[cf.inp, cf.inpArabic, { ...g }]} placeholder="اكتب هنا…"
           placeholderTextColor={dark ? '#475569' : '#94A3B8'}
-          value={arabic} onChangeText={setArabic}
-          textAlign="right" multiline
-        />
+          value={arabic} onChangeText={setArabic} textAlign="right" multiline />
 
         <Text style={[cf.lbl, dark && cf.lblDark]}>Transliteration</Text>
-        <TextInput
-          style={[cf.inp, { ...g }]}
-          placeholder="e.g. Subḥāna Llāh"
+        <TextInput style={[cf.inp, { ...g }]} placeholder="e.g. Subḥāna Llāh"
           placeholderTextColor={dark ? '#475569' : '#94A3B8'}
-          value={transliteration} onChangeText={setTranslit}
-        />
+          value={transliteration} onChangeText={setTranslit} />
 
         <Text style={[cf.lbl, dark && cf.lblDark]}>Translation</Text>
-        <TextInput
-          style={[cf.inp, { ...g }]}
-          placeholder="e.g. Glory be to Allah"
+        <TextInput style={[cf.inp, { ...g }]} placeholder="e.g. Glory be to Allah"
           placeholderTextColor={dark ? '#475569' : '#94A3B8'}
-          value={translation} onChangeText={setTranslation}
-        />
+          value={translation} onChangeText={setTranslation} />
 
         <TargetSelector value={target} onChange={setTarget} dark={dark} />
 
         <Text style={[cf.lbl, dark && cf.lblDark]}>Accent colour</Text>
         <View style={cf.colorRow}>
           {CUSTOM_COLORS.map(c => (
-            <TouchableOpacity
-              key={c}
-              onPress={() => setColor(c)}
+            <TouchableOpacity key={c} onPress={() => setColor(c)}
               style={[cf.colorDot, { backgroundColor: c }, color === c && cf.colorDotActive]}
-              activeOpacity={0.8}
-            >
+              activeOpacity={0.8}>
               {color === c && <Check color="#fff" size={15} strokeWidth={3} />}
             </TouchableOpacity>
           ))}
         </View>
 
         <View style={cf.btnRow}>
-          <TouchableOpacity
-            onPress={onCancel}
+          <TouchableOpacity onPress={onCancel}
             style={[cf.btn, cf.btnCancel, dark ? cf.btnCancelDark : cf.btnCancelLight]}
-            activeOpacity={0.8}
-          >
+            activeOpacity={0.8}>
             <Text style={[cf.btnText, dark ? { color: '#94A3B8' } : { color: '#64748B' }]}>Cancel</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={handleAdd} style={[cf.btn, cf.btnAdd]} activeOpacity={0.8}>
-            <Plus color="#fff" size={16} strokeWidth={2.5} />
-            <Text style={[cf.btnText, { color: '#fff' }]}>Add Dhikr</Text>
+          <TouchableOpacity onPress={handleSave} style={[cf.btn, cf.btnAdd]} activeOpacity={0.8}>
+            {isEdit
+              ? <Edit2 color="#fff" size={16} strokeWidth={2.5} />
+              : <Plus  color="#fff" size={16} strokeWidth={2.5} />}
+            <Text style={[cf.btnText, { color: '#fff' }]}>{isEdit ? 'Save Changes' : 'Add Dhikr'}</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -368,35 +299,18 @@ function AddCustomForm({
 const cf = StyleSheet.create({
   heading: { fontSize: 20, fontWeight: '800', color: '#1E293B', marginBottom: 20, letterSpacing: -0.3 },
   headingDark: { color: '#F8FAFC' },
-  lbl: {
-    fontSize: 12, fontWeight: '700', color: '#64748B',
-    textTransform: 'uppercase', letterSpacing: 1,
-    marginBottom: 6, marginTop: 16,
-  },
+  lbl: { fontSize: 12, fontWeight: '700', color: '#64748B', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6, marginTop: 16 },
   lblDark: { color: '#475569' },
-  inp: {
-    height: 48, borderRadius: 14, borderWidth: 1.5,
-    paddingHorizontal: 14, fontSize: 15, color: '#1E293B',
-  },
-  inpArabic: {
-    height: 88, paddingTop: 14,
-    fontFamily: 'Amiri_400Regular', fontSize: 22, lineHeight: 34,
-    color: '#1E293B',
-  },
+  inp: { height: 48, borderRadius: 14, borderWidth: 1.5, paddingHorizontal: 14, fontSize: 15, color: '#1E293B' },
+  inpArabic: { height: 88, paddingTop: 14, fontFamily: 'Amiri_400Regular', fontSize: 22, lineHeight: 34, color: '#1E293B' },
   colorRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginTop: 6 },
-  colorDot: {
-    width: 38, height: 38, borderRadius: 19,
-    justifyContent: 'center', alignItems: 'center',
-  },
+  colorDot: { width: 38, height: 38, borderRadius: 19, justifyContent: 'center', alignItems: 'center' },
   colorDotActive: {
     borderWidth: 3, borderColor: '#fff',
     shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 5,
   },
   btnRow: { flexDirection: 'row', gap: 12, marginTop: 28 },
-  btn: {
-    flex: 1, height: 52, borderRadius: 16,
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-  },
+  btn: { flex: 1, height: 52, borderRadius: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
   btnCancel: { borderWidth: 1.5 },
   btnCancelLight: { backgroundColor: 'rgba(255,255,255,0.75)', borderColor: 'rgba(255,255,255,0.9)' },
   btnCancelDark:  { backgroundColor: 'rgba(30,41,59,0.70)',   borderColor: 'rgba(255,255,255,0.07)' },
@@ -410,8 +324,16 @@ const cf = StyleSheet.create({
 // ─── Azkar Row ────────────────────────────────────────────────────────────────
 
 function AzkarRow({
-  item, dark, onSelect, onDelete,
-}: { item: AzkarItem; dark: boolean; onSelect: () => void; onDelete?: () => void }) {
+  item, dark, isFavorite, onSelect, onDelete, onEdit, onToggleFavorite,
+}: {
+  item: AzkarItem;
+  dark: boolean;
+  isFavorite: boolean;
+  onSelect: () => void;
+  onDelete?: () => void;
+  onEdit?: () => void;
+  onToggleFavorite: () => void;
+}) {
   return (
     <TouchableOpacity
       style={[ar.wrap, dark ? ar.wrapDark : ar.wrapLight]}
@@ -431,11 +353,35 @@ function AzkarRow({
         <View style={[ar.countBadge, { backgroundColor: item.color + '18' }]}>
           <Text style={[ar.countText, { color: item.color }]}>{item.defaultTarget}×</Text>
         </View>
+
+        <TouchableOpacity
+          onPress={onToggleFavorite}
+          hitSlop={{ top: 10, bottom: 10, left: 8, right: 8 }}
+          style={ar.iconBtn}
+        >
+          <Heart
+            color={isFavorite ? '#EF4444' : (dark ? '#334155' : '#CBD5E1')}
+            fill={isFavorite ? '#EF4444' : 'none'}
+            size={16}
+            strokeWidth={2}
+          />
+        </TouchableOpacity>
+
+        {onEdit && (
+          <TouchableOpacity
+            onPress={onEdit}
+            hitSlop={{ top: 10, bottom: 10, left: 8, right: 8 }}
+            style={ar.iconBtn}
+          >
+            <Edit2 color={dark ? '#475569' : '#94A3B8'} size={15} strokeWidth={2} />
+          </TouchableOpacity>
+        )}
+
         {onDelete ? (
           <TouchableOpacity
             onPress={onDelete}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            style={ar.delBtn}
+            hitSlop={{ top: 10, bottom: 10, left: 8, right: 8 }}
+            style={ar.iconBtn}
           >
             <Trash2 color="#EF4444" size={16} strokeWidth={2} />
           </TouchableOpacity>
@@ -451,8 +397,7 @@ const ar = StyleSheet.create({
   wrap: {
     flexDirection: 'row', alignItems: 'center',
     paddingVertical: 12, paddingHorizontal: 14,
-    marginBottom: 6, borderRadius: 16, gap: 12,
-    borderWidth: 1,
+    marginBottom: 6, borderRadius: 16, gap: 12, borderWidth: 1,
   },
   wrapLight: { backgroundColor: 'rgba(255,255,255,0.72)', borderColor: 'rgba(255,255,255,0.85)' },
   wrapDark:  { backgroundColor: 'rgba(15,23,42,0.65)',   borderColor: 'rgba(255,255,255,0.06)' },
@@ -463,10 +408,10 @@ const ar = StyleSheet.create({
   titleDark: { color: '#F1F5F9' },
   arabic: { fontSize: 16, color: '#94A3B8', fontFamily: 'Amiri_400Regular' },
   arabicDark: { color: '#475569' },
-  right: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  right: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   countBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
   countText: { fontSize: 12, fontWeight: '800' },
-  delBtn: { padding: 4 },
+  iconBtn: { padding: 2 },
 });
 
 // ─── Category chip ────────────────────────────────────────────────────────────
@@ -475,22 +420,11 @@ function CatChip({
   icon, label, active, color, dark, onPress,
 }: { icon?: string; label: string; active: boolean; color?: string; dark: boolean; onPress: () => void }) {
   return (
-    <TouchableOpacity
-      onPress={onPress}
-      activeOpacity={0.75}
-      style={[
-        cc.chip,
-        dark ? cc.chipDark : cc.chipLight,
-        active && (color
-          ? { backgroundColor: color, borderColor: color }
-          : cc.chipActiveDefault),
-      ]}
-    >
+    <TouchableOpacity onPress={onPress} activeOpacity={0.75}
+      style={[cc.chip, dark ? cc.chipDark : cc.chipLight,
+        active && (color ? { backgroundColor: color, borderColor: color } : cc.chipActiveDefault)]}>
       {icon ? <Text style={cc.icon}>{icon}</Text> : null}
-      <Text
-        style={[cc.text, dark && cc.textDark, active && cc.textActive]}
-        numberOfLines={1}
-      >
+      <Text style={[cc.text, dark && cc.textDark, active && cc.textActive]} numberOfLines={1}>
         {label}
       </Text>
     </TouchableOpacity>
@@ -498,12 +432,7 @@ function CatChip({
 }
 
 const cc = StyleSheet.create({
-  chip: {
-    flexDirection: 'row', alignItems: 'center', gap: 4,
-    paddingHorizontal: 10, paddingVertical: 6,
-    borderRadius: 20, borderWidth: 1.5,
-    maxWidth: 120,
-  },
+  chip: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 20, borderWidth: 1.5, maxWidth: 120 },
   chipLight: { backgroundColor: 'rgba(255,255,255,0.72)', borderColor: 'rgba(255,255,255,0.9)' },
   chipDark:  { backgroundColor: 'rgba(30,41,59,0.65)',   borderColor: 'rgba(255,255,255,0.07)' },
   chipActiveDefault: { backgroundColor: '#059669', borderColor: '#059669' },
@@ -515,8 +444,12 @@ const cc = StyleSheet.create({
 
 // ─── Main Modal ───────────────────────────────────────────────────────────────
 
-type Tab = 'library' | 'custom' | 'add';
-const CATEGORIES: AzkarCategory[] = ['morning_evening', 'salat', 'quran', 'tasbih', 'dua', 'tijani'];
+type Tab = 'library' | 'custom' | 'favorites' | 'add' | 'edit';
+
+// All library categories in display order
+const CATEGORIES: AzkarCategory[] = [
+  'morning_evening', 'salat', 'quran', 'tasbih', 'dua', 'dua_anbiya', 'tijani',
+];
 
 const CAT_SHORT: Record<AzkarCategory, string> = {
   morning_evening: 'Morning',
@@ -524,31 +457,43 @@ const CAT_SHORT: Record<AzkarCategory, string> = {
   quran:           'Quran',
   tasbih:          'Tasbih',
   dua:             'Dua',
+  dua_anbiya:      'Prophets',
   tijani:          'Tijani',
   custom:          'Custom',
 };
 
 export default function DhikrPickerModal({
-  visible, dark, customAzkars, onSelect, onAddCustom, onDeleteCustom, onClose,
+  visible, dark, customAzkars, favoriteIds,
+  onSelect, onAddCustom, onEditCustom, onDeleteCustom, onToggleFavorite, onClose,
 }: DhikrPickerModalProps) {
   const [tab,            setTab]            = useState<Tab>('library');
   const [search,         setSearch]         = useState('');
   const [selectedAzkar,  setSelectedAzkar]  = useState<AzkarItem | null>(null);
+  const [editingAzkar,   setEditingAzkar]   = useState<AzkarItem | null>(null);
   const [target,         setTarget]         = useState(33);
   const [activeCategory, setActiveCategory] = useState<AzkarCategory | 'all'>('all');
 
+  const allAzkars = useMemo(() => [...PRESET_AZKARS, ...customAzkars], [customAzkars]);
+
+  const favoriteAzkars = useMemo(
+    () => favoriteIds.map(id => allAzkars.find(a => a.id === id)).filter(Boolean) as AzkarItem[],
+    [favoriteIds, allAzkars],
+  );
+
   const filtered = useMemo(() => {
     const q    = search.toLowerCase();
-    const pool = tab === 'custom' ? customAzkars : PRESET_AZKARS;
+    const pool = tab === 'custom'    ? customAzkars
+               : tab === 'favorites' ? favoriteAzkars
+               : PRESET_AZKARS;
     return pool.filter(a => {
       const matchSearch = !q
         || a.title.toLowerCase().includes(q)
-        || a.transliteration?.toLowerCase().includes(q)
+        || (a.transliteration?.toLowerCase().includes(q) ?? false)
         || a.arabic.includes(search);
-      const matchCat = tab === 'custom' || activeCategory === 'all' || a.category === activeCategory;
+      const matchCat = tab !== 'library' || activeCategory === 'all' || a.category === activeCategory;
       return matchSearch && matchCat;
     });
-  }, [tab, customAzkars, search, activeCategory]);
+  }, [tab, customAzkars, favoriteAzkars, search, activeCategory]);
 
   const handleSelectAzkar = useCallback((azkar: AzkarItem) => {
     setSelectedAzkar(azkar);
@@ -562,10 +507,23 @@ export default function DhikrPickerModal({
     onClose();
   }, [selectedAzkar, target, onSelect, onClose]);
 
-  const handleAddCustom = useCallback((item: Omit<AzkarItem, 'id' | 'category' | 'isCustom' | 'createdAt'>) => {
-    onAddCustom(item);
-    setTab('custom');
-  }, [onAddCustom]);
+  const handleAddCustom = useCallback(
+    (item: Omit<AzkarItem, 'id' | 'category' | 'isCustom' | 'createdAt'>) => {
+      onAddCustom(item);
+      setTab('custom');
+    },
+    [onAddCustom],
+  );
+
+  const handleSaveEdit = useCallback(
+    (updates: Omit<AzkarItem, 'id' | 'category' | 'isCustom' | 'createdAt'>) => {
+      if (!editingAzkar) return;
+      onEditCustom(editingAzkar.id, updates);
+      setEditingAzkar(null);
+      setTab('custom');
+    },
+    [editingAzkar, onEditCustom],
+  );
 
   const handleDeleteCustom = useCallback((id: string) => {
     Alert.alert('Delete dhikr', 'Remove this custom dhikr permanently?', [
@@ -576,11 +534,20 @@ export default function DhikrPickerModal({
 
   const handleClose = () => {
     setSelectedAzkar(null);
+    setEditingAzkar(null);
     setSearch('');
     setTab('library');
     setActiveCategory('all');
     onClose();
   };
+
+  const handleBack = () => {
+    if (selectedAzkar) { setSelectedAzkar(null); return; }
+    if (tab === 'add')  { setTab('custom');  return; }
+    if (tab === 'edit') { setEditingAzkar(null); setTab('custom'); return; }
+  };
+
+  const showBack = !!selectedAzkar || tab === 'add' || tab === 'edit';
 
   return (
     <Modal
@@ -591,184 +558,139 @@ export default function DhikrPickerModal({
     >
       <SafeAreaView style={[m.root, dark ? m.rootDark : m.rootLight]}>
 
-        {/* ══ HEADER ══════════════════════════════════════════════════════════ */}
+        {/* ══ HEADER ══ */}
         <View style={[m.header, dark ? m.headerDark : m.headerLight]}>
-          {selectedAzkar ? (
-            <TouchableOpacity onPress={() => setSelectedAzkar(null)} style={m.backBtn} activeOpacity={0.7}>
-              <ChevronRight
-                color={dark ? '#94A3B8' : '#64748B'}
-                size={20} strokeWidth={2.5}
-                style={{ transform: [{ scaleX: -1 }] }}
-              />
-              <Text style={[m.backText, dark && m.backTextDark]}>Back</Text>
-            </TouchableOpacity>
-          ) : tab === 'add' ? (
-            <TouchableOpacity onPress={() => setTab('library')} style={m.backBtn} activeOpacity={0.7}>
-              <ChevronRight
-                color={dark ? '#94A3B8' : '#64748B'}
-                size={20} strokeWidth={2.5}
-                style={{ transform: [{ scaleX: -1 }] }}
-              />
+          {showBack ? (
+            <TouchableOpacity onPress={handleBack} style={m.backBtn} activeOpacity={0.7}>
+              <ChevronRight color={dark ? '#94A3B8' : '#64748B'} size={20} strokeWidth={2.5}
+                style={{ transform: [{ scaleX: -1 }] }} />
               <Text style={[m.backText, dark && m.backTextDark]}>Back</Text>
             </TouchableOpacity>
           ) : (
             <Text style={[m.headerTitle, dark && m.headerTitleDark]}>Choose a Dhikr</Text>
           )}
 
-          <TouchableOpacity
-            onPress={handleClose}
-            style={[m.closeBtn, dark ? m.closeBtnDark : m.closeBtnLight]}
-            activeOpacity={0.7}
-          >
+          <TouchableOpacity onPress={handleClose}
+            style={[m.closeBtn, dark ? m.closeBtnDark : m.closeBtnLight]} activeOpacity={0.7}>
             <X color={dark ? '#94A3B8' : '#64748B'} size={20} strokeWidth={2.5} />
           </TouchableOpacity>
         </View>
 
-        {/* ══ CONFIRMATION SCREEN ═════════════════════════════════════════════ */}
+        {/* ══ CONFIRMATION SCREEN ══ */}
         {selectedAzkar ? (
-          <ScrollView
-            contentContainerStyle={m.confirmPad}
-            showsVerticalScrollIndicator={false}
-            nestedScrollEnabled={true}
-          >
-            <View style={[m.previewCard, dark ? m.previewCardDark : m.previewCardLight, { borderLeftColor: selectedAzkar.color }]}>
+          <ScrollView contentContainerStyle={m.confirmPad}
+            showsVerticalScrollIndicator={false} nestedScrollEnabled={true}>
+            <View style={[m.previewCard, dark ? m.previewCardDark : m.previewCardLight,
+              { borderLeftColor: selectedAzkar.color }]}>
               <View style={[m.previewBadge, { backgroundColor: selectedAzkar.color + '22' }]}>
                 <Text style={[m.previewBadgeText, { color: selectedAzkar.color }]}>
                   {CATEGORY_ICONS[selectedAzkar.category]}  {CATEGORY_LABELS[selectedAzkar.category]}
                 </Text>
               </View>
-
               <Text style={[m.previewTitle, dark && m.previewTitleDark]}>{selectedAzkar.title}</Text>
-
-              {/* ✅ AzkarTextBlock adaptatif — remplace les 3 Text fixes */}
-              <AzkarTextBlock
-                dark={dark}
-                accentColor={selectedAzkar.color}
-                arabic={selectedAzkar.arabic}
-                transliteration={selectedAzkar.transliteration}
-                translation={selectedAzkar.translation}
-                fontSize={28}
-              />
+              <AzkarTextBlock dark={dark} accentColor={selectedAzkar.color}
+                arabic={selectedAzkar.arabic} transliteration={selectedAzkar.transliteration}
+                translation={selectedAzkar.translation} fontSize={28} />
             </View>
 
             <TargetSelector value={target} onChange={setTarget} dark={dark} />
 
-            <TouchableOpacity
-              onPress={handleConfirm}
+            <TouchableOpacity onPress={handleConfirm}
               style={[m.confirmBtn, { backgroundColor: selectedAzkar.color, shadowColor: selectedAzkar.color }]}
-              activeOpacity={0.85}
-            >
+              activeOpacity={0.85}>
               <Text style={m.confirmBtnText}>Start — {target}×</Text>
             </TouchableOpacity>
           </ScrollView>
 
-        /* ══ ADD CUSTOM FORM ══════════════════════════════════════════════════ */
+        /* ══ ADD FORM ══ */
         ) : tab === 'add' ? (
-          <ScrollView
-            style={{ flex: 1 }}
-            contentContainerStyle={m.bodyPad}
-            showsVerticalScrollIndicator={false}
-            nestedScrollEnabled={true}
-          >
-            <AddCustomForm dark={dark} onAdd={handleAddCustom} onCancel={() => setTab('library')} />
+          <ScrollView style={{ flex: 1 }} contentContainerStyle={m.bodyPad}
+            showsVerticalScrollIndicator={false} nestedScrollEnabled={true}>
+            <CustomForm dark={dark} onSave={handleAddCustom} onCancel={() => setTab('custom')} />
           </ScrollView>
 
-        /* ══ LIBRARY / CUSTOM LIST ════════════════════════════════════════════ */
+        /* ══ EDIT FORM ══ */
+        ) : tab === 'edit' && editingAzkar ? (
+          <ScrollView style={{ flex: 1 }} contentContainerStyle={m.bodyPad}
+            showsVerticalScrollIndicator={false} nestedScrollEnabled={true}>
+            <CustomForm dark={dark} onSave={handleSaveEdit}
+              onCancel={() => { setEditingAzkar(null); setTab('custom'); }}
+              editItem={editingAzkar} />
+          </ScrollView>
+
+        /* ══ LIBRARY / CUSTOM / FAVORITES LIST ══ */
         ) : (
           <>
-            {/* ── Tab switcher ── */}
+            {/* Tab switcher */}
             <View style={[m.tabs, dark ? m.tabsDark : m.tabsLight]}>
-              <TouchableOpacity
-                onPress={() => setTab('library')}
-                style={[m.tabBtn, tab === 'library' && m.tabBtnActive]}
-                activeOpacity={0.8}
-              >
-                <BookOpen
-                  color={tab === 'library' ? '#fff' : (dark ? '#94A3B8' : '#64748B')}
-                  size={14} strokeWidth={2}
-                />
+              <TouchableOpacity onPress={() => setTab('library')}
+                style={[m.tabBtn, tab === 'library' && m.tabBtnActive]} activeOpacity={0.8}>
+                <BookOpen color={tab === 'library' ? '#fff' : (dark ? '#94A3B8' : '#64748B')}
+                  size={14} strokeWidth={2} />
                 <Text style={[m.tabBtnText, dark && m.tabBtnTextDark, tab === 'library' && m.tabBtnTextActive]}>
                   Library
                 </Text>
               </TouchableOpacity>
 
-              <TouchableOpacity
-                onPress={() => setTab('custom')}
-                style={[m.tabBtn, tab === 'custom' && m.tabBtnActive]}
-                activeOpacity={0.8}
-              >
-                <Sparkles
-                  color={tab === 'custom' ? '#fff' : (dark ? '#94A3B8' : '#64748B')}
-                  size={14} strokeWidth={2}
-                />
+              <TouchableOpacity onPress={() => setTab('custom')}
+                style={[m.tabBtn, tab === 'custom' && m.tabBtnActive]} activeOpacity={0.8}>
+                <Sparkles color={tab === 'custom' ? '#fff' : (dark ? '#94A3B8' : '#64748B')}
+                  size={14} strokeWidth={2} />
                 <Text style={[m.tabBtnText, dark && m.tabBtnTextDark, tab === 'custom' && m.tabBtnTextActive]}>
                   My Dhikrs{customAzkars.length > 0 ? ` (${customAzkars.length})` : ''}
                 </Text>
               </TouchableOpacity>
+
+              <TouchableOpacity onPress={() => setTab('favorites')}
+                style={[m.tabBtn, tab === 'favorites' && m.tabBtnFavActive]} activeOpacity={0.8}>
+                <Heart
+                  color={tab === 'favorites' ? '#fff' : (dark ? '#94A3B8' : '#64748B')}
+                  fill={tab === 'favorites' ? '#fff' : 'none'}
+                  size={14} strokeWidth={2} />
+                <Text style={[m.tabBtnText, dark && m.tabBtnTextDark, tab === 'favorites' && m.tabBtnTextActive]}>
+                  Favs{favoriteIds.length > 0 ? ` (${favoriteIds.length})` : ''}
+                </Text>
+              </TouchableOpacity>
             </View>
 
-            {/* ── Search ── */}
+            {/* Search */}
             <View style={[m.searchWrap, dark ? m.searchWrapDark : m.searchWrapLight]}>
               <Search color={dark ? '#475569' : '#94A3B8'} size={17} strokeWidth={2} />
-              <TextInput
-                style={[m.searchInput, dark && m.searchInputDark]}
-                placeholder="Search azkars…"
-                placeholderTextColor={dark ? '#475569' : '#94A3B8'}
-                value={search}
-                onChangeText={setSearch}
-                returnKeyType="search"
-              />
+              <TextInput style={[m.searchInput, dark && m.searchInputDark]}
+                placeholder="Search azkars…" placeholderTextColor={dark ? '#475569' : '#94A3B8'}
+                value={search} onChangeText={setSearch} returnKeyType="search" />
               {search ? (
-                <TouchableOpacity onPress={() => setSearch('')} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                <TouchableOpacity onPress={() => setSearch('')}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
                   <X color={dark ? '#475569' : '#94A3B8'} size={15} strokeWidth={2} />
                 </TouchableOpacity>
               ) : null}
             </View>
 
-            {/* ── Category chips (library only) ── */}
+            {/* Category chips (library only) */}
             {tab === 'library' && (
               <View style={m.catWrap}>
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={m.catRow}
-                  nestedScrollEnabled={true}
-                >
-                  <CatChip
-                    label="All"
-                    active={activeCategory === 'all'}
-                    dark={dark}
-                    onPress={() => setActiveCategory('all')}
-                  />
+                <ScrollView horizontal showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={m.catRow} nestedScrollEnabled={true}>
+                  <CatChip label="All" active={activeCategory === 'all'} dark={dark}
+                    onPress={() => setActiveCategory('all')} />
                   {CATEGORIES.map(c => (
-                    <CatChip
-                      key={c}
-                      icon={CATEGORY_ICONS[c]}
-                      label={CAT_SHORT[c]}
-                      active={activeCategory === c}
-                      color={CATEGORY_COLORS[c]}
-                      dark={dark}
-                      onPress={() => setActiveCategory(c)}
-                    />
+                    <CatChip key={c} icon={CATEGORY_ICONS[c]} label={CAT_SHORT[c]}
+                      active={activeCategory === c} color={CATEGORY_COLORS[c]}
+                      dark={dark} onPress={() => setActiveCategory(c)} />
                   ))}
                 </ScrollView>
               </View>
             )}
 
-            {/* ── List ── */}
-            <ScrollView
-              style={{ flex: 1 }}
-              contentContainerStyle={m.listPad}
-              keyboardShouldPersistTaps="handled"
-              showsVerticalScrollIndicator={false}
-              nestedScrollEnabled={true}
-            >
+            {/* List */}
+            <ScrollView style={{ flex: 1 }} contentContainerStyle={m.listPad}
+              keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}
+              nestedScrollEnabled={true}>
+
               {tab === 'custom' && (
-                <TouchableOpacity
-                  style={[m.addRow, dark ? m.addRowDark : m.addRowLight]}
-                  onPress={() => setTab('add')}
-                  activeOpacity={0.8}
-                >
+                <TouchableOpacity style={[m.addRow, dark ? m.addRowDark : m.addRowLight]}
+                  onPress={() => setTab('add')} activeOpacity={0.8}>
                   <View style={m.addIconWrap}>
                     <Plus color="#059669" size={18} strokeWidth={2.5} />
                   </View>
@@ -781,14 +703,18 @@ export default function DhikrPickerModal({
 
               {filtered.length === 0 ? (
                 <View style={m.empty}>
-                  <Text style={m.emptyIcon}>{tab === 'custom' ? '✨' : '🔍'}</Text>
+                  <Text style={m.emptyIcon}>
+                    {tab === 'custom' ? '✨' : tab === 'favorites' ? '❤️' : '🔍'}
+                  </Text>
                   <Text style={[m.emptyTitle, dark && m.emptyTitleDark]}>
-                    {tab === 'custom' ? 'No custom dhikrs yet' : 'No results found'}
+                    {tab === 'custom'    ? 'No custom dhikrs yet'
+                   : tab === 'favorites' ? 'No favourites yet'
+                   : 'No results found'}
                   </Text>
                   <Text style={[m.emptySub, dark && m.emptySubDark]}>
-                    {tab === 'custom'
-                      ? 'Tap "Create new Dhikr" above to add one'
-                      : 'Try a different search term or category'}
+                    {tab === 'custom'    ? 'Tap "Create new Dhikr" above to add one'
+                   : tab === 'favorites' ? 'Tap the ♡ icon on any dhikr to save it here'
+                   : 'Try a different search term or category'}
                   </Text>
                 </View>
               ) : (
@@ -797,8 +723,11 @@ export default function DhikrPickerModal({
                     key={item.id}
                     item={item}
                     dark={dark}
+                    isFavorite={favoriteIds.includes(item.id)}
                     onSelect={() => handleSelectAzkar(item)}
                     onDelete={item.isCustom ? () => handleDeleteCustom(item.id) : undefined}
+                    onEdit={item.isCustom ? () => { setEditingAzkar(item); setTab('edit'); } : undefined}
+                    onToggleFavorite={() => onToggleFavorite(item.id)}
                   />
                 ))
               )}
@@ -819,24 +748,14 @@ const m = StyleSheet.create({
 
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 18, paddingVertical: 14,
-    borderBottomWidth: 1,
+    paddingHorizontal: 18, paddingVertical: 14, borderBottomWidth: 1,
   },
-  headerLight: {
-    backgroundColor: 'rgba(255,255,255,0.78)',
-    borderBottomColor: 'rgba(255,255,255,0.7)',
-  },
-  headerDark: {
-    backgroundColor: 'rgba(15,23,42,0.82)',
-    borderBottomColor: 'rgba(255,255,255,0.05)',
-  },
+  headerLight: { backgroundColor: 'rgba(255,255,255,0.78)', borderBottomColor: 'rgba(255,255,255,0.7)' },
+  headerDark:  { backgroundColor: 'rgba(15,23,42,0.82)',    borderBottomColor: 'rgba(255,255,255,0.05)' },
   headerTitle: { fontSize: 19, fontWeight: '800', color: '#1E293B', letterSpacing: -0.3 },
   headerTitleDark: { color: '#F8FAFC' },
 
-  closeBtn: {
-    width: 34, height: 34, borderRadius: 17,
-    justifyContent: 'center', alignItems: 'center', borderWidth: 1.5,
-  },
+  closeBtn: { width: 34, height: 34, borderRadius: 17, justifyContent: 'center', alignItems: 'center', borderWidth: 1.5 },
   closeBtnLight: { backgroundColor: 'rgba(255,255,255,0.75)', borderColor: 'rgba(255,255,255,0.9)' },
   closeBtnDark:  { backgroundColor: 'rgba(30,41,59,0.70)',   borderColor: 'rgba(255,255,255,0.07)' },
 
@@ -844,28 +763,23 @@ const m = StyleSheet.create({
   backText: { fontSize: 15, fontWeight: '700', color: '#64748B' },
   backTextDark: { color: '#94A3B8' },
 
-  tabs: {
-    flexDirection: 'row', gap: 8,
-    paddingHorizontal: 14, paddingVertical: 10,
-    borderBottomWidth: 1,
-  },
+  tabs: { flexDirection: 'row', gap: 6, paddingHorizontal: 14, paddingVertical: 10, borderBottomWidth: 1 },
   tabsLight: { backgroundColor: 'rgba(255,255,255,0.60)', borderBottomColor: 'rgba(255,255,255,0.55)' },
   tabsDark:  { backgroundColor: 'rgba(15,23,42,0.65)',   borderBottomColor: 'rgba(255,255,255,0.04)' },
   tabBtn: {
-    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
-    paddingVertical: 9, borderRadius: 12,
-    borderWidth: 1.5, borderColor: 'transparent',
+    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5,
+    paddingVertical: 8, borderRadius: 12, borderWidth: 1.5, borderColor: 'transparent',
   },
-  tabBtnActive: { backgroundColor: '#059669' },
-  tabBtnText: { fontSize: 13, fontWeight: '700', color: '#64748B' },
+  tabBtnActive:      { backgroundColor: '#059669' },
+  tabBtnFavActive:   { backgroundColor: '#EF4444' },
+  tabBtnText: { fontSize: 12, fontWeight: '700', color: '#64748B' },
   tabBtnTextDark: { color: '#94A3B8' },
   tabBtnTextActive: { color: '#FFFFFF' },
 
   searchWrap: {
     flexDirection: 'row', alignItems: 'center', gap: 10,
     marginHorizontal: 14, marginTop: 10, marginBottom: 6,
-    paddingHorizontal: 14, height: 44,
-    borderRadius: 14, borderWidth: 1.5,
+    paddingHorizontal: 14, height: 44, borderRadius: 14, borderWidth: 1.5,
   },
   searchWrapLight: { backgroundColor: 'rgba(255,255,255,0.75)', borderColor: 'rgba(255,255,255,0.9)' },
   searchWrapDark:  { backgroundColor: 'rgba(30,41,59,0.70)',   borderColor: 'rgba(255,255,255,0.07)' },
@@ -873,12 +787,7 @@ const m = StyleSheet.create({
   searchInputDark: { color: '#F8FAFC' },
 
   catWrap: { height: 44, marginBottom: 6 },
-  catRow: {
-    gap: 6,
-    paddingHorizontal: 14,
-    alignItems: 'center',
-    height: 44,
-  },
+  catRow: { gap: 6, paddingHorizontal: 14, alignItems: 'center', height: 44 },
 
   listPad: { paddingHorizontal: 14, paddingTop: 2, paddingBottom: 40 },
 
@@ -888,10 +797,7 @@ const m = StyleSheet.create({
   },
   addRowLight: { backgroundColor: 'rgba(240,253,244,0.85)', borderColor: 'rgba(167,243,208,0.6)' },
   addRowDark:  { backgroundColor: 'rgba(5,46,22,0.55)',     borderColor: 'rgba(6,95,70,0.5)' },
-  addIconWrap: {
-    width: 40, height: 40, borderRadius: 20,
-    backgroundColor: '#D1FAE5', justifyContent: 'center', alignItems: 'center',
-  },
+  addIconWrap: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#D1FAE5', justifyContent: 'center', alignItems: 'center' },
   addRowTitle: { fontSize: 14, fontWeight: '800', color: '#059669', marginBottom: 2 },
   addRowSub: { fontSize: 12, color: '#64748B', fontWeight: '500' },
   addRowSubDark: { color: '#475569' },
@@ -907,8 +813,7 @@ const m = StyleSheet.create({
 
   previewCard: {
     borderRadius: 22, padding: 22, marginBottom: 24,
-    borderLeftWidth: 4, borderWidth: 1,
-    alignItems: 'center', gap: 10,
+    borderLeftWidth: 4, borderWidth: 1, alignItems: 'center', gap: 10,
     shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 14, shadowOffset: { width: 0, height: 6 }, elevation: 5,
   },
   previewCardLight: { backgroundColor: 'rgba(255,255,255,0.88)', borderColor: 'rgba(255,255,255,0.9)' },
@@ -919,8 +824,7 @@ const m = StyleSheet.create({
   previewTitleDark: { color: '#F8FAFC' },
 
   confirmBtn: {
-    height: 56, borderRadius: 18,
-    justifyContent: 'center', alignItems: 'center',
+    height: 56, borderRadius: 18, justifyContent: 'center', alignItems: 'center',
     shadowOpacity: 0.35, shadowRadius: 12, shadowOffset: { width: 0, height: 5 }, elevation: 7,
   },
   confirmBtnText: { fontSize: 17, fontWeight: '800', color: '#FFFFFF', letterSpacing: 0.2 },

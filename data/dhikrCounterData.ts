@@ -6,6 +6,7 @@ export type AzkarCategory =
   | 'quran'
   | 'tasbih'
   | 'dua'
+  | 'dua_anbiya'
   | 'tijani'
   | 'custom';
 
@@ -28,6 +29,7 @@ export const CATEGORY_LABELS: Record<AzkarCategory, string> = {
   quran:           'Quran',
   tasbih:          'Tasbih',
   dua:             'Supplications',
+  dua_anbiya:      'Duʿāʾ of the Prophets',
   tijani:          'Tijani',
   custom:          'Custom',
 };
@@ -38,7 +40,8 @@ export const CATEGORY_ICONS: Record<AzkarCategory, string> = {
   quran:           '📖',
   tasbih:          '📿',
   dua:             '🤲',
-  tijani:          '🌿',
+  dua_anbiya:      '🌿',
+  tijani:          '⭐',
   custom:          '✨',
 };
 
@@ -48,6 +51,7 @@ export const CATEGORY_COLORS: Record<AzkarCategory, string> = {
   quran:           '#7C3AED',
   tasbih:          '#0891B2',
   dua:             '#DB2777',
+  dua_anbiya:      '#10B981',
   tijani:          '#16A34A',
   custom:          '#6366F1',
 };
@@ -127,7 +131,6 @@ export const PRESET_AZKARS: AzkarItem[] = [
     defaultTarget: 3,
     color: '#F59E0B',
   },
-  // ── NEW: Morning & Evening additions ─────────────────────────────────────
   {
     id: 'sayyid_istighfar',
     category: 'morning_evening',
@@ -181,7 +184,7 @@ export const PRESET_AZKARS: AzkarItem[] = [
   {
     id: 'allahumma_afiyah',
     category: 'morning_evening',
-    title: 'Allāhumma ʿāfini (Well-being)',
+    title: 'Allāhumma ʿāfinī (Well-being)',
     arabic: 'اللّٰهُمَّ إِنِّي أَسْأَلُكَ الْعَفْوَ وَالْعَافِيَةَ فِي الدُّنْيَا وَالْآخِرَةِ اللّٰهُمَّ إِنِّي أَسْأَلُكَ الْعَفْوَ وَالْعَافِيَةَ فِي دِينِي وَدُنْيَايَ وَأَهْلِي وَمَالِي اللّٰهُمَّ اسْتُرْ عَوْرَاتِي وَآمِنْ رَوْعَاتِي وَاحْفَظْنِي مِنْ بَيْنِ يَدَيَّ وَمِنْ خَلْفِي وَعَنْ يَمِينِي وَعَنْ شِمَالِي وَمِنْ فَوْقِي وَأَعُوذُ بِعَظَمَتِكَ أَنْ أُغْتَالَ مِنْ تَحْتِي',
     transliteration: 'Allāhumma innī asʾaluka l-ʿafwa wa l-ʿāfiyata fi d-dunyā wa l-ākhira. Allāhumma innī asʾaluka l-ʿafwa wa l-ʿāfiyata fī dīnī wa dunyāya wa ahlī wa mālī. Allāhumma stur ʿawrātī wa āmin rawʿātī, wa ḥfaẓnī min bayni yadayya wa min khalfī wa ʿan yamīnī wa ʿan shimālī wa min fawqī, wa aʿūdhu bi-ʿaẓamatika an ughtāla min taḥtī',
     translation: 'O Allah, I ask You for pardon and well-being in this life and the next. O Allah, I ask You for pardon and well-being in my religion, my worldly life, my family and my wealth. O Allah, conceal my faults and calm my fears. Protect me from before me and behind me, from my right and my left, and from above me — and I seek refuge in Your Greatness from being swallowed from beneath me.',
@@ -206,16 +209,6 @@ export const PRESET_AZKARS: AzkarItem[] = [
     transliteration: 'Ḥasbunā Llāhu wa niʿma l-wakīl, niʿma l-mawlā wa niʿma n-naṣīr',
     translation: 'Allah is sufficient for us and He is the best Disposer of affairs. Excellent is the Protector and excellent is the Helper.',
     defaultTarget: 7,
-    color: '#F59E0B',
-  },
-  {
-    id: 'dua_nabi_yunus',
-    category: 'morning_evening',
-    title: 'Duʿāʾ Dhī n-Nūn (Yūnus)',
-    arabic: 'لَا إِلٰهَ إِلَّا أَنْتَ سُبْحَانَكَ إِنِّي كُنْتُ مِنَ الظَّالِمِينَ',
-    transliteration: 'Lā ilāha illā anta subḥānaka innī kuntu mina ẓ-ẓālimīn',
-    translation: 'There is no deity except You. Glory be to You. Indeed, I have been among the wrongdoers. (Al-Anbiyāʾ: 87 — the invocation of Prophet Yūnus in the belly of the whale)',
-    defaultTarget: 40,
     color: '#F59E0B',
   },
 
@@ -292,24 +285,13 @@ export const PRESET_AZKARS: AzkarItem[] = [
     defaultTarget: 1,
     color: '#059669',
   },
-  // ── NEW: After Prayer additions ───────────────────────────────────────────
   {
     id: 'allahumma_aini_salat',
     category: 'salat',
     title: 'Allāhumma aʿinnī ʿalā dhikrik',
     arabic: 'اللّٰهُمَّ أَعِنِّي عَلَى ذِكْرِكَ وَشُكْرِكَ وَحُسْنِ عِبَادَتِكَ',
     transliteration: 'Allāhumma aʿinnī ʿalā dhikrika wa shukrika wa ḥusni ʿibādatik',
-    translation: 'O Allah, help me to remember You, to be grateful to You, and to worship You in the most excellent manner. (To be said after every prayer — recommended by the Prophet ﷺ to Muʿādh ibn Jabal)',
-    defaultTarget: 1,
-    color: '#059669',
-  },
-  {
-    id: 'dua_fajr_dunya',
-    category: 'salat',
-    title: 'Duʿāʾ Khayri d-Dunyā wa l-Ākhira',
-    arabic: 'اللّٰهُمَّ إِنِّي أَسْأَلُكَ مِنْ خَيْرِ هَذَا الْيَوْمِ فَتْحَهُ وَنَصْرَهُ وَنُورَهُ وَبَرَكَتَهُ وَهُدَاهُ وَأَعُوذُ بِكَ مِنْ شَرِّ مَا فِيهِ وَشَرِّ مَا بَعْدَهُ',
-    transliteration: 'Allāhumma innī asʾaluka min khayri hādha l-yawmi fatḥahu wa naṣrahu wa nūrahu wa barakatahu wa hudāhu, wa aʿūdhu bika min sharri mā fīhi wa sharri mā baʿdah',
-    translation: 'O Allah, I ask You for the good of this day — its opening, its victory, its light, its blessings and its guidance — and I seek refuge in You from the evil in it and the evil that comes after it.',
+    translation: 'O Allah, help me to remember You, to be grateful to You, and to worship You in the most excellent manner. (Recommended after every prayer — narrated by Muʿādh ibn Jabal)',
     defaultTarget: 1,
     color: '#059669',
   },
@@ -341,6 +323,16 @@ export const PRESET_AZKARS: AzkarItem[] = [
     transliteration: 'Qul huwa Llāhu aḥad, Allāhu ṣ-ṣamad, lam yalid wa lam yūlad, wa lam yakun lahū kufuwan aḥad',
     translation: 'Sūrat al-Ikhlāṣ — to be read 3× after Fajr and Maghrib, along with al-Falaq and an-Nās.',
     defaultTarget: 3,
+    color: '#059669',
+  },
+  {
+    id: 'dua_fajr_dunya',
+    category: 'salat',
+    title: 'Duʿāʾ Khayri d-Dunyā wa l-Ākhira',
+    arabic: 'اللّٰهُمَّ إِنِّي أَسْأَلُكَ مِنْ خَيْرِ هَذَا الْيَوْمِ فَتْحَهُ وَنَصْرَهُ وَنُورَهُ وَبَرَكَتَهُ وَهُدَاهُ وَأَعُوذُ بِكَ مِنْ شَرِّ مَا فِيهِ وَشَرِّ مَا بَعْدَهُ',
+    transliteration: 'Allāhumma innī asʾaluka min khayri hādha l-yawmi fatḥahu wa naṣrahu wa nūrahu wa barakatahu wa hudāhu, wa aʿūdhu bika min sharri mā fīhi wa sharri mā baʿdah',
+    translation: 'O Allah, I ask You for the good of this day — its opening, its victory, its light, its blessings and its guidance — and I seek refuge in You from the evil in it and the evil that comes after it.',
+    defaultTarget: 1,
     color: '#059669',
   },
 
@@ -387,17 +379,6 @@ export const PRESET_AZKARS: AzkarItem[] = [
     defaultTarget: 3,
     color: '#7C3AED',
   },
-  // ── NEW: Quran additions ──────────────────────────────────────────────────
-  {
-    id: 'baqara_1_5',
-    category: 'quran',
-    title: 'Fawātiḥ al-Baqara (2:1–5)',
-    arabic: 'الم ذٰلِكَ الْكِتَابُ لَا رَيْبَ فِيهِ هُدًى لِلْمُتَّقِينَ الَّذِينَ يُؤْمِنُونَ بِالْغَيْبِ وَيُقِيمُونَ الصَّلَاةَ وَمِمَّا رَزَقْنَاهُمْ يُنْفِقُونَ وَالَّذِينَ يُؤْمِنُونَ بِمَا أُنْزِلَ إِلَيْكَ وَمَا أُنْزِلَ مِنْ قَبْلِكَ وَبِالْآخِرَةِ هُمْ يُوقِنُونَ أُولٰئِكَ عَلَى هُدًى مِنْ رَبِّهِمْ وَأُولٰئِكَ هُمُ الْمُفْلِحُونَ',
-    transliteration: 'Alif-lām-mīm. Dhālika l-kitābu lā rayba fīhi hudan li-l-muttaqīn. Alladhīna yuʾminūna bi-l-ghaybi wa yuqīmūna ṣ-ṣalāta wa mimmā razaqnāhum yunfiqūn. Walladhīna yuʾminūna bi-mā unzila ilayka wa mā unzila min qablik, wa bi-l-ākhirati hum yūqinūn. Ulāʾika ʿalā hudan min rabbihim wa ulāʾika humu l-mufliḥūn',
-    translation: 'Alif-lām-mīm. That is the Book in which there is no doubt — a guidance for the God-fearing, who believe in the unseen, establish prayer, and spend from what We have provided them; and who believe in what was revealed to you and what was revealed before you, and are certain of the Hereafter. Those are on guidance from their Lord, and those are the successful. (Al-Baqara: 1–5)',
-    defaultTarget: 1,
-    color: '#7C3AED',
-  },
   {
     id: 'hashr_last_3',
     category: 'quran',
@@ -441,10 +422,20 @@ export const PRESET_AZKARS: AzkarItem[] = [
   {
     id: 'surah_kahf_10',
     category: 'quran',
-    title: 'Fawātiḥ al-Kahf (18:1–10)',
+    title: 'Fawātiḥ al-Kahf (18:1–3)',
     arabic: 'الْحَمْدُ لِلّٰهِ الَّذِي أَنْزَلَ عَلَى عَبْدِهِ الْكِتَابَ وَلَمْ يَجْعَلْ لَهُ عِوَجًا قَيِّمًا لِيُنْذِرَ بَأْسًا شَدِيدًا مِنْ لَدُنْهُ وَيُبَشِّرَ الْمُؤْمِنِينَ الَّذِينَ يَعْمَلُونَ الصَّالِحَاتِ أَنَّ لَهُمْ أَجْرًا حَسَنًا مَاكِثِينَ فِيهِ أَبَدًا',
     transliteration: 'Al-ḥamdu li-Llāhi lladhī anzala ʿalā ʿabdihi l-kitāba wa lam yajʿal lahu ʿiwajā. Qayyiman li-yundhira baʾsan shadīdan min ladunhu wa yubashshira l-muʾminīna lladhīna yaʿmalūna ṣ-ṣāliḥāti anna lahum ajran ḥasanā, mākhithīna fīhi abadā',
-    translation: 'All praise belongs to Allah who revealed the Book to His servant and made no crookedness therein — upright, to warn of severe punishment from Himself and to give glad tidings to the believers who do righteous deeds that they will have a fine reward in which they will remain forever. (Al-Kahf: 1–3 — these opening verses are part of the first ten which protect from the Dajjal)',
+    translation: 'All praise belongs to Allah who revealed the Book to His servant and made no crookedness therein — upright, to warn of severe punishment from Himself and to give glad tidings to the believers who do righteous deeds that they will have a fine reward in which they will remain forever. (Al-Kahf: 1–3)',
+    defaultTarget: 1,
+    color: '#7C3AED',
+  },
+  {
+    id: 'baqara_1_5',
+    category: 'quran',
+    title: 'Fawātiḥ al-Baqara (2:1–5)',
+    arabic: 'الم ذٰلِكَ الْكِتَابُ لَا رَيْبَ فِيهِ هُدًى لِلْمُتَّقِينَ الَّذِينَ يُؤْمِنُونَ بِالْغَيْبِ وَيُقِيمُونَ الصَّلَاةَ وَمِمَّا رَزَقْنَاهُمْ يُنْفِقُونَ وَالَّذِينَ يُؤْمِنُونَ بِمَا أُنْزِلَ إِلَيْكَ وَمَا أُنْزِلَ مِنْ قَبْلِكَ وَبِالْآخِرَةِ هُمْ يُوقِنُونَ أُولٰئِكَ عَلَى هُدًى مِنْ رَبِّهِمْ وَأُولٰئِكَ هُمُ الْمُفْلِحُونَ',
+    transliteration: 'Alif-lām-mīm. Dhālika l-kitābu lā rayba fīhi hudan li-l-muttaqīn. Alladhīna yuʾminūna bi-l-ghaybi wa yuqīmūna ṣ-ṣalāta wa mimmā razaqnāhum yunfiqūn. Walladhīna yuʾminūna bi-mā unzila ilayka wa mā unzila min qablik, wa bi-l-ākhirati hum yūqinūn. Ulāʾika ʿalā hudan min rabbihim wa ulāʾika humu l-mufliḥūn',
+    translation: 'Alif-lām-mīm. That is the Book in which there is no doubt — a guidance for the God-fearing, who believe in the unseen, establish prayer, and spend from what We have provided them; and who believe in what was revealed to you and what was revealed before you, and are certain of the Hereafter. Those are on guidance from their Lord, and those are the successful. (Al-Baqara: 1–5)',
     defaultTarget: 1,
     color: '#7C3AED',
   },
@@ -502,7 +493,6 @@ export const PRESET_AZKARS: AzkarItem[] = [
     defaultTarget: 100,
     color: '#0891B2',
   },
-  // ── NEW: Tasbih additions ─────────────────────────────────────────────────
   {
     id: 'kalima_tayyiba',
     category: 'tasbih',
@@ -529,7 +519,7 @@ export const PRESET_AZKARS: AzkarItem[] = [
     title: 'Istighfār (100×)',
     arabic: 'أَسْتَغْفِرُ اللّٰهَ وَأَتُوبُ إِلَيْهِ',
     transliteration: 'Astaghfiru Llāha wa atūbu ilayh',
-    translation: 'I seek forgiveness from Allah and repent to Him. (The Prophet ﷺ said he sought forgiveness 70–100 times every day)',
+    translation: 'I seek forgiveness from Allah and repent to Him. (The Prophet ﷺ sought forgiveness 70–100 times every day)',
     defaultTarget: 100,
     color: '#0891B2',
   },
@@ -560,6 +550,17 @@ export const PRESET_AZKARS: AzkarItem[] = [
     arabic: 'سُبْحَانَ اللّٰهِ وَالْحَمْدُ لِلّٰهِ وَلَا إِلٰهَ إِلَّا اللّٰهُ وَاللّٰهُ أَكْبَرُ',
     transliteration: 'Subḥāna Llāhi wa l-ḥamdu li-Llāhi wa lā ilāha illa Llāhu wa Llāhu akbar',
     translation: 'Glory be to Allah, all praise belongs to Allah, there is no deity except Allah, and Allah is the Greatest. (The most beloved words to Allah — Muslim)',
+    defaultTarget: 100,
+    color: '#0891B2',
+  },
+  // ── NEW ───────────────────────────────────────────────────────────────────
+  {
+    id: 'hasbunallah_wakil',
+    category: 'tasbih',
+    title: 'Ḥasbunā Llāh wa niʿma l-Wakīl',
+    arabic: 'حَسْبُنَا اللّٰهُ وَنِعْمَ الْوَكِيلُ',
+    transliteration: 'Ḥasbunā Llāhu wa niʿma l-wakīl',
+    translation: 'Allah is sufficient for us and He is the best Guardian (Wakīl). This was the saying of Ibrāhīm ﷺ when he was thrown into the fire, and of the Prophet Muḥammad ﷺ and the companions when the people said "the enemy has gathered against you." (Āl ʿImrān: 173 — Bukhārī)',
     defaultTarget: 100,
     color: '#0891B2',
   },
@@ -627,7 +628,6 @@ export const PRESET_AZKARS: AzkarItem[] = [
     defaultTarget: 1,
     color: '#DB2777',
   },
-  // ── NEW: Supplications additions ─────────────────────────────────────────
   {
     id: 'dua_tawba',
     category: 'dua',
@@ -790,6 +790,328 @@ export const PRESET_AZKARS: AzkarItem[] = [
   },
 
   // ══════════════════════════════════════════════════════════════════════════
+  // ── Duʿāʾ of the Prophets (ﷺ upon them all) ──────────────────────────────
+  // ══════════════════════════════════════════════════════════════════════════
+
+  // ── Ādam ʿalayhis-salām ───────────────────────────────────────────────────
+  {
+    id: 'dua_adam',
+    category: 'dua_anbiya',
+    title: 'Duʿāʾ Ādam ﷺ — Al-Aʿrāf 23',
+    arabic: 'رَبَّنَا ظَلَمْنَا أَنْفُسَنَا وَإِنْ لَمْ تَغْفِرْ لَنَا وَتَرْحَمْنَا لَنَكُونَنَّ مِنَ الْخَاسِرِينَ',
+    transliteration: 'Rabbanā ẓalamnā anfusanā wa in lam taghfir lanā wa tarḥamnā la-nakūnanna mina l-khāsirīn',
+    translation: 'Our Lord, we have wronged ourselves. If You do not forgive us and have mercy upon us, we will surely be among the losers. (Al-Aʿrāf: 23 — the first supplication taught by Allah to Ādam and Ḥawwāʾ after their descent)',
+    defaultTarget: 7,
+    color: '#10B981',
+  },
+
+  // ── Nūḥ ʿalayhis-salām ────────────────────────────────────────────────────
+  {
+    id: 'dua_nuh_forgiveness',
+    category: 'dua_anbiya',
+    title: 'Duʿāʾ Nūḥ ﷺ — Nūḥ 28',
+    arabic: 'رَبِّ اغْفِرْ لِي وَلِوَالِدَيَّ وَلِمَنْ دَخَلَ بَيْتِيَ مُؤْمِنًا وَلِلْمُؤْمِنِينَ وَالْمُؤْمِنَاتِ',
+    transliteration: 'Rabbi ghfir lī wa li-wālidayya wa li-man dakhala baytiya muʾminan wa li-l-muʾminīna wa l-muʾmināt',
+    translation: 'My Lord, forgive me and my parents and whoever enters my house as a believer, and forgive all believing men and believing women. (Nūḥ: 28)',
+    defaultTarget: 7,
+    color: '#10B981',
+  },
+  {
+    id: 'dua_nuh_victory',
+    category: 'dua_anbiya',
+    title: 'Duʿāʾ Nūḥ ﷺ — Al-Qamar 10',
+    arabic: 'رَبِّ إِنِّي مَغْلُوبٌ فَانْتَصِرْ',
+    transliteration: 'Rabbi innī maghġlūbun fa-ntaṣir',
+    translation: 'My Lord, I am overpowered, so give me victory. (Al-Qamar: 10 — said after 950 years of calling his people to Allah)',
+    defaultTarget: 10,
+    color: '#10B981',
+  },
+
+  // ── Ibrāhīm ʿalayhis-salām ────────────────────────────────────────────────
+  {
+    id: 'dua_ibrahim_fire',
+    category: 'dua_anbiya',
+    title: 'Duʿāʾ Ibrāhīm ﷺ — Ḥasbunā Llāh',
+    arabic: 'حَسْبُنَا اللّٰهُ وَنِعْمَ الْوَكِيلُ',
+    transliteration: 'Ḥasbunā Llāhu wa niʿma l-wakīl',
+    translation: 'Allah is sufficient for us, and He is the best Guardian. (Said by Ibrāhīm ﷺ when he was thrown into the fire — Bukhārī. Also said by the Prophet Muḥammad ﷺ and his companions — Āl ʿImrān: 173)',
+    defaultTarget: 100,
+    color: '#10B981',
+  },
+  {
+    id: 'dua_ibrahim_progeny',
+    category: 'dua_anbiya',
+    title: 'Duʿāʾ Ibrāhīm ﷺ — Ibrāhīm 40–41',
+    arabic: 'رَبِّ اجْعَلْنِي مُقِيمَ الصَّلَاةِ وَمِنْ ذُرِّيَّتِي رَبَّنَا وَتَقَبَّلْ دُعَاءِ رَبَّنَا اغْفِرْ لِي وَلِوَالِدَيَّ وَلِلْمُؤْمِنِينَ يَوْمَ يَقُومُ الْحِسَابُ',
+    transliteration: 'Rabbi jʿalnī muqīma ṣ-ṣalāti wa min dhurriyyatī rabbanā wa taqabbal duʿāʾ. Rabbanā ghfir lī wa li-wālidayya wa li-l-muʾminīna yawma yaqūmu l-ḥisāb',
+    translation: 'My Lord, make me an establisher of prayer, and from my descendants. Our Lord, and accept my supplication. Our Lord, forgive me and my parents and the believers on the Day the reckoning is established. (Ibrāhīm: 40–41)',
+    defaultTarget: 3,
+    color: '#10B981',
+  },
+  {
+    id: 'dua_ibrahim_makkah',
+    category: 'dua_anbiya',
+    title: 'Duʿāʾ Ibrāhīm ﷺ — Al-Baqara 126',
+    arabic: 'رَبِّ اجْعَلْ هَذَا بَلَدًا آمِنًا وَارْزُقْ أَهْلَهُ مِنَ الثَّمَرَاتِ مَنْ آمَنَ مِنْهُمْ بِاللّٰهِ وَالْيَوْمِ الْآخِرِ',
+    transliteration: 'Rabbi jʿal hādhā baladan āminan wa rzuq ahlahū mina th-thamarāti man āmana minhum bi-Llāhi wa l-yawmi l-ākhir',
+    translation: 'My Lord, make this city secure and provide its people with fruits — those among them who believe in Allah and the Last Day. (Al-Baqara: 126 — the supplication of Ibrāhīm for Makkah al-Mukarrama)',
+    defaultTarget: 3,
+    color: '#10B981',
+  },
+  {
+    id: 'dua_ibrahim_hikma',
+    category: 'dua_anbiya',
+    title: 'Duʿāʾ Ibrāhīm ﷺ — Ash-Shuʿarāʾ 83–87',
+    arabic: 'رَبِّ هَبْ لِي حُكْمًا وَأَلْحِقْنِي بِالصَّالِحِينَ وَاجْعَلْ لِي لِسَانَ صِدْقٍ فِي الْآخِرِينَ وَاجْعَلْنِي مِنْ وَرَثَةِ جَنَّةِ النَّعِيمِ وَلَا تُخْزِنِي يَوْمَ يُبْعَثُونَ',
+    transliteration: 'Rabbi hab lī ḥukman wa alḥiqnī bi-ṣ-ṣāliḥīn, wa jʿal lī lisāna ṣidqin fi l-ākhirīn, wa jʿalnī min warathati jannati n-naʿīm, wa lā tukhzinī yawma yubʿathūn',
+    translation: 'My Lord, grant me wisdom and join me with the righteous. Grant me a mention of truth among later generations. Make me among the inheritors of the Garden of Bliss. And do not disgrace me on the Day they are resurrected. (Ash-Shuʿarāʾ: 83–87)',
+    defaultTarget: 3,
+    color: '#10B981',
+  },
+
+  // ── Ismāʿīl ʿalayhis-salām ────────────────────────────────────────────────
+  {
+    id: 'dua_ibrahim_ismail_kaaba',
+    category: 'dua_anbiya',
+    title: 'Duʿāʾ Ibrāhīm & Ismāʿīl ﷺ — Al-Baqara 127–129',
+    arabic: 'رَبَّنَا تَقَبَّلْ مِنَّا إِنَّكَ أَنْتَ السَّمِيعُ الْعَلِيمُ رَبَّنَا وَاجْعَلْنَا مُسْلِمَيْنِ لَكَ وَمِنْ ذُرِّيَّتِنَا أُمَّةً مُسْلِمَةً لَكَ وَأَرِنَا مَنَاسِكَنَا وَتُبْ عَلَيْنَا إِنَّكَ أَنْتَ التَّوَّابُ الرَّحِيمُ رَبَّنَا وَابْعَثْ فِيهِمْ رَسُولًا مِنْهُمْ يَتْلُو عَلَيْهِمْ آيَاتِكَ وَيُعَلِّمُهُمُ الْكِتَابَ وَالْحِكْمَةَ وَيُزَكِّيهِمْ إِنَّكَ أَنْتَ الْعَزِيزُ الْحَكِيمُ',
+    transliteration: 'Rabbanā taqabbal minnā innaka anta s-samīʿu l-ʿalīm. Rabbanā wa jʿalnā muslimayni laka wa min dhurriyyatinā ummatan muslimatan lak, wa arinā manāsikanā wa tub ʿalaynā innaka anta t-tawwābu r-raḥīm. Rabbanā wa bʿath fīhim rasūlan minhum yatlū ʿalayhim āyātika wa yuʿallimuhumu l-kitāba wa l-ḥikmata wa yuzakkīhim innaka anta l-ʿazīzu l-ḥakīm',
+    translation: 'Our Lord, accept from us. Indeed You are the Hearing, the Knowing. Our Lord, make us Muslims submitting to You and from our descendants a Muslim nation submitting to You. Show us our rites of worship and accept our repentance. Indeed You are the Accepting of repentance, the Merciful. Our Lord, raise among them a messenger from themselves who will recite to them Your verses, teach them the Book and wisdom, and purify them. Indeed You are the Almighty, the Wise. (Al-Baqara: 127–129 — said while building the Kaʿba)',
+    defaultTarget: 3,
+    color: '#10B981',
+  },
+
+  // ── Mūsā ʿalayhis-salām ───────────────────────────────────────────────────
+  {
+    id: 'dua_musa_forgiveness',
+    category: 'dua_anbiya',
+    title: 'Duʿāʾ Mūsā ﷺ — Al-Aʿrāf 151',
+    arabic: 'رَبِّ اغْفِرْ لِي وَلِأَخِي وَأَدْخِلْنَا فِي رَحْمَتِكَ وَأَنْتَ أَرْحَمُ الرَّاحِمِينَ',
+    transliteration: 'Rabbi ghfir lī wa li-akhī wa adkhilnā fī raḥmatika wa anta arḥamu r-rāḥimīn',
+    translation: 'My Lord, forgive me and my brother and admit us into Your mercy, for You are the most merciful of the merciful. (Al-Aʿrāf: 151 — said by Mūsā ﷺ after his brother Hārūn went through the trial of the calf)',
+    defaultTarget: 7,
+    color: '#10B981',
+  },
+  {
+    id: 'dua_musa_guidance',
+    category: 'dua_anbiya',
+    title: 'Duʿāʾ Mūsā ﷺ — Al-Qaṣaṣ 16',
+    arabic: 'رَبِّ إِنِّي ظَلَمْتُ نَفْسِي فَاغْفِرْ لِي',
+    transliteration: 'Rabbi innī ẓalamtu nafsī faghfir lī',
+    translation: 'My Lord, indeed I have wronged myself, so forgive me. (Al-Qaṣaṣ: 16 — said by Mūsā ﷺ, and Allah immediately forgave him)',
+    defaultTarget: 10,
+    color: '#10B981',
+  },
+  {
+    id: 'dua_musa_rizq',
+    category: 'dua_anbiya',
+    title: 'Duʿāʾ Mūsā ﷺ — Al-Qaṣaṣ 24',
+    arabic: 'رَبِّ إِنِّي لِمَا أَنْزَلْتَ إِلَيَّ مِنْ خَيْرٍ فَقِيرٌ',
+    transliteration: 'Rabbi innī limā anzalta ilayya min khayrin faqīr',
+    translation: 'My Lord, I am in absolute need of whatever good You may send down to me. (Al-Qaṣaṣ: 24 — Mūsā ﷺ said this after watering the flock of the two women, and shortly after was given shelter, sustenance and a wife)',
+    defaultTarget: 7,
+    color: '#10B981',
+  },
+  {
+    id: 'dua_musa_sharh_sadr',
+    category: 'dua_anbiya',
+    title: 'Duʿāʾ Mūsā ﷺ — Ṭāhā 25–28',
+    arabic: 'رَبِّ اشْرَحْ لِي صَدْرِي وَيَسِّرْ لِي أَمْرِي وَاحْلُلْ عُقْدَةً مِنْ لِسَانِي يَفْقَهُوا قَوْلِي',
+    transliteration: 'Rabbi shraḥ lī ṣadrī wa yassir lī amrī wa ḥlul ʿuqdatan min lisānī yafqahū qawlī',
+    translation: 'My Lord, expand for me my chest. Ease my task for me. And untie the knot from my tongue so that they may understand my speech. (Ṭāhā: 25–28 — said before going to Pharaoh)',
+    defaultTarget: 7,
+    color: '#10B981',
+  },
+
+  // ── Yūsuf ʿalayhis-salām ──────────────────────────────────────────────────
+  {
+    id: 'dua_yusuf_prison',
+    category: 'dua_anbiya',
+    title: 'Duʿāʾ Yūsuf ﷺ — Yūsuf 33',
+    arabic: 'رَبِّ السِّجْنُ أَحَبُّ إِلَيَّ مِمَّا يَدْعُونَنِي إِلَيْهِ وَإِلَّا تَصْرِفْ عَنِّي كَيْدَهُنَّ أَصْبُ إِلَيْهِنَّ وَأَكُنْ مِنَ الْجَاهِلِينَ',
+    transliteration: 'Rabbi s-sijnu aḥabbu ilayya mimmā yadʿūnanī ilayhi wa illā taṣrif ʿannī kaydahunna aṣbu ilayhinna wa akun mina l-jāhilīn',
+    translation: 'My Lord, prison is more beloved to me than what they invite me to. And if You do not avert from me their scheme, I might incline toward them and be of the ignorant. (Yūsuf: 33 — said by Yūsuf ﷺ when the women plotted against him)',
+    defaultTarget: 7,
+    color: '#10B981',
+  },
+  {
+    id: 'dua_yusuf_victory',
+    category: 'dua_anbiya',
+    title: 'Duʿāʾ Yūsuf ﷺ — Yūsuf 101',
+    arabic: 'رَبِّ قَدْ آتَيْتَنِي مِنَ الْمُلْكِ وَعَلَّمْتَنِي مِنْ تَأْوِيلِ الْأَحَادِيثِ فَاطِرَ السَّمَاوَاتِ وَالْأَرْضِ أَنْتَ وَلِيِّي فِي الدُّنْيَا وَالْآخِرَةِ تَوَفَّنِي مُسْلِمًا وَأَلْحِقْنِي بِالصَّالِحِينَ',
+    transliteration: 'Rabbi qad ātaytanī mina l-mulki wa ʿallamtanī min taʾwīli l-aḥādīth, fāṭira s-samāwāti wa l-arḍi anta waliyyī fi d-dunyā wa l-ākhira, tawaffanī musliman wa alḥiqnī bi-ṣ-ṣāliḥīn',
+    translation: 'My Lord, You have given me of the kingdom and taught me of the interpretation of speech. Creator of the heavens and the earth, You are my Protector in this world and the Hereafter. Cause me to die as a Muslim and join me with the righteous. (Yūsuf: 101 — the final prayer of Yūsuf ﷺ after being reunited with his family)',
+    defaultTarget: 3,
+    color: '#10B981',
+  },
+
+  // ── Yaʿqūb ʿalayhis-salām ────────────────────────────────────────────────
+  {
+    id: 'dua_yaqub_grief',
+    category: 'dua_anbiya',
+    title: 'Duʿāʾ Yaʿqūb ﷺ — Yūsuf 86',
+    arabic: 'إِنَّمَا أَشْكُو بَثِّي وَحُزْنِي إِلَى اللّٰهِ وَأَعْلَمُ مِنَ اللّٰهِ مَا لَا تَعْلَمُونَ',
+    transliteration: 'Innamā ashkū baththī wa ḥuznī ila Llāh, wa aʿlamu mina Llāhi mā lā taʿlamūn',
+    translation: 'I only complain of my suffering and my grief to Allah, and I know from Allah what you do not know. (Yūsuf: 86 — said by Yaʿqūb ﷺ in his grief over the loss of Yūsuf ﷺ)',
+    defaultTarget: 7,
+    color: '#10B981',
+  },
+
+  // ── Ayyūb ʿalayhis-salām ──────────────────────────────────────────────────
+  {
+    id: 'dua_ayyub',
+    category: 'dua_anbiya',
+    title: 'Duʿāʾ Ayyūb ﷺ — Al-Anbiyāʾ 83',
+    arabic: 'رَبِّ إِنِّي مَسَّنِيَ الضُّرُّ وَأَنْتَ أَرْحَمُ الرَّاحِمِينَ',
+    transliteration: 'Rabbi innī massaniya d-ḍurru wa anta arḥamu r-rāḥimīn',
+    translation: 'My Lord, adversity has touched me, and You are the most merciful of the merciful. (Al-Anbiyāʾ: 83 — said by Ayyūb ﷺ after 18 years of illness. Allah answered immediately and restored his health and family)',
+    defaultTarget: 40,
+    color: '#10B981',
+  },
+
+  // ── Yūnus ʿalayhis-salām ──────────────────────────────────────────────────
+  {
+    id: 'dua_nabi_yunus',
+    category: 'dua_anbiya',
+    title: 'Duʿāʾ Dhī n-Nūn — Al-Anbiyāʾ 87',
+    arabic: 'لَا إِلٰهَ إِلَّا أَنْتَ سُبْحَانَكَ إِنِّي كُنْتُ مِنَ الظَّالِمِينَ',
+    transliteration: 'Lā ilāha illā anta subḥānaka innī kuntu mina ẓ-ẓālimīn',
+    translation: 'There is no deity except You. Glory be to You. Indeed, I have been among the wrongdoers. (Al-Anbiyāʾ: 87 — the invocation of Yūnus ﷺ in the belly of the whale. The Prophet ﷺ said: "No Muslim supplicates with it for anything, except that Allah answers him.")',
+    defaultTarget: 40,
+    color: '#10B981',
+  },
+
+  // ── Zakariyyā ʿalayhis-salām ─────────────────────────────────────────────
+  {
+    id: 'dua_zakariyya_child',
+    category: 'dua_anbiya',
+    title: 'Duʿāʾ Zakariyyā ﷺ — Āl ʿImrān 38',
+    arabic: 'رَبِّ هَبْ لِي مِنْ لَدُنْكَ ذُرِّيَّةً طَيِّبَةً إِنَّكَ سَمِيعُ الدُّعَاءِ',
+    transliteration: 'Rabbi hab lī min ladunka dhurriyyatan ṭayyibatan innaka samīʿu d-duʿāʾ',
+    translation: 'My Lord, grant me from Yourself a good offspring. Indeed You are the Hearer of supplication. (Āl ʿImrān: 38 — Zakariyyā ﷺ asked for a child in his old age and was given Yaḥyā ﷺ)',
+    defaultTarget: 10,
+    color: '#10B981',
+  },
+  {
+    id: 'dua_zakariyya_mercy',
+    category: 'dua_anbiya',
+    title: 'Duʿāʾ Zakariyyā ﷺ — Maryam 4–6',
+    arabic: 'رَبِّ إِنِّي وَهَنَ الْعَظْمُ مِنِّي وَاشْتَعَلَ الرَّأْسُ شَيْبًا وَلَمْ أَكُنْ بِدُعَائِكَ رَبِّ شَقِيًّا وَإِنِّي خِفْتُ الْمَوَالِيَ مِنْ وَرَائِي وَكَانَتِ امْرَأَتِي عَاقِرًا فَهَبْ لِي مِنْ لَدُنْكَ وَلِيًّا يَرِثُنِي وَيَرِثُ مِنْ آلِ يَعْقُوبَ وَاجْعَلْهُ رَبِّ رَضِيًّا',
+    transliteration: 'Rabbi innī wahana l-ʿaẓmu minnī wa shtaʿala r-raʾsu shayban wa lam akun bi-duʿāʾika rabbi shaqiyyā wa innī khiftu l-mawāliya min warāʾī wa kānati mraʾatī ʿāqiran fa-hab lī min ladunka waliyyan yarithunī wa yarithu min āli yaʿqūba wa jʿalhu rabbi raḍiyyā',
+    translation: 'My Lord, indeed my bones have weakened and my head has filled with white, and I have never been unhappy in my supplication to You, my Lord. And indeed I fear the successors after me, and my wife has been barren, so grant me from Yourself an heir who will inherit me and inherit from the family of Yaʿqūb. And make him, my Lord, pleasing. (Maryam: 4–6)',
+    defaultTarget: 7,
+    color: '#10B981',
+  },
+
+  // ── ʿĪsā ʿalayhis-salām ──────────────────────────────────────────────────
+  {
+    id: 'dua_isa_maidah',
+    category: 'dua_anbiya',
+    title: 'Duʿāʾ ʿĪsā ﷺ — Al-Māʾida 114',
+    arabic: 'اللّٰهُمَّ رَبَّنَا أَنْزِلْ عَلَيْنَا مَائِدَةً مِنَ السَّمَاءِ تَكُونُ لَنَا عِيدًا لِأَوَّلِنَا وَآخِرِنَا وَآيَةً مِنْكَ وَارْزُقْنَا وَأَنْتَ خَيْرُ الرَّازِقِينَ',
+    transliteration: 'Allāhumma rabbanā anzil ʿalaynā māʾidatan mina s-samāʾi takūnu lanā ʿīdan li-awwalinā wa ākhirinā wa āyatan minka wa rzuqnā wa anta khayru r-rāziqīn',
+    translation: 'O Allah, our Lord, send down to us a table from the sky that will be a festival for us — for the first of us and the last of us — and a sign from You. And provide for us, for You are the best of providers. (Al-Māʾida: 114 — supplication of ʿĪsā ﷺ for the table spread)',
+    defaultTarget: 3,
+    color: '#10B981',
+  },
+  {
+    id: 'dua_isa_day_of_judgement',
+    category: 'dua_anbiya',
+    title: 'Duʿāʾ ʿĪsā ﷺ — Al-Māʾida 118',
+    arabic: 'إِنْ تُعَذِّبْهُمْ فَإِنَّهُمْ عِبَادُكَ وَإِنْ تَغْفِرْ لَهُمْ فَإِنَّكَ أَنْتَ الْعَزِيزُ الْحَكِيمُ',
+    transliteration: 'In tuʿadhdhibhum fa-innahum ʿibāduka wa in taghfir lahum fa-innaka anta l-ʿazīzu l-ḥakīm',
+    translation: 'If You punish them, they are Your servants. And if You forgive them, You are the Almighty, the Wise. (Al-Māʾida: 118 — said by ʿĪsā ﷺ on the Day of Judgement)',
+    defaultTarget: 7,
+    color: '#10B981',
+  },
+
+  // ── Shuʿayb ʿalayhis-salām ────────────────────────────────────────────────
+  {
+    id: 'dua_shuayb',
+    category: 'dua_anbiya',
+    title: 'Duʿāʾ Shuʿayb ﷺ — Al-Aʿrāf 89',
+    arabic: 'رَبَّنَا افْتَحْ بَيْنَنَا وَبَيْنَ قَوْمِنَا بِالْحَقِّ وَأَنْتَ خَيْرُ الْفَاتِحِينَ',
+    transliteration: 'Rabbanā ftaḥ baynanā wa bayna qawminā bi-l-ḥaqqi wa anta khayru l-fātiḥīn',
+    translation: 'Our Lord, decide between us and our people in truth, for You are the best of those who give decision. (Al-Aʿrāf: 89)',
+    defaultTarget: 7,
+    color: '#10B981',
+  },
+
+  // ── Sulaymān ʿalayhis-salām ───────────────────────────────────────────────
+  {
+    id: 'dua_sulayman_gratitude',
+    category: 'dua_anbiya',
+    title: 'Duʿāʾ Sulaymān ﷺ — Al-Naml 19',
+    arabic: 'رَبِّ أَوْزِعْنِي أَنْ أَشْكُرَ نِعْمَتَكَ الَّتِي أَنْعَمْتَ عَلَيَّ وَعَلَى وَالِدَيَّ وَأَنْ أَعْمَلَ صَالِحًا تَرْضَاهُ وَأَدْخِلْنِي بِرَحْمَتِكَ فِي عِبَادِكَ الصَّالِحِينَ',
+    transliteration: 'Rabbi awziʿnī an ashkura niʿmataka llatī anʿamta ʿalayya wa ʿalā wālidayya wa an aʿmala ṣāliḥan tarḍāhu wa adkhilnī bi-raḥmatika fī ʿibādika ṣ-ṣāliḥīn',
+    translation: 'My Lord, inspire me to be grateful for Your favour which You have bestowed upon me and my parents, and to do good that pleases You, and admit me by Your mercy among Your righteous servants. (Al-Naml: 19)',
+    defaultTarget: 7,
+    color: '#10B981',
+  },
+  {
+    id: 'dua_sulayman_forgiveness',
+    category: 'dua_anbiya',
+    title: 'Duʿāʾ Sulaymān ﷺ — Ṣād 35',
+    arabic: 'رَبِّ اغْفِرْ لِي وَهَبْ لِي مُلْكًا لَا يَنْبَغِي لِأَحَدٍ مِنْ بَعْدِي إِنَّكَ أَنْتَ الْوَهَّابُ',
+    transliteration: 'Rabbi ghfir lī wa hab lī mulkan lā yanbaghī li-aḥadin min baʿdī innaka anta l-wahhāb',
+    translation: 'My Lord, forgive me and grant me a kingdom such as will not belong to anyone after me. Indeed You are the Bestower. (Ṣād: 35)',
+    defaultTarget: 3,
+    color: '#10B981',
+  },
+
+  // ── Prophet Muḥammad ﷺ ─────────────────────────────────────────────────────
+  {
+    id: 'dua_muhammad_heart',
+    category: 'dua_anbiya',
+    title: 'Duʿāʾ an-Nabī ﷺ — Tathbīt al-Qalb',
+    arabic: 'يَا مُقَلِّبَ الْقُلُوبِ ثَبِّتْ قَلْبِي عَلَى دِينِكَ',
+    transliteration: 'Yā muqalliba l-qulūbi thabbit qalbī ʿalā dīnik',
+    translation: 'O Turner of Hearts, keep my heart firm upon Your religion. (Said frequently by the Prophet ﷺ — at-Tirmidhī, authenticated)',
+    defaultTarget: 10,
+    color: '#10B981',
+  },
+  {
+    id: 'dua_muhammad_israf',
+    category: 'dua_anbiya',
+    title: 'Duʿāʾ an-Nabī ﷺ — ʿAdam al-Isrāf',
+    arabic: 'رَبِّ أَعُوذُ بِكَ مِنْ عَذَابِ الْقَبْرِ وَعَذَابِ النَّارِ وَفِتْنَةِ الْمَحْيَا وَالْمَمَاتِ وَفِتْنَةِ الْمَسِيحِ الدَّجَّالِ',
+    transliteration: 'Rabbi aʿūdhu bika min ʿadhābi l-qabri wa ʿadhābi n-nāri wa fitnati l-maḥyā wa l-mamāti wa fitnati l-masīḥi d-dajjāl',
+    translation: 'My Lord, I seek refuge in You from the punishment of the grave, from the punishment of the Fire, from the trials of life and death, and from the trial of the False Messiah. (Recommended by the Prophet ﷺ at the end of every prayer — Bukhārī & Muslim)',
+    defaultTarget: 3,
+    color: '#10B981',
+  },
+  {
+    id: 'dua_muhammad_allahuma_inni_asaluka_hudaa',
+    category: 'dua_anbiya',
+    title: 'Duʿāʾ an-Nabī ﷺ — Al-Hudā wa t-Tuqā',
+    arabic: 'اللّٰهُمَّ إِنِّي أَسْأَلُكَ الْهُدَى وَالتُّقَى وَالْعَفَافَ وَالْغِنَى',
+    transliteration: 'Allāhumma innī asʾaluka l-hudā wa t-tuqā wa l-ʿafāfa wa l-ghinā',
+    translation: 'O Allah, I ask You for guidance, piety, chastity and self-sufficiency. (Muslim — recommended by the Prophet ﷺ)',
+    defaultTarget: 10,
+    color: '#10B981',
+  },
+  {
+    id: 'dua_muhammad_noor',
+    category: 'dua_anbiya',
+    title: 'Duʿāʾ an-Nabī ﷺ — Duʿāʾ an-Nūr',
+    arabic: 'اللّٰهُمَّ اجْعَلْ فِي قَلْبِي نُورًا وَفِي لِسَانِي نُورًا وَفِي سَمْعِي نُورًا وَفِي بَصَرِي نُورًا وَمِنْ فَوْقِي نُورًا وَمِنْ تَحْتِي نُورًا وَعَنْ يَمِينِي نُورًا وَعَنْ شِمَالِي نُورًا وَمِنْ أَمَامِي نُورًا وَمِنْ خَلْفِي نُورًا وَاجْعَلْ فِي نَفْسِي نُورًا وَأَعْظِمْ لِي نُورًا',
+    transliteration: 'Allāhumma jʿal fī qalbī nūran wa fī lisānī nūran wa fī samʿī nūran wa fī baṣarī nūran wa min fawqī nūran wa min taḥtī nūran wa ʿan yamīnī nūran wa ʿan shimālī nūran wa min amāmī nūran wa min khalfī nūran wa jʿal fī nafsī nūran wa aʿẓim lī nūrā',
+    translation: 'O Allah, place light in my heart, light on my tongue, light in my hearing, light in my sight, light above me, light beneath me, light on my right, light on my left, light before me, light behind me, place light in my soul, and make my light great. (Bukhārī & Muslim — said by the Prophet ﷺ going to prayer)',
+    defaultTarget: 3,
+    color: '#10B981',
+  },
+  {
+    id: 'dua_muhammad_morning_complete',
+    category: 'dua_anbiya',
+    title: 'Duʿāʾ an-Nabī ﷺ — Al-Khayr al-Kullī',
+    arabic: 'اللّٰهُمَّ إِنِّي أَسْأَلُكَ مِنَ الْخَيْرِ كُلِّهِ عَاجِلِهِ وَآجِلِهِ مَا عَلِمْتُ مِنْهُ وَمَا لَمْ أَعْلَمْ وَأَعُوذُ بِكَ مِنَ الشَّرِّ كُلِّهِ عَاجِلِهِ وَآجِلِهِ مَا عَلِمْتُ مِنْهُ وَمَا لَمْ أَعْلَمْ اللّٰهُمَّ إِنِّي أَسْأَلُكَ مِنْ خَيْرِ مَا سَأَلَكَ عَبْدُكَ وَنَبِيُّكَ وَأَعُوذُ بِكَ مِنْ شَرِّ مَا عَاذَ بِهِ عَبْدُكَ وَنَبِيُّكَ اللّٰهُمَّ إِنِّي أَسْأَلُكَ الْجَنَّةَ وَمَا قَرَّبَ إِلَيْهَا مِنْ قَوْلٍ أَوْ عَمَلٍ وَأَعُوذُ بِكَ مِنَ النَّارِ وَمَا قَرَّبَ إِلَيْهَا مِنْ قَوْلٍ أَوْ عَمَلٍ',
+    transliteration: 'Allāhumma innī asʾaluka mina l-khayri kullih, ʿājilihī wa ājilih, mā ʿalimtu minhu wa mā lam aʿlam, wa aʿūdhu bika mina sh-sharri kullih, ʿājilihī wa ājilih, mā ʿalimtu minhu wa mā lam aʿlam. Allāhumma innī asʾaluka min khayri mā saʾalaka ʿabduka wa nabiyyuk, wa aʿūdhu bika min sharri mā ʿādha bihi ʿabduka wa nabiyyuk. Allāhumma innī asʾaluka l-jannata wa mā qarraba ilayhā min qawlin aw ʿamal, wa aʿūdhu bika mina n-nāri wa mā qarraba ilayhā min qawlin aw ʿamal',
+    translation: 'O Allah, I ask You for all good — the immediate and the deferred — what I know of it and what I do not know. And I seek refuge in You from all evil — the immediate and the deferred — what I know of it and what I do not know. O Allah, I ask You for the best of what Your servant and Prophet has asked You, and I seek refuge in You from the worst of what Your servant and Prophet sought refuge from. O Allah, I ask You for Paradise and what draws near to it in word and deed, and I seek refuge in You from the Fire and what draws near to it in word and deed. (Ibn Mājah & Aḥmad — a comprehensive prayer of the Prophet ﷺ)',
+    defaultTarget: 1,
+    color: '#10B981',
+  },
+
+  // ══════════════════════════════════════════════════════════════════════════
   // ── Tijani ────────────────────────────────────────────────────────────────
   // ══════════════════════════════════════════════════════════════════════════
   {
@@ -832,7 +1154,6 @@ export const PRESET_AZKARS: AzkarItem[] = [
     defaultTarget: 12,
     color: '#16A34A',
   },
-  // ── NEW: Tijani additions ─────────────────────────────────────────────────
   {
     id: 'wazifa_salat_fatih_wazifu',
     category: 'tijani',

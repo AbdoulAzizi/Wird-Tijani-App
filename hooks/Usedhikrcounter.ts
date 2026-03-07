@@ -36,6 +36,9 @@ export interface DhikrCounterState {
   // History
   sessions: DhikrSession[];
 
+  // Favorites
+  favoriteIds: string[];
+
   // Stats
   totalSessions: number;
   totalCounts: number;
@@ -46,6 +49,7 @@ const STORAGE_KEYS = {
   CUSTOM_AZKARS: 'dhikr_custom_azkars',
   SESSIONS:      'dhikr_sessions',
   ACTIVE:        'dhikr_active_session',
+  FAVORITES:     'dhikr_favorites',
 };
 
 // ─── Hook ─────────────────────────────────────────────────────────────────────
@@ -56,21 +60,24 @@ export function useDhikrCounter() {
   const [active,       setActive]       = useState<ActiveDhikr | null>(null);
   const [isRunning,    setIsRunning]    = useState(false);
   const [elapsed,      setElapsed]      = useState(0);
+  const [favoriteIds,  setFavoriteIds]  = useState<string[]>([]);
 
-  const timerRef   = useRef<ReturnType<typeof setInterval> | null>(null);
+  const timerRef     = useRef<ReturnType<typeof setInterval> | null>(null);
   const startTimeRef = useRef<number>(0);
 
   // ── Load persisted data ──────────────────────────────────────────────────
   useEffect(() => {
     (async () => {
       try {
-        const [rawCustom, rawSessions, rawActive] = await Promise.all([
+        const [rawCustom, rawSessions, rawActive, rawFavorites] = await Promise.all([
           AsyncStorage.getItem(STORAGE_KEYS.CUSTOM_AZKARS),
           AsyncStorage.getItem(STORAGE_KEYS.SESSIONS),
           AsyncStorage.getItem(STORAGE_KEYS.ACTIVE),
+          AsyncStorage.getItem(STORAGE_KEYS.FAVORITES),
         ]);
-        if (rawCustom)   setCustomAzkars(JSON.parse(rawCustom));
-        if (rawSessions) setSessions(JSON.parse(rawSessions));
+        if (rawCustom)    setCustomAzkars(JSON.parse(rawCustom));
+        if (rawSessions)  setSessions(JSON.parse(rawSessions));
+        if (rawFavorites) setFavoriteIds(JSON.parse(rawFavorites));
         if (rawActive) {
           const saved: ActiveDhikr = JSON.parse(rawActive);
           setActive(saved);
@@ -107,10 +114,17 @@ export function useDhikrCounter() {
   }, [active]);
 
   // ── Derived stats ────────────────────────────────────────────────────────
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr      = new Date().toISOString().split('T')[0];
   const todaySessions = sessions.filter(s => s.completedAt.startsWith(todayStr));
   const todayCounts   = todaySessions.reduce((sum, s) => sum + s.count, 0);
   const totalCounts   = sessions.reduce((sum, s) => sum + s.count, 0);
+
+  // ── Favorites helpers ────────────────────────────────────────────────────
+  const allAzkars = [...PRESET_AZKARS, ...customAzkars];
+
+  const favoriteAzkars = favoriteIds
+    .map(id => allAzkars.find(a => a.id === id))
+    .filter(Boolean) as AzkarItem[];
 
   // ── Actions ──────────────────────────────────────────────────────────────
 
@@ -126,6 +140,22 @@ export function useDhikrCounter() {
     setIsRunning(true);
     setElapsed(0);
   }, []);
+
+  /** Replay a session from history */
+  const replaySession = useCallback((session: DhikrSession) => {
+    // Try to find the original azkar object
+    const azkar = allAzkars.find(a => a.id === session.azkarId) ?? {
+      id:             session.azkarId,
+      category:       'custom' as const,
+      title:          session.azkarTitle,
+      arabic:         session.azkarArabic,
+      transliteration: '',
+      translation:    '',
+      defaultTarget:  session.target,
+      color:          '#059669',
+    };
+    startDhikr(azkar, session.target);
+  }, [allAzkars, startDhikr]);
 
   /** Tap to increment */
   const increment = useCallback(() => {
@@ -160,15 +190,15 @@ export function useDhikrCounter() {
   const completeSession = useCallback(async () => {
     if (!active) return;
     const session: DhikrSession = {
-      id:             `session_${Date.now()}`,
-      azkarId:        active.azkar.id,
-      azkarTitle:     active.azkar.title,
-      azkarArabic:    active.azkar.arabic,
-      target:         active.target,
-      count:          active.count,
-      completedAt:    new Date().toISOString(),
+      id:              `session_${Date.now()}`,
+      azkarId:         active.azkar.id,
+      azkarTitle:      active.azkar.title,
+      azkarArabic:     active.azkar.arabic,
+      target:          active.target,
+      count:           active.count,
+      completedAt:     new Date().toISOString(),
       durationSeconds: elapsed,
-      isComplete:     active.count >= active.target,
+      isComplete:      active.count >= active.target,
     };
     const updated = [session, ...sessions].slice(0, 200); // keep last 200
     setSessions(updated);
@@ -186,7 +216,9 @@ export function useDhikrCounter() {
   }, []);
 
   /** Add a new custom azkar */
-  const addCustomAzkar = useCallback(async (item: Omit<AzkarItem, 'id' | 'category' | 'isCustom' | 'createdAt'>) => {
+  const addCustomAzkar = useCallback(async (
+    item: Omit<AzkarItem, 'id' | 'category' | 'isCustom' | 'createdAt'>,
+  ) => {
     const newItem: AzkarItem = {
       ...item,
       id:        `custom_${Date.now()}`,
@@ -201,12 +233,46 @@ export function useDhikrCounter() {
     return newItem;
   }, [customAzkars]);
 
+  /** Edit an existing custom azkar */
+  const editCustomAzkar = useCallback(async (
+    id: string,
+    updates: Partial<Omit<AzkarItem, 'id' | 'category' | 'isCustom' | 'createdAt'>>,
+  ) => {
+    const updated = customAzkars.map(a =>
+      a.id === id ? { ...a, ...updates } : a,
+    );
+    setCustomAzkars(updated);
+    await AsyncStorage.setItem(STORAGE_KEYS.CUSTOM_AZKARS, JSON.stringify(updated));
+    // If the active session uses this azkar, update it too
+    setActive(prev => {
+      if (!prev || prev.azkar.id !== id) return prev;
+      return { ...prev, azkar: { ...prev.azkar, ...updates } };
+    });
+  }, [customAzkars]);
+
   /** Delete a custom azkar */
   const deleteCustomAzkar = useCallback(async (id: string) => {
     const updated = customAzkars.filter(a => a.id !== id);
     setCustomAzkars(updated);
     await AsyncStorage.setItem(STORAGE_KEYS.CUSTOM_AZKARS, JSON.stringify(updated));
+    // Also remove from favorites
+    setFavoriteIds(prev => {
+      const next = prev.filter(fid => fid !== id);
+      AsyncStorage.setItem(STORAGE_KEYS.FAVORITES, JSON.stringify(next)).catch(() => {});
+      return next;
+    });
   }, [customAzkars]);
+
+  /** Toggle favorite */
+  const toggleFavorite = useCallback(async (azkarId: string) => {
+    setFavoriteIds(prev => {
+      const next = prev.includes(azkarId)
+        ? prev.filter(id => id !== azkarId)
+        : [...prev, azkarId];
+      AsyncStorage.setItem(STORAGE_KEYS.FAVORITES, JSON.stringify(next)).catch(() => {});
+      return next;
+    });
+  }, []);
 
   /** Delete a history session */
   const deleteSession = useCallback(async (id: string) => {
@@ -221,8 +287,6 @@ export function useDhikrCounter() {
     await AsyncStorage.removeItem(STORAGE_KEYS.SESSIONS);
   }, []);
 
-  const allAzkars = [...PRESET_AZKARS, ...customAzkars];
-
   return {
     // state
     active,
@@ -235,8 +299,11 @@ export function useDhikrCounter() {
     totalSessions: sessions.length,
     totalCounts,
     todayCounts,
+    favoriteIds,
+    favoriteAzkars,
     // actions
     startDhikr,
+    replaySession,
     increment,
     decrement,
     resetCount,
@@ -244,7 +311,9 @@ export function useDhikrCounter() {
     completeSession,
     discardSession,
     addCustomAzkar,
+    editCustomAzkar,
     deleteCustomAzkar,
+    toggleFavorite,
     deleteSession,
     clearHistory,
   };

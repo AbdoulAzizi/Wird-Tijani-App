@@ -7,7 +7,7 @@ import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
   Plus, Play, Pause, Square, RotateCcw, Clock,
-  Trash2, Award, CheckCircle,
+  Trash2, Award, CheckCircle, Heart, RotateCw,
 } from 'lucide-react-native';
 import { useDhikrCounter } from '@/hooks/Usedhikrcounter';
 import DhikrPickerModal from '@/components/Dhikrpickermodal';
@@ -18,6 +18,7 @@ import { useContext } from 'react';
 import MinimalHeader from '../../components/MinimalHeader';
 import { LayoutActionsContext } from '../../contexts/LayoutActionsContext';
 import { useRegisterHeaderActions } from '../../contexts/HeaderActionsContext';
+import type { AzkarItem } from '../../data/dhikrCounterData';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -50,47 +51,36 @@ function GlassCard({ children, style, dark }: { children: React.ReactNode; style
 
 const glass = StyleSheet.create({
   card: {
-    borderRadius: 20, padding: 16,
-    borderWidth: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowRadius: 20,
-    elevation: 8,
+    borderRadius: 20, padding: 16, borderWidth: 1,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowRadius: 20, elevation: 8,
   },
-  cardLight: {
-    backgroundColor: 'rgba(255,255,255,0.82)',
-    borderColor:  'rgba(255,255,255,0.90)',
-    shadowOpacity: 0.14,
-  },
-  cardDark: {
-    backgroundColor: 'rgba(15,23,42,0.78)',
-    borderColor: 'rgba(255,255,255,0.07)',
-    shadowOpacity: 0.35,
-  },
+  cardLight: { backgroundColor: 'rgba(255,255,255,0.82)', borderColor: 'rgba(255,255,255,0.90)', shadowOpacity: 0.14 },
+  cardDark:  { backgroundColor: 'rgba(15,23,42,0.78)',    borderColor: 'rgba(255,255,255,0.07)', shadowOpacity: 0.35 },
 });
 
 // ─── Idle / Empty State ───────────────────────────────────────────────────────
-function IdleView({ dark, onOpen }: { dark: boolean; onOpen: () => void }) {
+function IdleView({
+  dark, onOpen, favorites, onPickFavorite, suggestions,
+}: {
+  dark: boolean;
+  onOpen: () => void;
+  favorites: AzkarItem[];
+  onPickFavorite: (azkar: AzkarItem) => void;
+  suggestions: AzkarItem[];
+}) {
   const pulse = useRef(new Animated.Value(1)).current;
+  const randomSuggestions = suggestions;
 
   useEffect(() => {
     Animated.loop(
       Animated.sequence([
-        Animated.timing(pulse, {
-          toValue: 1.06,
-          duration: 1600,
-          easing: Easing.inOut(Easing.sin),
-          useNativeDriver: true,
-        }),
-        Animated.timing(pulse, {
-          toValue: 1,
-          duration: 1600,
-          easing: Easing.inOut(Easing.sin),
-          useNativeDriver: true,
-        }),
+        Animated.timing(pulse, { toValue: 1.06, duration: 1600, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+        Animated.timing(pulse, { toValue: 1,    duration: 1600, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
       ])
     ).start();
   }, []);
+
+  const hasFavorites = favorites.length > 0;
 
   return (
     <View style={idle.wrap}>
@@ -105,6 +95,54 @@ function IdleView({ dark, onOpen }: { dark: boolean; onOpen: () => void }) {
         <Text style={[idle.sub, dark && idle.subDark]}>
           Choose an azkar from the library or create your own to begin your dhikr session
         </Text>
+      </GlassCard>
+
+      {/* Favorites strip OR random suggestions */}
+      <GlassCard dark={dark} style={idle.suggestCard}>
+        {hasFavorites ? (
+          /* ── Favorites strip ── */
+          <View style={idle.suggestInner}>
+            <View style={idle.suggestLabelRow}>
+              <Heart color="#EF4444" fill="#EF4444" size={13} strokeWidth={2} />
+              <Text style={[idle.suggestLabel, dark && idle.suggestLabelDark]}>Favourites</Text>
+            </View>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}
+              contentContainerStyle={idle.chipRow} nestedScrollEnabled={true}>
+              {favorites.slice(0, 4).map(a => (
+                <TouchableOpacity key={a.id} onPress={() => onPickFavorite(a)}
+                  activeOpacity={0.8}
+                  style={[idle.chip, dark ? idle.chipDark : idle.chipLight, { borderColor: a.color + '55' }]}>
+                  <View style={[idle.chipDot, { backgroundColor: a.color }]} />
+                  <Text style={[idle.chipTitle, dark && idle.chipTitleDark]} numberOfLines={1}>{a.title}</Text>
+                  <Text style={[idle.chipCount, { color: a.color }]}>{a.defaultTarget}×</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        ) : (
+          /* ── Random suggestions ── */
+          <View style={idle.suggestInner}>
+            <View style={idle.suggestLabelRow}>
+              <Text style={idle.suggestEmoji}>✨</Text>
+              <Text style={[idle.suggestLabel, dark && idle.suggestLabelDark]}>Suggestions</Text>
+              <TouchableOpacity onPress={onOpen} style={idle.moreBtn} activeOpacity={0.75}>
+                <Text style={idle.moreBtnText}>More</Text>
+              </TouchableOpacity>
+            </View>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}
+              contentContainerStyle={idle.chipRow} nestedScrollEnabled={true}>
+              {randomSuggestions.map(a => (
+                <TouchableOpacity key={a.id} onPress={() => onPickFavorite(a)}
+                  activeOpacity={0.8}
+                  style={[idle.chip, dark ? idle.chipDark : idle.chipLight, { borderColor: a.color + '55' }]}>
+                  <View style={[idle.chipDot, { backgroundColor: a.color }]} />
+                  <Text style={[idle.chipTitle, dark && idle.chipTitleDark]} numberOfLines={1}>{a.title}</Text>
+                  <Text style={[idle.chipCount, { color: a.color }]}>{a.defaultTarget}×</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        )}
       </GlassCard>
 
       <TouchableOpacity style={idle.btn} onPress={onOpen} activeOpacity={0.85}>
@@ -124,10 +162,36 @@ const idle = StyleSheet.create({
   titleDark: { color: '#F8FAFC' },
   sub: { fontSize: 14, color: '#475569', textAlign: 'center', lineHeight: 21 },
   subDark: { color: '#94A3B8' },
+
+  // Unified suggest/favorites card
+  suggestCard: { width: '100%', paddingVertical: 14, paddingHorizontal: 16 },
+  suggestInner: { gap: 10 },
+  suggestLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  suggestEmoji: { fontSize: 13 },
+  suggestLabel: { fontSize: 12, fontWeight: '700', color: '#94A3B8', textTransform: 'uppercase', letterSpacing: 0.8, flex: 1 },
+  suggestLabelDark: { color: '#475569' },
+  moreBtn: {
+    paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10,
+    backgroundColor: '#059669',
+  },
+  moreBtnText: { fontSize: 11, fontWeight: '800', color: '#fff', letterSpacing: 0.3 },
+
+  chipRow: { gap: 8, paddingBottom: 2 },
+  chip: {
+    flexDirection: 'row', alignItems: 'center', gap: 7,
+    paddingHorizontal: 12, paddingVertical: 9,
+    borderRadius: 16, borderWidth: 1.5, maxWidth: 180,
+  },
+  chipLight: { backgroundColor: 'rgba(255,255,255,0.80)' },
+  chipDark:  { backgroundColor: 'rgba(15,23,42,0.65)' },
+  chipDot: { width: 8, height: 8, borderRadius: 4, flexShrink: 0 },
+  chipTitle: { fontSize: 13, fontWeight: '700', color: '#1E293B', flexShrink: 1 },
+  chipTitleDark: { color: '#F1F5F9' },
+  chipCount: { fontSize: 11, fontWeight: '800', flexShrink: 0 },
+
   btn: {
     flexDirection: 'row', alignItems: 'center', gap: 10,
-    backgroundColor: '#059669', paddingHorizontal: 28, paddingVertical: 14,
-    borderRadius: 18,
+    backgroundColor: '#059669', paddingHorizontal: 28, paddingVertical: 14, borderRadius: 18,
     shadowColor: '#059669', shadowOpacity: 0.45, shadowRadius: 14, shadowOffset: { width: 0, height: 6 }, elevation: 8,
   },
   btnText: { fontSize: 16, fontWeight: '800', color: '#FFFFFF' },
@@ -135,19 +199,21 @@ const idle = StyleSheet.create({
 
 // ─── Active Counter ───────────────────────────────────────────────────────────
 function ActiveCounter({
-  dark, active, isRunning, elapsed,
-  onIncrement, onDecrement, onReset, onTogglePause, onComplete, onDiscard,
+  dark, active, isRunning, elapsed, isFavorite,
+  onIncrement, onDecrement, onReset, onTogglePause, onComplete, onDiscard, onToggleFavorite,
 }: {
   dark: boolean;
   active: NonNullable<ReturnType<typeof useDhikrCounter>['active']>;
   isRunning: boolean;
   elapsed: number;
+  isFavorite: boolean;
   onIncrement: () => void;
   onDecrement: () => void;
   onReset: () => void;
   onTogglePause: () => void;
   onComplete: () => void;
   onDiscard: () => void;
+  onToggleFavorite: () => void;
 }) {
   const { count, target, azkar } = active;
   const progress    = Math.min((count / target) * 100, 100);
@@ -155,8 +221,7 @@ function ActiveCounter({
   const remaining   = Math.max(target - count, 0);
   const accentColor = isDone ? '#F59E0B' : azkar.color;
 
-  // Scroll indicators
-  const [showTopGradient, setShowTopGradient] = useState(false);
+  const [showTopGradient,    setShowTopGradient]    = useState(false);
   const [showBottomGradient, setShowBottomGradient] = useState(false);
 
   const countScale     = useRef(new Animated.Value(1)).current;
@@ -165,12 +230,7 @@ function ActiveCounter({
   const tapRipple      = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    Animated.timing(progressAnim, {
-      toValue: progress,
-      duration: 450,
-      easing: Easing.out(Easing.cubic),
-      useNativeDriver: false,
-    }).start();
+    Animated.timing(progressAnim, { toValue: progress, duration: 450, easing: Easing.out(Easing.cubic), useNativeDriver: false }).start();
   }, [progress]);
 
   useEffect(() => {
@@ -196,11 +256,8 @@ function ActiveCounter({
   const handleScroll = useCallback((event: any) => {
     const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
     const scrollY = contentOffset.y;
-    const scrollHeight = contentSize.height;
-    const viewHeight = layoutMeasurement.height;
-
     setShowTopGradient(scrollY > 10);
-    setShowBottomGradient(scrollY + viewHeight < scrollHeight - 10);
+    setShowBottomGradient(scrollY + layoutMeasurement.height < contentSize.height - 10);
   }, []);
 
   const progressWidth = progressAnim.interpolate({ inputRange: [0, 100], outputRange: ['0%', '100%'] });
@@ -208,57 +265,53 @@ function ActiveCounter({
   const rippleOpacity = tapRipple.interpolate({ inputRange: [0, 0.4, 1], outputRange: [0.35, 0.12, 0] });
 
   const topGradientColors: readonly [string, string, string] = dark
-    ? ['rgba(15, 23, 42, 0)', 'rgba(15, 23, 42, 0.9)', 'rgba(15, 23, 42, 1)']
-    : ['rgba(255, 255, 255, 0)', 'rgba(255, 255, 255, 0.9)', 'rgba(255, 255, 255, 1)'];
-
+    ? ['rgba(15,23,42,0)', 'rgba(15,23,42,0.9)', 'rgba(15,23,42,1)']
+    : ['rgba(255,255,255,0)', 'rgba(255,255,255,0.9)', 'rgba(255,255,255,1)'];
   const bottomGradientColors: readonly [string, string, string] = dark
-    ? ['rgba(15, 23, 42, 1)', 'rgba(15, 23, 42, 0.9)', 'rgba(15, 23, 42, 0)']
-    : ['rgba(255, 255, 255, 1)', 'rgba(255, 255, 255, 0.9)', 'rgba(255, 255, 255, 0)'];
+    ? ['rgba(15,23,42,1)', 'rgba(15,23,42,0.9)', 'rgba(15,23,42,0)']
+    : ['rgba(255,255,255,1)', 'rgba(255,255,255,0.9)', 'rgba(255,255,255,0)'];
 
   return (
-    // ✅ FIX 1: nestedScrollEnabled on outer ScrollView
-    <ScrollView
-      style={{ flex: 1 }}
-      showsVerticalScrollIndicator={false}
-      contentContainerStyle={ac.scroll}
-      nestedScrollEnabled={true}
-    >
+    <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}
+      contentContainerStyle={ac.scroll} nestedScrollEnabled={true}>
 
-      {/* ── Azkar info card WITH SCROLL ── */}
+      {/* Azkar info card */}
       <View style={ac.headerCardWrapper}>
         <GlassCard dark={dark} style={ac.headerCard}>
-          <View style={[ac.categoryBadge, { backgroundColor: CATEGORY_COLORS[azkar.category] + '25' }]}>
-            <Text style={[ac.categoryText, { color: CATEGORY_COLORS[azkar.category] }]}>
-              {CATEGORY_ICONS[azkar.category]}  {CATEGORY_LABELS[azkar.category]}
-            </Text>
+          {/* Category badge + favorite button row */}
+          <View style={ac.headerTopRow}>
+            <View style={[ac.categoryBadge, { backgroundColor: CATEGORY_COLORS[azkar.category] + '25' }]}>
+              <Text style={[ac.categoryText, { color: CATEGORY_COLORS[azkar.category] }]}>
+                {CATEGORY_ICONS[azkar.category]}  {CATEGORY_LABELS[azkar.category]}
+              </Text>
+            </View>
+
+            <TouchableOpacity
+              onPress={() => { haptic('light'); onToggleFavorite(); }}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              style={[ac.favBtn, isFavorite && ac.favBtnActive]}
+              activeOpacity={0.75}
+            >
+              <Heart
+                color={isFavorite ? '#EF4444' : (dark ? '#475569' : '#CBD5E1')}
+                fill={isFavorite ? '#EF4444' : 'none'}
+                size={18}
+                strokeWidth={2}
+              />
+            </TouchableOpacity>
           </View>
+
           <Text style={[ac.azkarTitle, dark && ac.azkarTitleDark]}>{azkar.title}</Text>
 
-          {/* ✅ Scrollable text block with gradients */}
           <View style={ac.textWrapper}>
             {showTopGradient && (
-              <LinearGradient
-                colors={topGradientColors}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 0, y: 1 }}
-                style={ac.topGradient}
-                pointerEvents="none"
-              />
+              <LinearGradient colors={topGradientColors} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }}
+                style={ac.topGradient} pointerEvents="none" />
             )}
-
-            {/* ✅ FIX 2: nestedScrollEnabled on inner ScrollView */}
-            <ScrollView
-              style={ac.textScroll}
-              contentContainerStyle={ac.textContent}
-              showsVerticalScrollIndicator={false}
-              bounces={true}
-              scrollEventThrottle={16}
-              nestedScrollEnabled={true}
-              onScroll={handleScroll}
-              onContentSizeChange={(_width, height) => {
-                setShowBottomGradient(height > 220);
-              }}
-            >
+            <ScrollView style={ac.textScroll} contentContainerStyle={ac.textContent}
+              showsVerticalScrollIndicator={false} bounces={true} scrollEventThrottle={16}
+              nestedScrollEnabled={true} onScroll={handleScroll}
+              onContentSizeChange={(_width, height) => setShowBottomGradient(height > 220)}>
               <Text style={[ac.arabic, dark && ac.arabicDark]}>{azkar.arabic}</Text>
               {azkar.transliteration ? (
                 <Text style={[ac.translit, { color: accentColor }]}>{azkar.transliteration}</Text>
@@ -267,30 +320,18 @@ function ActiveCounter({
                 <Text style={[ac.translation, dark && ac.translationDark]}>{azkar.translation}</Text>
               ) : null}
             </ScrollView>
-
             {showBottomGradient && (
-              <LinearGradient
-                colors={bottomGradientColors}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 0, y: 1 }}
-                style={ac.bottomGradient}
-                pointerEvents="none"
-              />
+              <LinearGradient colors={bottomGradientColors} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }}
+                style={ac.bottomGradient} pointerEvents="none" />
             )}
           </View>
         </GlassCard>
       </View>
 
-      {/* ── Tap zone card ── */}
+      {/* Tap zone */}
       <GlassCard dark={dark} style={ac.tapCard}>
-        {/* Big circular button */}
         <View style={ac.tapCenter}>
-          {/* Animated ripple ring */}
-          <Animated.View style={[
-            ac.ripple,
-            { borderColor: accentColor, transform: [{ scale: rippleScale }], opacity: rippleOpacity }
-          ]} />
-
+          <Animated.View style={[ac.ripple, { borderColor: accentColor, transform: [{ scale: rippleScale }], opacity: rippleOpacity }]} />
           <TouchableOpacity
             onPress={() => { haptic('light'); onIncrement(); }}
             disabled={isDone || !isRunning}
@@ -323,12 +364,10 @@ function ActiveCounter({
           </TouchableOpacity>
         </View>
 
-        {/* Progress bar */}
         <View style={[ac.progressTrack, dark && ac.progressTrackDark]}>
           <Animated.View style={[ac.progressFill, { width: progressWidth, backgroundColor: accentColor }]} />
         </View>
 
-        {/* 4-column stats */}
         <View style={ac.statsRow}>
           {[
             { label: 'remaining', value: String(remaining),          color: accentColor },
@@ -347,36 +386,25 @@ function ActiveCounter({
         </View>
       </GlassCard>
 
-      {/* ── Controls row ── */}
+      {/* Controls row */}
       <View style={ac.controlsRow}>
-        <TouchableOpacity
-          onPress={() => { haptic('light'); onDecrement(); }}
-          style={[ac.sideBtn, dark ? ac.sideBtnDark : ac.sideBtnLight]}
-          activeOpacity={0.75}
-        >
+        <TouchableOpacity onPress={() => { haptic('light'); onDecrement(); }}
+          style={[ac.sideBtn, dark ? ac.sideBtnDark : ac.sideBtnLight]} activeOpacity={0.75}>
           <Text style={[ac.sideBtnSymbol, dark && ac.sideBtnSymbolDark]}>−</Text>
         </TouchableOpacity>
-
-        <TouchableOpacity
-          onPress={() => { haptic('medium'); onTogglePause(); }}
-          style={[ac.pauseBtn, dark ? ac.pauseBtnDark : ac.pauseBtnLight]}
-          activeOpacity={0.82}
-        >
+        <TouchableOpacity onPress={() => { haptic('medium'); onTogglePause(); }}
+          style={[ac.pauseBtn, dark ? ac.pauseBtnDark : ac.pauseBtnLight]} activeOpacity={0.82}>
           {isRunning
             ? <Pause color={dark ? '#F1F5F9' : '#1E293B'} size={26} strokeWidth={2} />
             : <Play  color={dark ? '#F1F5F9' : '#1E293B'} size={26} strokeWidth={2} />}
         </TouchableOpacity>
-
-        <TouchableOpacity
-          onPress={() => { haptic('medium'); onReset(); }}
-          style={[ac.sideBtn, dark ? ac.sideBtnDark : ac.sideBtnLight]}
-          activeOpacity={0.75}
-        >
+        <TouchableOpacity onPress={() => { haptic('medium'); onReset(); }}
+          style={[ac.sideBtn, dark ? ac.sideBtnDark : ac.sideBtnLight]} activeOpacity={0.75}>
           <RotateCcw color={dark ? '#94A3B8' : '#64748B'} size={18} strokeWidth={2.5} />
         </TouchableOpacity>
       </View>
 
-      {/* ── Stop / Finish ── */}
+      {/* Stop / Finish */}
       <View style={ac.actionRow}>
         <TouchableOpacity
           onPress={() => Alert.alert('Stop session', 'Save progress before leaving?', [
@@ -384,97 +412,64 @@ function ActiveCounter({
             { text: 'Save',    onPress: onComplete },
             { text: 'Cancel',  style: 'cancel' },
           ])}
-          style={[ac.stopBtn, dark ? ac.stopBtnDark : ac.stopBtnLight]}
-          activeOpacity={0.8}
-        >
+          style={[ac.stopBtn, dark ? ac.stopBtnDark : ac.stopBtnLight]} activeOpacity={0.8}>
           <Square color="#EF4444" size={16} strokeWidth={2} />
           <Text style={ac.stopBtnText}>Stop</Text>
         </TouchableOpacity>
 
         {isDone && (
-          <TouchableOpacity
-            onPress={() => { haptic('success'); onComplete(); }}
+          <TouchableOpacity onPress={() => { haptic('success'); onComplete(); }}
             style={[ac.doneBtn, { backgroundColor: accentColor, shadowColor: accentColor }]}
-            activeOpacity={0.85}
-          >
+            activeOpacity={0.85}>
             <Award color="#fff" size={16} strokeWidth={2} />
             <Text style={ac.doneBtnText}>Save & Finish</Text>
           </TouchableOpacity>
         )}
       </View>
-
     </ScrollView>
   );
 }
 
 const ac = StyleSheet.create({
   scroll: { padding: 14, paddingBottom: 40, gap: 12 },
-
   headerCardWrapper: { marginBottom: 0 },
   headerCard: { gap: 8, alignItems: 'center', paddingVertical: 18, paddingBottom: 14 },
+  headerTopRow: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    width: '100%', paddingHorizontal: 2,
+  },
+  favBtn: {
+    width: 34, height: 34, borderRadius: 17,
+    justifyContent: 'center', alignItems: 'center',
+    backgroundColor: 'rgba(239,68,68,0.08)',
+    borderWidth: 1.5, borderColor: 'rgba(239,68,68,0.15)',
+  },
+  favBtnActive: {
+    backgroundColor: 'rgba(239,68,68,0.12)',
+    borderColor: 'rgba(239,68,68,0.40)',
+  },
   categoryBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10 },
   categoryText: { fontSize: 12, fontWeight: '700' },
   azkarTitle: { fontSize: 18, fontWeight: '800', color: '#1E293B', letterSpacing: -0.3, textAlign: 'center' },
   azkarTitleDark: { color: '#F8FAFC' },
-
-  // Scrollable text wrapper
-  textWrapper: {
-    width: '100%',
-    height: 220,
-    position: 'relative',
-    borderRadius: 12,
-  },
-  textScroll: {
-    height: 220,
-  },
-  textContent: {
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    alignItems: 'center',
-    gap: 8,
-  },
-  topGradient: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 30,
-    zIndex: 10,
-    borderTopLeftRadius: 12,
-    borderTopRightRadius: 12,
-  },
-  bottomGradient: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 30,
-    zIndex: 10,
-    borderBottomLeftRadius: 12,
-    borderBottomRightRadius: 12,
-  },
-
+  textWrapper: { width: '100%', height: 220, position: 'relative', borderRadius: 12 },
+  textScroll: { height: 220 },
+  textContent: { paddingHorizontal: 12, paddingVertical: 12, alignItems: 'center', gap: 8 },
+  topGradient: { position: 'absolute', top: 0, left: 0, right: 0, height: 30, zIndex: 10, borderTopLeftRadius: 12, borderTopRightRadius: 12 },
+  bottomGradient: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 30, zIndex: 10, borderBottomLeftRadius: 12, borderBottomRightRadius: 12 },
   arabic: { fontSize: 28, textAlign: 'center', color: '#1E293B', fontFamily: 'Amiri_400Regular', lineHeight: 46 },
   arabicDark: { color: '#F1F5F9' },
   translit: { fontSize: 13, fontStyle: 'italic', fontWeight: '600', textAlign: 'center' },
   translation: { fontSize: 13, color: '#64748B', textAlign: 'center', lineHeight: 19 },
   translationDark: { color: '#94A3B8' },
-
   tapCard: { paddingVertical: 20, gap: 14 },
   tapCenter: { alignItems: 'center', justifyContent: 'center', height: 200 },
-
-  ripple: {
-    position: 'absolute',
-    width: 194, height: 194, borderRadius: 97,
-    borderWidth: 2,
-  },
+  ripple: { position: 'absolute', width: 194, height: 194, borderRadius: 97, borderWidth: 2 },
   tapBtn: {
     width: 178, height: 178, borderRadius: 89,
-    backgroundColor: 'rgba(255,255,255,0.9)',
-    borderWidth: 2.5,
+    backgroundColor: 'rgba(255,255,255,0.9)', borderWidth: 2.5,
     justifyContent: 'center', alignItems: 'center',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.28, shadowRadius: 20, elevation: 12,
+    shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.28, shadowRadius: 20, elevation: 12,
   },
   tapBtnPaused: { opacity: 0.5 },
   countNum: { fontSize: 68, fontWeight: '900', letterSpacing: -4, lineHeight: 76 },
@@ -483,11 +478,9 @@ const ac = StyleSheet.create({
   tapHintPaused: { color: '#CBD5E1' },
   doneInner: { alignItems: 'center', gap: 6 },
   doneText: { fontSize: 15, fontWeight: '800', color: '#FFFFFF', letterSpacing: 0.2 },
-
   progressTrack: { height: 7, backgroundColor: 'rgba(0,0,0,0.08)', borderRadius: 4, overflow: 'hidden' },
   progressTrackDark: { backgroundColor: 'rgba(255,255,255,0.08)' },
   progressFill: { height: '100%', borderRadius: 4 },
-
   statsRow: { flexDirection: 'row', alignItems: 'center' },
   statItem: { flex: 1, alignItems: 'center', gap: 3 },
   statValue: { fontSize: 17, fontWeight: '800', letterSpacing: -0.3 },
@@ -495,12 +488,8 @@ const ac = StyleSheet.create({
   statLabelDark: { color: '#475569' },
   statDiv: { width: 1, height: 28, backgroundColor: 'rgba(0,0,0,0.1)' },
   statDivDark: { backgroundColor: 'rgba(255,255,255,0.08)' },
-
   controlsRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 16 },
-  sideBtn: {
-    width: 56, height: 56, borderRadius: 28,
-    justifyContent: 'center', alignItems: 'center', borderWidth: 1.5,
-  },
+  sideBtn: { width: 56, height: 56, borderRadius: 28, justifyContent: 'center', alignItems: 'center', borderWidth: 1.5 },
   sideBtnLight: { backgroundColor: 'rgba(255,255,255,0.80)', borderColor: 'rgba(255,255,255,0.90)' },
   sideBtnDark:  { backgroundColor: 'rgba(15,23,42,0.70)',  borderColor: 'rgba(255,255,255,0.07)' },
   sideBtnSymbol: { fontSize: 28, fontWeight: '600', color: '#64748B', lineHeight: 34 },
@@ -512,7 +501,6 @@ const ac = StyleSheet.create({
   },
   pauseBtnLight: { backgroundColor: 'rgba(255,255,255,0.90)', borderColor: 'rgba(255,255,255,0.95)' },
   pauseBtnDark:  { backgroundColor: 'rgba(30,41,59,0.85)',   borderColor: 'rgba(255,255,255,0.10)' },
-
   actionRow: { flexDirection: 'row', gap: 10 },
   stopBtn: {
     flex: 1, height: 48, borderRadius: 14,
@@ -531,13 +519,14 @@ const ac = StyleSheet.create({
 
 // ─── History ──────────────────────────────────────────────────────────────────
 function HistoryView({
-  dark, sessions, onDelete, onClear,
+  dark, sessions, onDelete, onClear, onReplay,
   totalCounts, todayCounts, totalSessions,
 }: {
   dark: boolean;
   sessions: ReturnType<typeof useDhikrCounter>['sessions'];
   onDelete: (id: string) => void;
   onClear: () => void;
+  onReplay: (session: ReturnType<typeof useDhikrCounter>['sessions'][number]) => void;
   totalCounts: number;
   todayCounts: number;
   totalSessions: number;
@@ -547,7 +536,7 @@ function HistoryView({
       {/* Stats cards */}
       <View style={hist.statsRow}>
         {[
-          { icon: '📿', label: "Today",    value: todayCounts.toLocaleString() },
+          { icon: '📿', label: 'Today',    value: todayCounts.toLocaleString() },
           { icon: '∑',  label: 'Total',    value: totalCounts.toLocaleString() },
           { icon: '🗓', label: 'Sessions', value: totalSessions.toLocaleString() },
         ].map(s => (
@@ -576,26 +565,52 @@ function HistoryView({
               <Text style={hist.clearBtn}>Clear all</Text>
             </TouchableOpacity>
           </View>
+
           {sessions.map(s => (
             <GlassCard key={s.id} dark={dark} style={hist.sessionCard}>
               <View style={hist.sessionTop}>
                 <View style={[hist.dot, s.isComplete && hist.dotDone]} />
-                <Text style={[hist.sessionTitle, dark && hist.sessionTitleDark]} numberOfLines={1}>{s.azkarTitle}</Text>
+                <Text style={[hist.sessionTitle, dark && hist.sessionTitleDark]} numberOfLines={1}>
+                  {s.azkarTitle}
+                </Text>
                 <View style={hist.sessionRight}>
-                  <Text style={[hist.sessionCount, s.isComplete && hist.sessionCountDone]}>{s.count}/{s.target}</Text>
+                  <Text style={[hist.sessionCount, s.isComplete && hist.sessionCountDone]}>
+                    {s.count}/{s.target}
+                  </Text>
                   <Text style={[hist.sessionPct, s.isComplete && hist.sessionPctDone]}>
                     {s.isComplete ? '✓' : `${Math.round((s.count / s.target) * 100)}%`}
                   </Text>
                 </View>
               </View>
-              <Text style={[hist.sessionArabic, dark && hist.sessionArabicDark]} numberOfLines={1}>{s.azkarArabic}</Text>
+
+              <Text style={[hist.sessionArabic, dark && hist.sessionArabicDark]} numberOfLines={1}>
+                {s.azkarArabic}
+              </Text>
+
               <View style={hist.sessionMeta}>
                 <Clock color={dark ? '#334155' : '#CBD5E1'} size={11} strokeWidth={2} />
                 <Text style={[hist.metaText, dark && hist.metaTextDark]}>{fmtDate(s.completedAt)}</Text>
                 <Text style={[hist.metaText, dark && hist.metaTextDark]}>· {fmtTime(s.durationSeconds)}</Text>
-                <TouchableOpacity onPress={() => onDelete(s.id)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} style={{ marginLeft: 'auto' }}>
-                  <Trash2 color={dark ? '#334155' : '#CBD5E1'} size={14} strokeWidth={2} />
-                </TouchableOpacity>
+
+                {/* Action buttons */}
+                <View style={hist.metaActions}>
+                  {/* Replay button */}
+                  <TouchableOpacity
+                    onPress={() => onReplay(s)}
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                    style={hist.replayBtn}
+                  >
+                    <RotateCw color="#059669" size={14} strokeWidth={2.5} />
+                  </TouchableOpacity>
+
+                  {/* Delete button */}
+                  <TouchableOpacity
+                    onPress={() => onDelete(s.id)}
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                  >
+                    <Trash2 color={dark ? '#334155' : '#CBD5E1'} size={14} strokeWidth={2} />
+                  </TouchableOpacity>
+                </View>
               </View>
             </GlassCard>
           ))}
@@ -641,10 +656,108 @@ const hist = StyleSheet.create({
   sessionMeta: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   metaText: { fontSize: 11, color: '#94A3B8' },
   metaTextDark: { color: '#475569' },
+  metaActions: { flexDirection: 'row', alignItems: 'center', gap: 10, marginLeft: 'auto' },
+  replayBtn: { padding: 2 },
+});
+
+// ─── Favorites Full List Screen ───────────────────────────────────────────────
+function FavoritesView({
+  dark, favorites, favoriteIds, onStart, onToggleFavorite,
+}: {
+  dark: boolean;
+  favorites: AzkarItem[];
+  favoriteIds: string[];
+  onStart: (azkar: AzkarItem) => void;
+  onToggleFavorite: (id: string) => void;
+}) {
+  return (
+    <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={fv.scroll}>
+      {favorites.length === 0 ? (
+        <GlassCard dark={dark} style={fv.emptyCard}>
+          <Text style={fv.emptyIcon}>❤️</Text>
+          <Text style={[fv.emptyTitle, dark && fv.emptyTitleDark]}>No favourites yet</Text>
+          <Text style={[fv.emptySub, dark && fv.emptySubDark]}>
+            Open the picker and tap ♡ on any dhikr to add it here
+          </Text>
+        </GlassCard>
+      ) : (
+        <>
+          <Text style={[fv.sectionTitle, dark && fv.sectionTitleDark]}>
+            {favorites.length} saved dhikr{favorites.length !== 1 ? 's' : ''}
+          </Text>
+          {favorites.map(item => (
+            <TouchableOpacity
+              key={item.id}
+              onPress={() => onStart(item)}
+              activeOpacity={0.75}
+              style={[fv.card, dark ? fv.cardDark : fv.cardLight]}
+            >
+              <View style={[fv.colorBar, { backgroundColor: item.color }]} />
+              <View style={fv.cardContent}>
+                <Text style={[fv.cardTitle, dark && fv.cardTitleDark]} numberOfLines={1}>
+                  {item.title}
+                </Text>
+                <Text style={[fv.cardArabic, dark && fv.cardArabicDark]} numberOfLines={1}>
+                  {item.arabic}
+                </Text>
+                <View style={fv.cardMeta}>
+                  <View style={[fv.badge, { backgroundColor: item.color + '20' }]}>
+                    <Text style={[fv.badgeText, { color: item.color }]}>{item.defaultTarget}×</Text>
+                  </View>
+                  <Text style={[fv.catText, dark && fv.catTextDark]}>
+                    {CATEGORY_ICONS[item.category]} {CATEGORY_LABELS[item.category]}
+                  </Text>
+                </View>
+              </View>
+              <TouchableOpacity
+                onPress={() => onToggleFavorite(item.id)}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                style={fv.heartBtn}
+              >
+                <Heart color="#EF4444" fill="#EF4444" size={18} strokeWidth={2} />
+              </TouchableOpacity>
+            </TouchableOpacity>
+          ))}
+        </>
+      )}
+      <View style={{ height: 40 }} />
+    </ScrollView>
+  );
+}
+
+const fv = StyleSheet.create({
+  scroll: { padding: 14, gap: 10 },
+  emptyCard: { alignItems: 'center', paddingVertical: 40, gap: 10, marginTop: 20 },
+  emptyIcon: { fontSize: 44 },
+  emptyTitle: { fontSize: 16, fontWeight: '700', color: '#1E293B' },
+  emptyTitleDark: { color: '#F8FAFC' },
+  emptySub: { fontSize: 13, color: '#94A3B8', textAlign: 'center', lineHeight: 20 },
+  emptySubDark: { color: '#475569' },
+  sectionTitle: { fontSize: 13, fontWeight: '700', color: '#94A3B8', textTransform: 'uppercase', letterSpacing: 0.8, paddingHorizontal: 2 },
+  sectionTitleDark: { color: '#475569' },
+  card: {
+    flexDirection: 'row', alignItems: 'center',
+    borderRadius: 18, overflow: 'hidden', borderWidth: 1,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowRadius: 12, elevation: 5,
+  },
+  cardLight: { backgroundColor: 'rgba(255,255,255,0.82)', borderColor: 'rgba(255,255,255,0.90)', shadowOpacity: 0.10 },
+  cardDark:  { backgroundColor: 'rgba(15,23,42,0.78)',    borderColor: 'rgba(255,255,255,0.07)', shadowOpacity: 0.30 },
+  colorBar: { width: 5, alignSelf: 'stretch' },
+  cardContent: { flex: 1, padding: 14, gap: 4 },
+  cardTitle: { fontSize: 15, fontWeight: '800', color: '#1E293B' },
+  cardTitleDark: { color: '#F1F5F9' },
+  cardArabic: { fontSize: 17, color: '#94A3B8', fontFamily: 'Amiri_400Regular' },
+  cardArabicDark: { color: '#475569' },
+  cardMeta: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 },
+  badge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
+  badgeText: { fontSize: 12, fontWeight: '800' },
+  catText: { fontSize: 11, color: '#94A3B8', fontWeight: '600' },
+  catTextDark: { color: '#475569' },
+  heartBtn: { paddingRight: 16, paddingLeft: 8 },
 });
 
 // ─── Main Screen ──────────────────────────────────────────────────────────────
-type ScreenTab = 'counter' | 'history';
+type ScreenTab = 'counter' | 'history' | 'favorites';
 
 export default function DhikrCounterScreen() {
   const { state } = useApp();
@@ -656,19 +769,37 @@ export default function DhikrCounterScreen() {
 
   const {
     active, isRunning, elapsed,
-    customAzkars, sessions,
+    customAzkars, allAzkars, sessions, favoriteIds, favoriteAzkars,
     totalCounts, todayCounts, totalSessions,
-    startDhikr, increment, decrement, resetCount,
+    startDhikr, replaySession, increment, decrement, resetCount,
     togglePause, completeSession, discardSession,
-    addCustomAzkar, deleteCustomAzkar,
+    addCustomAzkar, editCustomAzkar, deleteCustomAzkar, toggleFavorite,
     deleteSession, clearHistory,
   } = useDhikrCounter();
 
-  const handleSelect = useCallback((azkar: any, target: number) => {
+  // 4 random suggestions for the idle screen — stable for the lifetime of this screen
+  const randomSuggestions = useMemo<AzkarItem[]>(
+    () => [...allAzkars].sort(() => Math.random() - 0.5).slice(0, 4),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [], // intentionally empty: pick once on mount
+  );
+
+  // Quick-start from idle favorites strip (uses azkar's defaultTarget)
+  const handlePickFavorite = useCallback((azkar: AzkarItem) => {
+    startDhikr(azkar, azkar.defaultTarget);
+    setScreenTab('counter');
+  }, [startDhikr]);
+
+  const handleSelect = useCallback((azkar: AzkarItem, target: number) => {
     startDhikr(azkar, target);
     setScreenTab('counter');
     setShowPicker(false);
   }, [startDhikr]);
+
+  const handleReplay = useCallback((session: ReturnType<typeof useDhikrCounter>['sessions'][number]) => {
+    replaySession(session);
+    setScreenTab('counter');
+  }, [replaySession]);
 
   const handleReset = useCallback(() => {
     Alert.alert('Reset counter', 'Reset count to zero?', [
@@ -694,7 +825,7 @@ export default function DhikrCounterScreen() {
 
   return (
     <View style={styles.root}>
-     <MinimalHeader
+      <MinimalHeader
         title="Dhikr Counter"
         subtitle="Track your recitations"
         onBackPress={handleBack}
@@ -708,26 +839,41 @@ export default function DhikrCounterScreen() {
         <View style={[styles.topBar, dark ? styles.topBarDark : styles.topBarLight]}>
           <View style={styles.tabRow}>
             {([
-              ['counter', '📿', 'Counter'],
-              ['history', '📊', 'History'],
+              ['counter',   '📿', 'Counter'],
+              ['history',   '📊', 'History'],
             ] as const).map(([t, icon, label]) => (
-              <TouchableOpacity
-                key={t}
-                onPress={() => setScreenTab(t)}
-                style={[styles.tab, screenTab === t && styles.tabActive]}
-                activeOpacity={0.8}
-              >
+              <TouchableOpacity key={t} onPress={() => setScreenTab(t)}
+                style={[styles.tab, screenTab === t && styles.tabActive]} activeOpacity={0.8}>
                 <Text style={styles.tabIcon}>{icon}</Text>
                 <Text style={[
-                  styles.tabText,
-                  dark && styles.tabTextDark,
+                  styles.tabText, dark && styles.tabTextDark,
                   screenTab === t && styles.tabTextActive,
                 ]}>
                   {label}
                 </Text>
               </TouchableOpacity>
             ))}
+
+            {/* Favorites tab */}
+            <TouchableOpacity
+              onPress={() => setScreenTab('favorites')}
+              style={[styles.tab, screenTab === 'favorites' && styles.tabActiveFav]}
+              activeOpacity={0.8}
+            >
+              <Heart
+                color={screenTab === 'favorites' ? '#fff' : (dark ? '#94A3B8' : '#64748B')}
+                fill={screenTab === 'favorites' ? '#fff' : 'none'}
+                size={14} strokeWidth={2}
+              />
+              <Text style={[
+                styles.tabText, dark && styles.tabTextDark,
+                screenTab === 'favorites' && styles.tabTextActive,
+              ]}>
+                Favs{favoriteIds.length > 0 ? ` (${favoriteIds.length})` : ''}
+              </Text>
+            </TouchableOpacity>
           </View>
+
           {screenTab === 'counter' && (
             <TouchableOpacity onPress={() => setShowPicker(true)} style={styles.newBtn} activeOpacity={0.85}>
               <Plus color="#fff" size={18} strokeWidth={2.5} />
@@ -739,29 +885,35 @@ export default function DhikrCounterScreen() {
         {screenTab === 'counter' ? (
           active ? (
             <ActiveCounter
-              dark={dark}
-              active={active}
-              isRunning={isRunning}
-              elapsed={elapsed}
-              onIncrement={increment}
-              onDecrement={decrement}
-              onReset={handleReset}
-              onTogglePause={togglePause}
-              onComplete={completeSession}
-              onDiscard={discardSession}
+              dark={dark} active={active} isRunning={isRunning} elapsed={elapsed}
+              isFavorite={favoriteIds.includes(active.azkar.id)}
+              onIncrement={increment} onDecrement={decrement} onReset={handleReset}
+              onTogglePause={togglePause} onComplete={completeSession} onDiscard={discardSession}
+              onToggleFavorite={() => toggleFavorite(active.azkar.id)}
             />
           ) : (
-            <IdleView dark={dark} onOpen={() => setShowPicker(true)} />
+            <IdleView
+              dark={dark}
+              onOpen={() => setShowPicker(true)}
+              favorites={favoriteAzkars}
+              onPickFavorite={handlePickFavorite}
+              suggestions={randomSuggestions}
+            />
           )
-        ) : (
+        ) : screenTab === 'history' ? (
           <HistoryView
+            dark={dark} sessions={sessions}
+            onDelete={deleteSession} onClear={clearHistory}
+            onReplay={handleReplay}
+            totalCounts={totalCounts} todayCounts={todayCounts} totalSessions={totalSessions}
+          />
+        ) : (
+          <FavoritesView
             dark={dark}
-            sessions={sessions}
-            onDelete={deleteSession}
-            onClear={clearHistory}
-            totalCounts={totalCounts}
-            todayCounts={todayCounts}
-            totalSessions={totalSessions}
+            favorites={favoriteAzkars}
+            favoriteIds={favoriteIds}
+            onStart={handlePickFavorite}
+            onToggleFavorite={toggleFavorite}
           />
         )}
       </ScreenBackground>
@@ -770,9 +922,12 @@ export default function DhikrCounterScreen() {
         visible={showPicker}
         dark={dark}
         customAzkars={customAzkars}
+        favoriteIds={favoriteIds}
         onSelect={handleSelect}
         onAddCustom={addCustomAzkar}
+        onEditCustom={editCustomAzkar}
         onDeleteCustom={deleteCustomAzkar}
+        onToggleFavorite={toggleFavorite}
         onClose={() => setShowPicker(false)}
       />
     </View>
@@ -781,35 +936,23 @@ export default function DhikrCounterScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-
   topBar: {
     flexDirection: 'row', alignItems: 'center',
     paddingHorizontal: 14, paddingVertical: 10,
     borderBottomWidth: 1, gap: 8,
   },
-  topBarLight: {
-    backgroundColor: 'rgba(255,255,255,0.72)',
-    borderBottomColor: 'rgba(255,255,255,0.60)',
-  },
-  topBarDark: {
-    backgroundColor: 'rgba(15,23,42,0.72)',
-    borderBottomColor: 'rgba(255,255,255,0.05)',
-  },
-
+  topBarLight: { backgroundColor: 'rgba(255,255,255,0.72)', borderBottomColor: 'rgba(255,255,255,0.60)' },
+  topBarDark:  { backgroundColor: 'rgba(15,23,42,0.72)',   borderBottomColor: 'rgba(255,255,255,0.05)' },
   tabRow: { flexDirection: 'row', gap: 4, flex: 1 },
-  tab: {
-    flexDirection: 'row', alignItems: 'center', gap: 6,
-    paddingHorizontal: 14, paddingVertical: 8, borderRadius: 12,
-  },
-  tabActive: { backgroundColor: '#059669' },
-  tabIcon: { fontSize: 14 },
-  tabText: { fontSize: 14, fontWeight: '700', color: '#64748B' },
+  tab: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 10, paddingVertical: 8, borderRadius: 12 },
+  tabActive:    { backgroundColor: '#059669' },
+  tabActiveFav: { backgroundColor: '#EF4444' },
+  tabIcon: { fontSize: 13 },
+  tabText: { fontSize: 13, fontWeight: '700', color: '#64748B' },
   tabTextDark: { color: '#94A3B8' },
   tabTextActive: { color: '#FFFFFF' },
-
   newBtn: {
-    width: 38, height: 38, borderRadius: 19,
-    backgroundColor: '#059669',
+    width: 38, height: 38, borderRadius: 19, backgroundColor: '#059669',
     justifyContent: 'center', alignItems: 'center',
     shadowColor: '#059669', shadowOpacity: 0.45, shadowRadius: 8, shadowOffset: { width: 0, height: 3 }, elevation: 5,
   },
