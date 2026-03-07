@@ -1,6 +1,6 @@
 // components/layout/AnimatedTabBar.tsx
 
-import { Heart, Timer, BookOpen, Grid3X3, X, Sun } from 'lucide-react-native';
+import { Heart, Timer, BookOpen, Grid3X3, X, Sun, SunMoon, Menu,} from 'lucide-react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import {
   View, Text, TouchableOpacity, Animated,
@@ -95,7 +95,7 @@ function TabIcon({ routeName, isActive }: { routeName: string; isActive: boolean
   if (routeName === 'index')         return <Ionicons name="home" color={color} size={size} />;
   if (routeName === 'wird')          return <Heart  color={color} size={size} strokeWidth={sw} />;
   if (routeName === 'dhikr-counter') return <Timer  color={color} size={size} strokeWidth={sw} />;
-  if (routeName === 'azkars')        return <Sun   color={color} size={size} strokeWidth={sw} />;
+  if (routeName === 'azkars')        return <SunMoon   color={color} size={size} strokeWidth={sw} />;
   return null;
 }
 
@@ -170,7 +170,8 @@ export function AnimatedTabBar({ state, navigation, onBurgerPress, onWirdPress, 
                 <View style={[s.burgerCircle, burgerActive && s.burgerCircleActive]}>
                   {burgerActive
                     ? <X       color="#FFFFFF" size={19} strokeWidth={2.5} />
-                    : <Grid3X3 color="#F59E0B" size={18} strokeWidth={2}   />
+                    // : <Grid3X3 color="#F59E0B" size={18} strokeWidth={2}   />
+                    : <Menu color="#F59E0B" size={18} strokeWidth={2}   />
                   }
                   {unreadCount > 0 && (
                     <View style={s.badge}>
