@@ -1,14 +1,15 @@
 // app/(tabs)/_layout.tsx
 
-import { Tabs, useRouter, usePathname } from 'expo-router';
-import { SafeAreaView }                 from 'react-native-safe-area-context';
-import { View, StyleSheet, Platform }   from 'react-native';
+import { Tabs, useRouter, usePathname }   from 'expo-router';
+import { SafeAreaView }                   from 'react-native-safe-area-context';
+import { View, StyleSheet, Platform }     from 'react-native';
 import { useState, useCallback, useMemo } from 'react';
 import * as Haptics from 'expo-haptics';
 
 import { useNotifications }      from '@/contexts/NotificationContext';
 import { HeaderActionsProvider } from '@/contexts/HeaderActionsContext';
 import { LayoutActionsContext }  from '@/contexts/LayoutActionsContext';
+import { SheetProvider, useSheets } from '@/contexts/SheetContext';
 import { AnimatedTabBar }        from '@/components/layout/AnimatedTabBar';
 import { BottomMenuSheet }       from '@/components/layout/BottomMenuSheet';
 import { SideDrawer }            from '@/components/layout/SideDrawer';
@@ -42,20 +43,20 @@ function useHaptic() {
   }, []);
 }
 
-// ─── Layout ───────────────────────────────────────────────────────────────────
+// ─── Inner layout (consomme SheetContext) ─────────────────────────────────────
 function InnerTabLayout() {
-  const [drawerOpen,      setDrawerOpen]      = useState(false);
-  const [bottomSheetOpen, setBottomSheetOpen] = useState(false);
-  const [wirdPickerOpen,  setWirdPickerOpen]  = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   const router   = useRouter();
   const pathname = usePathname();
   const haptic   = useHaptic();
 
-  const { unreadCount } = useNotifications();
-  const isMainPage      = MAIN_PAGES.includes(pathname);
+  const { unreadCount }                          = useNotifications();
+  const { menuOpen, wirdOpen, toggleSheet, closeAll, closeSheet } = useSheets();
 
-  // ── Navigation ──
+  const isMainPage = MAIN_PAGES.includes(pathname);
+
+  // ── Navigation ──────────────────────────────────────────────────────────────
   const navigate = useCallback((route: string, delay = 0) => {
     haptic('success');
     const go = () => router.push(route as any);
@@ -69,25 +70,31 @@ function InnerTabLayout() {
 
   const handleNotifications = useCallback(() => navigate('/notifications'), [navigate]);
 
-  // ── Drawer ──
-  const openDrawer  = useCallback(() => { haptic('light');  setDrawerOpen(true);  }, [haptic]);
-  const closeDrawer = useCallback(() => { haptic('light');  setDrawerOpen(false); }, [haptic]);
-  const onDrawerNav = useCallback((route: string) => { closeDrawer(); navigate(route, 240); }, [closeDrawer, navigate]);
+  // ── Drawer (swipe latéral) ──────────────────────────────────────────────────
+  const openDrawer  = useCallback(() => { haptic('light'); setDrawerOpen(true);  }, [haptic]);
+  const closeDrawer = useCallback(() => { haptic('light'); setDrawerOpen(false); }, [haptic]);
+  const onDrawerNav = useCallback(
+    (route: string) => { closeDrawer(); navigate(route, 240); },
+    [closeDrawer, navigate],
+  );
 
-  // ── Bottom sheet ──
-  const openSheet  = useCallback(() => { haptic('medium'); setBottomSheetOpen(true);  }, [haptic]);
-  const closeSheet = useCallback(() => { haptic('light');  setBottomSheetOpen(false); }, [haptic]);
-  const onSheetNav = useCallback((route: string) => { closeSheet(); navigate(route, 260); }, [closeSheet, navigate]);
+  // ── Handlers sheets ─────────────────────────────────────────────────────────
+  const onMenuNav = useCallback(
+    (route: string) => { closeSheet(); navigate(route, 260); },
+    [closeSheet, navigate],
+  );
+  const onWirdNav = useCallback(
+    (route: string) => { closeSheet(); navigate(route, 240); },
+    [closeSheet, navigate],
+  );
 
-  // ── Wird picker ──
-  const openWirdPicker  = useCallback(() => { haptic('medium'); setWirdPickerOpen(true);  }, [haptic]);
-  const closeWirdPicker = useCallback(() => { haptic('light');  setWirdPickerOpen(false); }, [haptic]);
-  const onWirdPickerNav = useCallback((route: string) => { closeWirdPicker(); navigate(route, 240); }, [closeWirdPicker, navigate]);
+  // ── Swipe pour ouvrir le drawer ─────────────────────────────────────────────
+  const swipeHandlers = useSwipeDrawer({
+    enabled: isMainPage && !drawerOpen,
+    onOpen:  openDrawer,
+  });
 
-  // ── Swipe to open drawer ──
-  const swipeHandlers = useSwipeDrawer({ enabled: isMainPage && !drawerOpen, onOpen: openDrawer });
-
-  // ── Context ──
+  // ── Context partagé ─────────────────────────────────────────────────────────
   const layoutActions = useMemo(() => ({
     openDrawer, handleBack, handleNotifications, unreadCount,
   }), [openDrawer, handleBack, handleNotifications, unreadCount]);
@@ -109,17 +116,17 @@ function InnerTabLayout() {
         />
 
         <BottomMenuSheet
-          visible={bottomSheetOpen}
+          visible={menuOpen}
           onClose={closeSheet}
           menuItems={MENU_ITEMS}
-          onNavigate={onSheetNav}
+          onNavigate={onMenuNav}
           pathname={pathname}
         />
 
         <WirdPickerSheet
-          visible={wirdPickerOpen}
-          onClose={closeWirdPicker}
-          onNavigate={onWirdPickerNav}
+          visible={wirdOpen}
+          onClose={closeSheet}
+          onNavigate={onWirdNav}
           pathname={pathname}
         />
 
@@ -128,13 +135,20 @@ function InnerTabLayout() {
           tabBar={(props) => (
             <AnimatedTabBar
               {...props}
-              onBurgerPress={openSheet}
-              onWirdPress={openWirdPicker}
-              burgerActive={bottomSheetOpen}
+              onBurgerPress={() => toggleSheet('menu')}
+              onWirdPress={() => toggleSheet('wird')}
+              burgerActive={menuOpen}
+              wirdActive={wirdOpen}
               unreadCount={unreadCount}
             />
           )}
-          screenListeners={{ tabPress: () => haptic('light') }}
+          screenListeners={{
+            // Ferme tous les sheets dès qu'un tab standard est pressé
+            tabPress: () => {
+              haptic('light');
+              closeAll();
+            },
+          }}
         >
           <Tabs.Screen name="index"         options={{ title: 'Home'   }} />
           <Tabs.Screen name="wird"          options={{ title: 'Wird'   }} />
@@ -151,11 +165,13 @@ function InnerTabLayout() {
   );
 }
 
-// ─── Export ───────────────────────────────────────────────────────────────────
+// ─── Export — SheetProvider enveloppe tout ────────────────────────────────────
 export default function TabLayout() {
   return (
     <HeaderActionsProvider>
-      <InnerTabLayout />
+      <SheetProvider>
+        <InnerTabLayout />
+      </SheetProvider>
     </HeaderActionsProvider>
   );
 }
