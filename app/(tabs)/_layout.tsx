@@ -9,7 +9,6 @@ import * as Haptics from 'expo-haptics';
 import { useNotifications }      from '@/contexts/NotificationContext';
 import { HeaderActionsProvider } from '@/contexts/HeaderActionsContext';
 import { LayoutActionsContext }  from '@/contexts/LayoutActionsContext';
-import { SheetProvider, useSheets } from '@/contexts/SheetContext';
 import { AnimatedTabBar }        from '@/components/layout/AnimatedTabBar';
 import { BottomMenuSheet }       from '@/components/layout/BottomMenuSheet';
 import { SideDrawer }            from '@/components/layout/SideDrawer';
@@ -43,18 +42,24 @@ function useHaptic() {
   }, []);
 }
 
-// ─── Inner layout (consomme SheetContext) ─────────────────────────────────────
+// ─── Layout ───────────────────────────────────────────────────────────────────
 function InnerTabLayout() {
-  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [drawerOpen,      setDrawerOpen]      = useState(false);
+  const [bottomSheetOpen, setBottomSheetOpen] = useState(false);
+  const [wirdPickerOpen,  setWirdPickerOpen]  = useState(false);
 
   const router   = useRouter();
   const pathname = usePathname();
   const haptic   = useHaptic();
 
-  const { unreadCount }                          = useNotifications();
-  const { menuOpen, wirdOpen, toggleSheet, closeAll, closeSheet } = useSheets();
+  const { unreadCount } = useNotifications();
+  const isMainPage      = MAIN_PAGES.includes(pathname);
 
-  const isMainPage = MAIN_PAGES.includes(pathname);
+  // ── Ferme tous les sheets ───────────────────────────────────────────────────
+  const closeAllSheets = useCallback(() => {
+    setBottomSheetOpen(false);
+    setWirdPickerOpen(false);
+  }, []);
 
   // ── Navigation ──────────────────────────────────────────────────────────────
   const navigate = useCallback((route: string, delay = 0) => {
@@ -78,14 +83,42 @@ function InnerTabLayout() {
     [closeDrawer, navigate],
   );
 
-  // ── Handlers sheets ─────────────────────────────────────────────────────────
-  const onMenuNav = useCallback(
+  // ── Bottom sheet (Menu) — toggle, ferme Wird si ouvert ─────────────────────
+  const toggleSheet = useCallback(() => {
+    haptic('medium');
+    setBottomSheetOpen(prev => {
+      if (!prev) setWirdPickerOpen(false);
+      return !prev;
+    });
+  }, [haptic]);
+
+  const closeSheet = useCallback(() => {
+    haptic('light');
+    setBottomSheetOpen(false);
+  }, [haptic]);
+
+  const onSheetNav = useCallback(
     (route: string) => { closeSheet(); navigate(route, 260); },
     [closeSheet, navigate],
   );
-  const onWirdNav = useCallback(
-    (route: string) => { closeSheet(); navigate(route, 240); },
-    [closeSheet, navigate],
+
+  // ── Wird picker — toggle, ferme Menu si ouvert ─────────────────────────────
+  const toggleWirdPicker = useCallback(() => {
+    haptic('medium');
+    setWirdPickerOpen(prev => {
+      if (!prev) setBottomSheetOpen(false);
+      return !prev;
+    });
+  }, [haptic]);
+
+  const closeWirdPicker = useCallback(() => {
+    haptic('light');
+    setWirdPickerOpen(false);
+  }, [haptic]);
+
+  const onWirdPickerNav = useCallback(
+    (route: string) => { closeWirdPicker(); navigate(route, 240); },
+    [closeWirdPicker, navigate],
   );
 
   // ── Swipe pour ouvrir le drawer ─────────────────────────────────────────────
@@ -116,37 +149,38 @@ function InnerTabLayout() {
         />
 
         <BottomMenuSheet
-          visible={menuOpen}
+          visible={bottomSheetOpen}
           onClose={closeSheet}
           menuItems={MENU_ITEMS}
-          onNavigate={onMenuNav}
+          onNavigate={onSheetNav}
           pathname={pathname}
         />
 
         <WirdPickerSheet
-          visible={wirdOpen}
-          onClose={closeSheet}
-          onNavigate={onWirdNav}
+          visible={wirdPickerOpen}
+          onClose={closeWirdPicker}
+          onNavigate={onWirdPickerNav}
           pathname={pathname}
         />
 
         <Tabs
           screenOptions={{ headerShown: false }}
           tabBar={(props) => (
-            <AnimatedTabBar
-              {...props}
-              onBurgerPress={() => toggleSheet('menu')}
-              onWirdPress={() => toggleSheet('wird')}
-              burgerActive={menuOpen}
-              wirdActive={wirdOpen}
-              unreadCount={unreadCount}
-            />
+            <View style={s.tabBarWrapper}>
+              <AnimatedTabBar
+                {...props}
+                onBurgerPress={toggleSheet}
+                onWirdPress={toggleWirdPicker}
+                burgerActive={bottomSheetOpen}
+                wirdActive={wirdPickerOpen}
+                unreadCount={unreadCount}
+              />
+            </View>
           )}
           screenListeners={{
-            // Ferme tous les sheets dès qu'un tab standard est pressé
             tabPress: () => {
               haptic('light');
-              closeAll();
+              closeAllSheets();
             },
           }}
         >
@@ -165,13 +199,11 @@ function InnerTabLayout() {
   );
 }
 
-// ─── Export — SheetProvider enveloppe tout ────────────────────────────────────
+// ─── Export ───────────────────────────────────────────────────────────────────
 export default function TabLayout() {
   return (
     <HeaderActionsProvider>
-      <SheetProvider>
-        <InnerTabLayout />
-      </SheetProvider>
+      <InnerTabLayout />
     </HeaderActionsProvider>
   );
 }
@@ -179,4 +211,8 @@ export default function TabLayout() {
 const s = StyleSheet.create({
   root:      { flex: 1, backgroundColor: '#043D2E' },
   swipeZone: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 30, zIndex: 999 },
+  tabBarWrapper: {
+    zIndex:    3000,
+    elevation: 30,
+  },
 });
