@@ -236,11 +236,11 @@ const s = StyleSheet.create({
   labelActive: { color: '#FCD34D', fontWeight: '700', letterSpacing: 0.3 },
 
   burgerCircle: {
-    width: 46, height: 46, borderRadius: 23,
+    width: 40, height: 40, borderRadius: 20,
     backgroundColor: 'rgba(252,211,77,0.08)',
     alignItems: 'center', justifyContent: 'center',
     borderWidth: 1.5, borderColor: 'rgba(252,211,77,0.28)',
-    position: 'relative', marginBottom: 4,
+    position: 'relative',
   },
   burgerCircleActive: {
     backgroundColor: '#065F46',

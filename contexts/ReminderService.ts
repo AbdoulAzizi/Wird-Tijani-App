@@ -1,7 +1,8 @@
-import * as Notifications from 'expo-notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Platform } from 'react-native';
+import * as NotificationsType from 'expo-notifications';
+
 import { NotificationType, getDeviceTimezone } from './NotificationContext';
+import { loadNotificationsModule } from '@/utils/notifications.loader';
 
 // ============================================================================
 // TYPES
@@ -101,19 +102,44 @@ const STORAGE_KEY = 'reminder_scheduled_ids_v2';
 export class ReminderService {
   private static instance: ReminderService;
 
-  private scheduledIds: ScheduledIdMap = {};
-  private loaded = false;
+  // Module chargé dynamiquement — null si env. non supporté
+  private Notifications: typeof NotificationsType | null = null;
+  private moduleLoaded = false;
 
-  // Guard against concurrent scheduleAllReminders calls
+  private scheduledIds: ScheduledIdMap = {};
+  private loaded    = false;
   private scheduling = false;
 
   private constructor() {}
+
+  /**
+   * Réinitialise le cache interne du module expo-notifications.
+   * À appeler après setForceNotificationsEnabled() pour que le service
+   * recharge le module avec le nouveau flag.
+   */
+  resetModuleCache(): void {
+    this.Notifications = null;
+    this.moduleLoaded  = false;
+  }
 
   static getInstance(): ReminderService {
     if (!ReminderService.instance) {
       ReminderService.instance = new ReminderService();
     }
     return ReminderService.instance;
+  }
+
+  // ============================================================================
+  // MODULE — chargement unique du module expo-notifications
+  // Le warning "non disponible" est émis UNE SEULE FOIS dans loadNotificationsModule
+  // ============================================================================
+
+  private async getModule(): Promise<typeof NotificationsType | null> {
+    if (!this.moduleLoaded) {
+      this.Notifications = await loadNotificationsModule();
+      this.moduleLoaded  = true;
+    }
+    return this.Notifications;
   }
 
   // ============================================================================
@@ -129,8 +155,10 @@ export class ReminderService {
   // ============================================================================
 
   async isPermissionGranted(): Promise<boolean> {
+    const N = await this.getModule();
+    if (!N) return false;
     try {
-      const { status } = await Notifications.getPermissionsAsync();
+      const { status } = await N.getPermissionsAsync();
       return status === 'granted';
     } catch {
       return false;
@@ -138,10 +166,12 @@ export class ReminderService {
   }
 
   async ensurePermissions(): Promise<boolean> {
+    const N = await this.getModule();
+    if (!N) return false;
     try {
-      const { status: existing } = await Notifications.getPermissionsAsync();
+      const { status: existing } = await N.getPermissionsAsync();
       if (existing === 'granted') return true;
-      const { status } = await Notifications.requestPermissionsAsync();
+      const { status } = await N.requestPermissionsAsync();
       return status === 'granted';
     } catch {
       return false;
@@ -174,9 +204,6 @@ export class ReminderService {
 
   // ============================================================================
   // SCHEDULE ALL
-  // FIX: Cancel ALL OS-scheduled notifications (not just tracked IDs) before
-  // rescheduling, so stale notifs from lost/corrupted ID maps can't survive.
-  // Also guard against concurrent calls with a scheduling lock.
   // ============================================================================
 
   async scheduleAllReminders(
@@ -199,11 +226,7 @@ export class ReminderService {
       console.log(`[ReminderService] Scheduling in timezone: ${this.getTimezone()}`);
 
       await this.loadIds();
-
-      // FIX: Cancel every notification the OS knows about, not just our tracked
-      // IDs. This prevents duplicates when IDs were lost or corrupted.
       await this._cancelAllOsNotifications();
-
       this.scheduledIds = {};
 
       const tasks: Promise<void>[] = [];
@@ -313,12 +336,16 @@ export class ReminderService {
   // ============================================================================
 
   async scheduleTestNotification(): Promise<void> {
+    const N = await this.getModule();
+    if (!N) return;
+
     const granted = await this.isPermissionGranted();
     if (!granted) {
       console.warn('[ReminderService] Cannot send test — permissions not granted.');
       return;
     }
-    await Notifications.scheduleNotificationAsync({
+
+    await N.scheduleNotificationAsync({
       content: {
         title: '✅ Reminders working!',
         body:  `Notifications set up correctly (${this.getTimezone()}).`,
@@ -336,11 +363,23 @@ export class ReminderService {
     activeIds:          ScheduledIdMap;
     timezone:           string;
   }> {
+    const N = await this.getModule();
+    await this.loadIds();
+
+    if (!N) {
+      return {
+        permissionsGranted: false,
+        scheduledCount:     0,
+        trackedKeys:        [],
+        activeIds:          {},
+        timezone:           this.getTimezone(),
+      };
+    }
+
     const [permissionsGranted, all] = await Promise.all([
       this.isPermissionGranted(),
-      Notifications.getAllScheduledNotificationsAsync(),
+      N.getAllScheduledNotificationsAsync(),
     ]);
-    await this.loadIds();
 
     return {
       permissionsGranted,
@@ -351,9 +390,11 @@ export class ReminderService {
     };
   }
 
-  async getScheduledNotifications() {
+  async getScheduledNotifications(): Promise<NotificationsType.NotificationRequest[]> {
+    const N = await this.getModule();
+    if (!N) return [];
     try {
-      return await Notifications.getAllScheduledNotificationsAsync();
+      return await N.getAllScheduledNotificationsAsync();
     } catch (e) {
       console.error('[ReminderService] getScheduledNotifications error:', e);
       return [];
@@ -432,14 +473,13 @@ export class ReminderService {
     );
   }
 
-  // ── Cancel ALL notifications at the OS level (nuclear option) ──────────────
-  // FIX: This is the key fix. Instead of only cancelling our tracked IDs
-  // (which may be stale/lost), we cancel every scheduled notification the
-  // OS knows about. This guarantees no duplicates can survive.
+  // ── Cancel ALL notifications at the OS level ───────────────────────────────
 
   private async _cancelAllOsNotifications(): Promise<void> {
+    const N = await this.getModule();
+    if (!N) return;
     try {
-      await Notifications.cancelAllScheduledNotificationsAsync();
+      await N.cancelAllScheduledNotificationsAsync();
     } catch (e) {
       console.error('[ReminderService] _cancelAllOsNotifications error:', e);
     }
@@ -448,10 +488,11 @@ export class ReminderService {
   // ── Cancel a single tracked key ────────────────────────────────────────────
 
   private async _cancelKey(key: ReminderKey): Promise<void> {
+    const N  = await this.getModule();
     const id = this.scheduledIds[key];
-    if (id) {
+    if (N && id) {
       try {
-        await Notifications.cancelScheduledNotificationAsync(id);
+        await N.cancelScheduledNotificationAsync(id);
       } catch {
         // Already cancelled or ID expired — safe to ignore
       }
@@ -468,21 +509,23 @@ export class ReminderService {
     body:   string;
     type:   NotificationType;
   }): Promise<string | null> {
+    const N = await this.getModule();
+    if (!N) return null;
     try {
-      return await Notifications.scheduleNotificationAsync({
+      return await N.scheduleNotificationAsync({
         content: {
           title:    params.title,
           body:     params.body,
           sound:    true,
-          priority: Notifications.AndroidNotificationPriority.HIGH,
+          priority: N.AndroidNotificationPriority.HIGH,
           data:     { type: params.type },
         },
         trigger: {
-          type:    Notifications.SchedulableTriggerInputTypes.DAILY,
+          type:    N.SchedulableTriggerInputTypes.DAILY,
           hour:    params.hour,
           minute:  params.minute,
           repeats: true,
-        } as Notifications.DailyTriggerInput,
+        } as NotificationsType.DailyTriggerInput,
       });
     } catch (error) {
       console.error('[ReminderService] _scheduleDaily error:', error);
@@ -498,22 +541,24 @@ export class ReminderService {
     body:    string;
     type:    NotificationType;
   }): Promise<string | null> {
+    const N = await this.getModule();
+    if (!N) return null;
     try {
-      return await Notifications.scheduleNotificationAsync({
+      return await N.scheduleNotificationAsync({
         content: {
           title:    params.title,
           body:     params.body,
           sound:    true,
-          priority: Notifications.AndroidNotificationPriority.HIGH,
+          priority: N.AndroidNotificationPriority.HIGH,
           data:     { type: params.type },
         },
         trigger: {
-          type:    Notifications.SchedulableTriggerInputTypes.WEEKLY,
+          type:    N.SchedulableTriggerInputTypes.WEEKLY,
           weekday: params.weekday,
           hour:    params.hour,
           minute:  params.minute,
           repeats: true,
-        } as Notifications.WeeklyTriggerInput,
+        } as NotificationsType.WeeklyTriggerInput,
       });
     } catch (error) {
       console.error('[ReminderService] _scheduleWeekly error:', error);

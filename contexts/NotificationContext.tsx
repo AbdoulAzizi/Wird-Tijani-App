@@ -1,10 +1,16 @@
-import React, {
-  createContext, useContext, useState,
-  useEffect, useCallback, useRef
-} from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as Notifications from 'expo-notifications';
+import * as NotificationsType from 'expo-notifications';
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import { Platform } from 'react-native';
+
+import { loadNotificationsModule } from '@/utils/notifications.loader';
 
 // ============================================================================
 // TYPES
@@ -54,23 +60,14 @@ interface NotificationContextValue {
 const NotificationContext = createContext<NotificationContextValue | null>(null);
 
 // ============================================================================
-// CONFIGURATION
+// CONSTANTS
 // ============================================================================
 
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert:  true,
-    shouldPlaySound:  true,
-    shouldSetBadge:   true,
-    shouldShowBanner: true,
-    shouldShowList:   true,
-  }),
-});
-
-const STORAGE_KEY = 'app_notifications_v2';
+const STORAGE_KEY    = 'app_notifications_v2';
+const DEDUP_WINDOW_MS = 3_000;
 
 // ============================================================================
-// TIMEZONE UTILITY
+// TIMEZONE UTILITIES
 // ============================================================================
 
 /**
@@ -92,12 +89,12 @@ export function formatLocalTime(timestamp: number): string {
   try {
     const tz = getDeviceTimezone();
     return new Intl.DateTimeFormat(undefined, {
-      timeZone:   tz,
-      hour:       '2-digit',
-      minute:     '2-digit',
-      weekday:    'short',
-      day:        'numeric',
-      month:      'short',
+      timeZone: tz,
+      hour:     '2-digit',
+      minute:   '2-digit',
+      weekday:  'short',
+      day:      'numeric',
+      month:    'short',
     }).format(new Date(timestamp));
   } catch {
     return new Date(timestamp).toLocaleString();
@@ -105,50 +102,67 @@ export function formatLocalTime(timestamp: number): string {
 }
 
 // ============================================================================
-// DEDUP HELPER
-// ============================================================================
-
-/** Rolling window (ms) within which two notifications with the same title+type are considered duplicates */
-const DEDUP_WINDOW_MS = 3_000;
-
-// ============================================================================
 // PROVIDER
 // ============================================================================
 
 export function NotificationProvider({ children }: { children: React.ReactNode }) {
-  const [notifications, setNotifications] = useState<NotificationData[]>([]);
+  // ── Module chargé dynamiquement (null = env. non supporté) ────────────────
+  const [Notifications, setNotifications] = useState<typeof NotificationsType | null>(null);
+
+  const [notifications,      setNotifications_]    = useState<NotificationData[]>([]);
   const [permissionsGranted, setPermissionsGranted] = useState(false);
   const timezone = getDeviceTimezone();
 
-  // ── Guard: don't save until initial load is done ──────────────────────────
+  // ── Guard : ne pas sauvegarder avant le chargement initial ───────────────
   const isLoaded = useRef(false);
 
-  // ── Promise that resolves once persisted data is loaded ───────────────────
+  // ── Promise résolue une fois les données persistées chargées ─────────────
   const loadedResolveRef = useRef<() => void>(() => {});
-  const loadedPromise = useRef<Promise<void>>(
-    new Promise<void>(resolve => {
-      loadedResolveRef.current = resolve;
-    })
+  const loadedPromise    = useRef<Promise<void>>(
+    new Promise<void>(resolve => { loadedResolveRef.current = resolve; })
   );
 
-  // ── Recent-notification dedup registry ────────────────────────────────────
-  // Maps `type:title` → timestamp of the last time it was added.
+  // ── Registre de déduplication des notifications récentes ─────────────────
+  // Maps `type:title` → timestamp du dernier ajout.
   const recentlyAddedRef = useRef<Map<string, number>>(new Map());
 
+  // ── Ref pour accéder à permissionsGranted dans les callbacks ─────────────
+  const permissionsRef = useRef(permissionsGranted);
+  useEffect(() => { permissionsRef.current = permissionsGranted; }, [permissionsGranted]);
+
   // ============================================================================
-  // INIT
+  // INIT — charger le module, puis les données et les permissions
   // ============================================================================
 
   useEffect(() => {
     const init = async () => {
+      // 1. Import dynamique : warning émis UNE SEULE FOIS ici si env. non supporté
+      const module = await loadNotificationsModule();
+      setNotifications(module);
+
+      // 2. Initialiser le handler seulement si le module est disponible
+      if (module) {
+        module.setNotificationHandler({
+          handleNotification: async () => ({
+            shouldShowAlert:  true,
+            shouldPlaySound:  true,
+            shouldSetBadge:   true,
+            shouldShowBanner: true,
+            shouldShowList:   true,
+          }),
+        });
+      }
+
+      // 3. Charger les données persistées et demander les permissions
       await loadNotifications();
       await requestPermissions();
     };
+
     init();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ============================================================================
-  // SAVE — only after the initial load has completed
+  // SAVE — uniquement après le chargement initial
   // ============================================================================
 
   useEffect(() => {
@@ -157,7 +171,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   }, [notifications]);
 
   // ============================================================================
-  // LOAD
+  // PERSISTENCE
   // ============================================================================
 
   const loadNotifications = async () => {
@@ -165,7 +179,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
       const saved = await AsyncStorage.getItem(STORAGE_KEY);
       if (saved) {
         const parsed: NotificationData[] = JSON.parse(saved);
-        setNotifications(parsed);
+        setNotifications_(parsed);
       }
     } catch (error) {
       console.error('[NotificationContext] Error loading notifications:', error);
@@ -188,6 +202,9 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   // ============================================================================
 
   const requestPermissions = async (): Promise<boolean> => {
+    // Guard unique : si le module n'est pas disponible, on sort proprement
+    if (!Notifications) return false;
+
     try {
       const { status: existingStatus } = await Notifications.getPermissionsAsync();
       let finalStatus = existingStatus;
@@ -224,20 +241,15 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   // NOTIFICATION MANAGEMENT
   // ============================================================================
 
-  const permissionsRef = useRef(permissionsGranted);
-  useEffect(() => { permissionsRef.current = permissionsGranted; }, [permissionsGranted]);
-
-  // ── Internal: in-app list ONLY, zero OS push ──────────────────────────────
-  //
-  // Called by the OS listener when a scheduled reminder fires.
-  // The OS already showed the notification in the tray — we just need to
-  // mirror it into the in-app list.  Calling scheduleNotificationAsync here
-  // would fire a SECOND OS notification → duplicate in the tray.
-  //
+  /**
+   * Mise à jour de la liste in-app UNIQUEMENT, sans push OS.
+   * Appelée par le listener OS quand une notification planifiée arrive :
+   * l'OS l'a déjà affichée dans le tiroir, on la miroir juste dans la liste.
+   */
   const _syncToList = useCallback((
     notification: Omit<NotificationData, 'id' | 'timestamp' | 'read'>
   ) => {
-    const dedupKey = `${notification.type}:${notification.title}`;
+    const dedupKey  = `${notification.type}:${notification.title}`;
     const lastAdded = recentlyAddedRef.current.get(dedupKey) ?? 0;
     if (Date.now() - lastAdded < DEDUP_WINDOW_MS) return;
     recentlyAddedRef.current.set(dedupKey, Date.now());
@@ -248,23 +260,25 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
       timestamp: Date.now(),
       read:      false,
     };
+
     loadedPromise.current.then(() => {
-      setNotifications(prev => [entry, ...prev]);
+      setNotifications_(prev => [entry, ...prev]);
     });
   }, []);
 
-  // ── Public: in-app list + immediate OS push ────────────────────────────────
-  //
-  // For events triggered inside the app (completion, streak, etc.).
-  // Marks the OS push with data.inApp = true so the listener skips it
-  // and does NOT call _syncToList again (avoiding a second OS push).
-  //
+  /**
+   * Liste in-app + push OS immédiat.
+   * Pour les événements déclenchés depuis l'app (complétion, streak, etc.).
+   * Marque la notification avec data.inApp = true pour éviter le doublon
+   * dans le listener OS.
+   */
   const addNotification = useCallback((
     notification: Omit<NotificationData, 'id' | 'timestamp' | 'read'>
   ) => {
     _syncToList(notification);
 
-    if (permissionsRef.current) {
+    // Guard unique : si le module n'est pas disponible, on ne tente pas le push OS
+    if (Notifications && permissionsRef.current) {
       Notifications.scheduleNotificationAsync({
         content: {
           title:    notification.title,
@@ -278,24 +292,24 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
         console.error('[NotificationContext] scheduleNotificationAsync error:', err)
       );
     }
-  }, [_syncToList]);
+  }, [_syncToList, Notifications]);
 
   const markAsRead = useCallback((id: string) => {
-    setNotifications(prev =>
+    setNotifications_(prev =>
       prev.map(n => n.id === id ? { ...n, read: true } : n)
     );
   }, []);
 
   const markAllAsRead = useCallback(() => {
-    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    setNotifications_(prev => prev.map(n => ({ ...n, read: true })));
   }, []);
 
   const deleteNotification = useCallback((id: string) => {
-    setNotifications(prev => prev.filter(n => n.id !== id));
+    setNotifications_(prev => prev.filter(n => n.id !== id));
   }, []);
 
   const clearAll = useCallback(() => {
-    setNotifications([]);
+    setNotifications_([]);
   }, []);
 
   // ============================================================================
@@ -308,7 +322,9 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     body:  string,
     time:  Date,
   ) => {
-    if (!permissionsRef.current) return;
+    // Guard unique : si le module n'est pas disponible ou pas de permission, on sort
+    if (!Notifications || !permissionsRef.current) return;
+
     try {
       await Notifications.scheduleNotificationAsync({
         content: {
@@ -317,15 +333,14 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
           sound:    true,
           priority: Notifications.AndroidNotificationPriority.HIGH,
           data:     { type },
-          // Note: expo-notifications fires DAILY/WEEKLY triggers in device-local
-          // time automatically. For DATE triggers the JS Date is UTC-based so
-          // no extra conversion is needed.
+          // Note: expo-notifications fire DAILY/WEEKLY triggers en heure locale
+          // automatiquement. Pour DATE, le JS Date est UTC-based, pas de conversion.
         },
         trigger: {
           type:    Notifications.SchedulableTriggerInputTypes.DATE,
           date:    time,
           repeats: false,
-        } as Notifications.DateTriggerInput,
+        } as NotificationsType.DateTriggerInput,
       });
     } catch (error) {
       console.error('[NotificationContext] Error scheduling notification:', error);
@@ -333,6 +348,9 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   };
 
   const cancelAllScheduled = async () => {
+    // Guard unique
+    if (!Notifications) return;
+
     try {
       await Notifications.cancelAllScheduledNotificationsAsync();
     } catch (error) {
@@ -341,28 +359,22 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   };
 
   // ============================================================================
-  // COMPUTED
-  // ============================================================================
-
-  const unreadCount = notifications.filter(n => !n.read).length;
-
-  // ============================================================================
-  // INCOMING PUSH — sync OS-originated notifications into the in-app list
+  // LISTENER OS — sync les notifications distantes dans la liste in-app
   // ============================================================================
 
   useEffect(() => {
+    // Guard unique : ne pas attacher le listener si le module n'est pas disponible
+    if (!Notifications) return;
+
     const subscription = Notifications.addNotificationReceivedListener(notification => {
       const { title, body, data } = notification.request.content;
 
-      // Notifications fired by addNotification() itself carry inApp: true.
-      // The OS echo must be ignored entirely — the list was already updated
-      // synchronously and firing addNotification() again would produce a
-      // second OS push (= duplicate in the device tray).
+      // Notifications déclenchées par addNotification() : data.inApp = true.
+      // On ignore l'écho OS — la liste a déjà été mise à jour de façon synchrone.
       if (data?.inApp) return;
 
-      // Scheduled reminders from ReminderService arrive here.
-      // Use _syncToList — NOT addNotification — so we only mirror the item
-      // into the in-app list without triggering any new OS notification.
+      // Reminders planifiés via scheduleReminder : on les miroir dans la liste
+      // avec _syncToList (et non addNotification) pour éviter un second push OS.
       if (data?.type) {
         _syncToList({
           type:     (data.type as NotificationType) ?? 'info',
@@ -374,7 +386,13 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     });
 
     return () => subscription.remove();
-  }, [_syncToList]);
+  }, [Notifications, _syncToList]);
+
+  // ============================================================================
+  // COMPUTED
+  // ============================================================================
+
+  const unreadCount = notifications.filter(n => !n.read).length;
 
   // ============================================================================
   // RENDER
