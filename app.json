@@ -2,16 +2,16 @@
   "expo": {
     "name": "My Wird",
     "slug": "wird-tijani",
-    "version": "1.0.21",
+    "version": "1.0.22",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "wirdtijani",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-    "primaryColor": "#059669",
+    "primaryColor": "#ffffff",
 
     "androidStatusBar": {
-      "backgroundColor": "#059669",
+      "backgroundColor": "#ffffff",
       "barStyle": "light-content"
     },
     "androidNavigationBar": {
@@ -27,7 +27,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.wirdtijani.app",
-      "buildNumber": "22"
+      "buildNumber": "23"
     },
 
     "android": {
@@ -36,7 +36,8 @@
       "permissions": [],
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#059669"
+        "backgroundColor": "#ffffff"
+        // "backgroundColor": "#059669"
       }
     },
 
