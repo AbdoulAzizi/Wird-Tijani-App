@@ -2,7 +2,7 @@
   "expo": {
     "name": "Wird Tijāni",
     "slug": "wird-tijani",
-    "version": "1.0.22",
+    "version": "1.0.23",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "wirdtijani",
@@ -27,12 +27,12 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.wirdtijani.app",
-      "buildNumber": "23"
+      "buildNumber": "24"
     },
 
     "android": {
       "package": "com.wirdtijani.app",
-      "versionCode": 1,
+      "versionCode": 24,
       "permissions": [],
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
