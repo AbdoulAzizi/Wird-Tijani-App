@@ -1,4 +1,6 @@
-// app/(tabs)/_layout.tsx
+// app/(tabs)/_layout.tsx — Wird Tijani
+// Tabs: Home · Wird · Wazifa · Library
+// Hidden: hadra, stats, settings, about, notifications, etc.
 
 import { Tabs, useRouter, usePathname }   from 'expo-router';
 import { SafeAreaView }                   from 'react-native-safe-area-context';
@@ -17,14 +19,15 @@ import { MENU_ITEMS }            from '@/constants/menuItems';
 import { useSwipeDrawer }        from '@/hooks/useSwipeDrawer';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-const MAIN_PAGES = ['/', '/wird', '/dhikr-counter', '/azkars'];
+// Pages where the swipe-to-open-drawer gesture is active
+const MAIN_PAGES = ['/', '/wird'];
 
+// Screens that exist but are NOT shown as tabs
 const HIDDEN_TABS = [
-  'suwar', 'hadra-station', 'asmaa-alhusna',
   'wazifa', 'hadra',
   'stats', 'settings', 'about', 'library', 'notifications',
   'notification-settings', 'notification-test',
-  'daily-achievements', 'asmaa-nabi', 'contact',
+  'daily-achievements', 'contact',
 ];
 
 // ─── Haptic helper ────────────────────────────────────────────────────────────
@@ -55,13 +58,11 @@ function InnerTabLayout() {
   const { unreadCount } = useNotifications();
   const isMainPage      = MAIN_PAGES.includes(pathname);
 
-  // ── Ferme tous les sheets ───────────────────────────────────────────────────
   const closeAllSheets = useCallback(() => {
     setBottomSheetOpen(false);
     setWirdPickerOpen(false);
   }, []);
 
-  // ── Navigation ──────────────────────────────────────────────────────────────
   const navigate = useCallback((route: string, delay = 0) => {
     haptic('success');
     const go = () => router.push(route as any);
@@ -75,7 +76,7 @@ function InnerTabLayout() {
 
   const handleNotifications = useCallback(() => navigate('/notifications'), [navigate]);
 
-  // ── Drawer (swipe latéral) ──────────────────────────────────────────────────
+  // ── Drawer ─────────────────────────────────────────────────────────────────
   const openDrawer  = useCallback(() => { haptic('light'); setDrawerOpen(true);  }, [haptic]);
   const closeDrawer = useCallback(() => { haptic('light'); setDrawerOpen(false); }, [haptic]);
   const onDrawerNav = useCallback(
@@ -83,51 +84,37 @@ function InnerTabLayout() {
     [closeDrawer, navigate],
   );
 
-  // ── Bottom sheet (Menu) — toggle, ferme Wird si ouvert ─────────────────────
+  // ── Bottom sheet ────────────────────────────────────────────────────────────
   const toggleSheet = useCallback(() => {
     haptic('medium');
-    setBottomSheetOpen(prev => {
-      if (!prev) setWirdPickerOpen(false);
-      return !prev;
-    });
+    setBottomSheetOpen(prev => { if (!prev) setWirdPickerOpen(false); return !prev; });
   }, [haptic]);
 
-  const closeSheet = useCallback(() => {
-    haptic('light');
-    setBottomSheetOpen(false);
-  }, [haptic]);
-
-  const onSheetNav = useCallback(
+  const closeSheet  = useCallback(() => { haptic('light'); setBottomSheetOpen(false); }, [haptic]);
+  const onSheetNav  = useCallback(
     (route: string) => { closeSheet(); navigate(route, 260); },
     [closeSheet, navigate],
   );
 
-  // ── Wird picker — toggle, ferme Menu si ouvert ─────────────────────────────
+  // ── Wird picker ─────────────────────────────────────────────────────────────
   const toggleWirdPicker = useCallback(() => {
     haptic('medium');
-    setWirdPickerOpen(prev => {
-      if (!prev) setBottomSheetOpen(false);
-      return !prev;
-    });
+    setWirdPickerOpen(prev => { if (!prev) setBottomSheetOpen(false); return !prev; });
   }, [haptic]);
 
-  const closeWirdPicker = useCallback(() => {
-    haptic('light');
-    setWirdPickerOpen(false);
-  }, [haptic]);
-
+  const closeWirdPicker = useCallback(() => { haptic('light'); setWirdPickerOpen(false); }, [haptic]);
   const onWirdPickerNav = useCallback(
     (route: string) => { closeWirdPicker(); navigate(route, 240); },
     [closeWirdPicker, navigate],
   );
 
-  // ── Swipe pour ouvrir le drawer ─────────────────────────────────────────────
+  // ── Swipe gesture ───────────────────────────────────────────────────────────
   const swipeHandlers = useSwipeDrawer({
     enabled: isMainPage && !drawerOpen,
     onOpen:  openDrawer,
   });
 
-  // ── Context partagé ─────────────────────────────────────────────────────────
+  // ── Shared context ──────────────────────────────────────────────────────────
   const layoutActions = useMemo(() => ({
     openDrawer, handleBack, handleNotifications, unreadCount,
   }), [openDrawer, handleBack, handleNotifications, unreadCount]);
@@ -178,17 +165,14 @@ function InnerTabLayout() {
             </View>
           )}
           screenListeners={{
-            tabPress: () => {
-              haptic('light');
-              closeAllSheets();
-            },
+            tabPress: () => { haptic('light'); closeAllSheets(); },
           }}
         >
-          <Tabs.Screen name="index"         options={{ title: 'Home'   }} />
-          <Tabs.Screen name="wird"          options={{ title: 'Wird'   }} />
-          <Tabs.Screen name="dhikr-counter" options={{ title: 'Dhikr'  }} />
-          <Tabs.Screen name="azkars"        options={{ title: 'Azkars' }} />
+          {/* ── Visible tabs ── */}
+          <Tabs.Screen name="index" options={{ title: 'Home'    }} />
+          <Tabs.Screen name="wird"  options={{ title: 'Wird'    }} />
 
+          {/* ── Hidden screens ── */}
           {HIDDEN_TABS.map(name => (
             <Tabs.Screen key={name} name={name} options={{ href: null }} />
           ))}
@@ -209,10 +193,7 @@ export default function TabLayout() {
 }
 
 const s = StyleSheet.create({
-  root:      { flex: 1, backgroundColor: '#043D2E' },
-  swipeZone: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 30, zIndex: 999 },
-  tabBarWrapper: {
-    zIndex:    3000,
-    elevation: 30,
-  },
+  root:          { flex: 1, backgroundColor: '#043D2E' },
+  swipeZone:     { position: 'absolute', left: 0, top: 0, bottom: 0, width: 30, zIndex: 999 },
+  tabBarWrapper: { zIndex: 3000, elevation: 30 },
 });

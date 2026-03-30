@@ -1,5 +1,8 @@
-// components/layout/WirdPickerSheet.tsx
-// Composant intermédiaire élégant — sélection Wird / Wazifa / Haḍra
+// components/layout/WirdPickerSheet.tsx — Wird Tijani
+//
+// Unchanged from original — this picker is intrinsically Tariqa-specific
+// (Wird · Wazifa · Haḍra) and belongs only in Wird Tijani.
+// Rawdat Dhikr does NOT use this component.
 
 import { Heart, Star, Moon, X, ChevronRight } from 'lucide-react-native';
 import {
@@ -10,9 +13,9 @@ import { useRef, useEffect } from 'react';
 import Svg, { Defs, RadialGradient, Stop, Ellipse } from 'react-native-svg';
 
 // ─── Theme — only identity tokens ────────────────────────────────────────────
-import { practices, type PracticeKey } from "@/theme";
+import { practices, type PracticeKey } from '@/theme';
 
-// ─── Icons map (UI concern — stays in component) ──────────────────────────────
+// ─── Icons map ────────────────────────────────────────────────────────────────
 const ICONS: Record<PracticeKey, any> = {
   wird:   Heart,
   wazifa: Star,
@@ -36,7 +39,7 @@ interface Props {
 const { height: SH } = Dimensions.get('window');
 const SHEET_H = Math.min(SH * 0.72, 560);
 
-// ─── Glow décoratif ───────────────────────────────────────────────────────────
+// ─── Glow orb ─────────────────────────────────────────────────────────────────
 function GlowOrb({ color }: { color: string }) {
   return (
     <Svg width={80} height={80} style={StyleSheet.absoluteFill}>
@@ -51,7 +54,7 @@ function GlowOrb({ color }: { color: string }) {
   );
 }
 
-// ─── Carte d'une pratique ─────────────────────────────────────────────────────
+// ─── Practice card ────────────────────────────────────────────────────────────
 function PracticeCard({
   item, onPress, index,
 }: {
@@ -110,7 +113,7 @@ function PracticeCard({
   );
 }
 
-// ─── Séparateur ornemental ────────────────────────────────────────────────────
+// ─── Ornamental divider ───────────────────────────────────────────────────────
 function OrnamentalDivider() {
   return (
     <View style={s.divider}>
@@ -121,7 +124,7 @@ function OrnamentalDivider() {
   );
 }
 
-// ─── Sheet principal ──────────────────────────────────────────────────────────
+// ─── Sheet ────────────────────────────────────────────────────────────────────
 export function WirdPickerSheet({ visible, onClose, onNavigate, pathname }: Props) {
   const slideAnim = useRef(new Animated.Value(SHEET_H)).current;
   const fadeAnim  = useRef(new Animated.Value(0)).current;

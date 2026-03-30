@@ -1,11 +1,13 @@
 // contexts/LayoutActionsContext.ts
+// Shared between Wird Tijani and Rawdat Dhikr — no app-specific logic.
+
 import { createContext } from 'react';
 
 export interface LayoutActions {
-  openDrawer:        () => void;
-  handleBack:        () => void;
+  openDrawer:          () => void;
+  handleBack:          () => void;
   handleNotifications: () => void;
-  unreadCount:       number;
+  unreadCount:         number;
 }
 
 export const LayoutActionsContext = createContext<LayoutActions>({

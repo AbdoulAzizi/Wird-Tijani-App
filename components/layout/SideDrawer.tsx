@@ -1,4 +1,9 @@
-// components/layout/SideDrawer.tsx
+// components/layout/SideDrawer.tsx — Wird Tijani
+//
+// Green brand: header #064E3B, active items #F0FDF4.
+// Includes HadraMenuItem special treatment for /hadra-station
+// (though that route does not exist in Wird Tijani, the component
+//  handles it gracefully if ever passed through MENU_ITEMS).
 
 import { X, ChevronRight } from 'lucide-react-native';
 import {
@@ -10,18 +15,16 @@ import { useRef, useEffect, useCallback } from 'react';
 import { useAppVersion } from '@/hooks/useAppVersion';
 import { MenuItem }      from '@/constants/menuItems';
 
-// ─── Constants ────────────────────────────────────────────────────────────────
 const DRAWER_WIDTH = 300;
 
-// ─── Special item : Al-Hadra ──────────────────────────────────────────────────
+// ─── Special item : Al-Hadra (gold) ──────────────────────────────────────────
 function HadraMenuItem({ item, isActive, onPress }: { item: MenuItem; isActive: boolean; onPress: () => void }) {
   const Icon = item.icon;
   return (
     <View style={s.hadraWrap}>
       <TouchableOpacity
         style={[s.hadraItem, isActive && { borderColor: '#C8922A', borderWidth: 1.5 }]}
-        onPress={onPress}
-        activeOpacity={0.75}
+        onPress={onPress} activeOpacity={0.75}
       >
         <View style={s.hadraIconWrap}>
           <Icon color="#C8922A" size={20} strokeWidth={1.8} />
@@ -29,9 +32,7 @@ function HadraMenuItem({ item, isActive, onPress }: { item: MenuItem; isActive: 
         <View style={{ flex: 1 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
             <Text style={s.hadraLabel}>{item.name}</Text>
-            <View style={s.hadraBadge}>
-              <Text style={s.hadraBadgeTxt}>✦ PRESENCE</Text>
-            </View>
+            <View style={s.hadraBadge}><Text style={s.hadraBadgeTxt}>✦ PRESENCE</Text></View>
           </View>
           <Text style={s.hadraDesc}>{item.description}</Text>
         </View>
@@ -45,14 +46,9 @@ function HadraMenuItem({ item, isActive, onPress }: { item: MenuItem; isActive: 
 function MenuItem_({ item, isActive, onPress }: { item: MenuItem; isActive: boolean; onPress: () => void }) {
   const Icon  = item.icon;
   const color = item.color || '#059669';
-
   return (
     <>
-      <TouchableOpacity
-        style={[s.item, isActive && s.itemActive]}
-        onPress={onPress}
-        activeOpacity={0.7}
-      >
+      <TouchableOpacity style={[s.item, isActive && s.itemActive]} onPress={onPress} activeOpacity={0.7}>
         <View style={[s.icon, { backgroundColor: isActive ? color : color + '15' }]}>
           <Icon color={isActive ? '#FFFFFF' : color} size={20} strokeWidth={2.2} />
         </View>
@@ -60,13 +56,9 @@ function MenuItem_({ item, isActive, onPress }: { item: MenuItem; isActive: bool
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
             <Text style={[s.label, isActive && { color }]}>{item.name}</Text>
             {item.badge && item.badge > 0 ? (
-              <View style={s.badge}>
-                <Text style={s.badgeTxt}>{item.badge > 99 ? '99+' : item.badge}</Text>
-              </View>
+              <View style={s.badge}><Text style={s.badgeTxt}>{item.badge > 99 ? '99+' : item.badge}</Text></View>
             ) : item.isNew ? (
-              <View style={s.newBadge}>
-                <Text style={s.newBadgeTxt}>NEW</Text>
-              </View>
+              <View style={s.newBadge}><Text style={s.newBadgeTxt}>NEW</Text></View>
             ) : null}
           </View>
           <Text style={s.desc}>{item.description}</Text>
@@ -94,27 +86,16 @@ export function SideDrawer({ visible, onClose, menuItems, onNavigate, pathname }
 
   useEffect(() => {
     Animated.parallel([
-      Animated.spring(slideAnim, {
-        toValue:         visible ? 0 : -DRAWER_WIDTH,
-        useNativeDriver: true,
-        damping:         20,
-        stiffness:       180,
-      }),
-      Animated.timing(fadeAnim, {
-        toValue:         visible ? 1 : 0,
-        duration:        visible ? 280 : 220,
-        useNativeDriver: true,
-      }),
+      Animated.spring(slideAnim, { toValue: visible ? 0 : -DRAWER_WIDTH, useNativeDriver: true, damping: 20, stiffness: 180 }),
+      Animated.timing(fadeAnim,  { toValue: visible ? 1 : 0, duration: visible ? 280 : 220, useNativeDriver: true }),
     ]).start();
   }, [visible]);
 
   const renderItem = useCallback((item: MenuItem) => {
     const isActive = pathname === item.route;
     const onPress  = () => onNavigate(item.route);
-
     if (item.route === '/hadra-station')
       return <HadraMenuItem key={item.route} item={item} isActive={isActive} onPress={onPress} />;
-
     return <MenuItem_ key={item.route} item={item} isActive={isActive} onPress={onPress} />;
   }, [pathname, onNavigate]);
 
@@ -127,7 +108,8 @@ export function SideDrawer({ visible, onClose, menuItems, onNavigate, pathname }
       </Pressable>
 
       <Animated.View style={[s.drawer, { transform: [{ translateX: slideAnim }] }]}>
-        {/* Header */}
+
+        {/* ── Green header ── */}
         <View style={s.header}>
           <View>
             <Text style={s.headerTitle}>Menu</Text>
@@ -138,20 +120,15 @@ export function SideDrawer({ visible, onClose, menuItems, onNavigate, pathname }
           </TouchableOpacity>
         </View>
 
-        {/* Items */}
-        <ScrollView
-          style={{ flex: 1 }}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingTop: 8, paddingBottom: 16 }}
-        >
+        <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingTop: 8, paddingBottom: 16 }}>
           {menuItems.map(renderItem)}
         </ScrollView>
 
-        {/* Footer */}
         <View style={s.footer}>
           <View style={s.footerLine} />
           <Text style={s.footerVersion}>{appName} · v{fullVersion}</Text>
-          <Text style={s.footerCopy}>© 2025 Spiritual App</Text>
+          <Text style={s.footerCopy}>© 2025 Wird Tijani</Text>
         </View>
       </Animated.View>
     </View>
@@ -160,7 +137,7 @@ export function SideDrawer({ visible, onClose, menuItems, onNavigate, pathname }
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const s = StyleSheet.create({
-  overlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1000 },
+  overlay:  { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1000 },
   backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.48)' },
   drawer: {
     position: 'absolute', left: 0, top: 0, bottom: 0,
@@ -170,6 +147,7 @@ const s = StyleSheet.create({
     borderTopRightRadius: 28, borderBottomRightRadius: 28,
   },
 
+  // Green brand header
   header: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     padding: 22, paddingTop: Platform.OS === 'ios' ? 60 : 46,
@@ -179,8 +157,8 @@ const s = StyleSheet.create({
   headerSub:   { fontSize: 13, color: '#D1FAE5', marginTop: 2, fontWeight: '500' },
   closeBtn:    { padding: 8, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.18)' },
 
-  // Standard item
   item:       { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, paddingHorizontal: 16, marginHorizontal: 10, marginVertical: 2, borderRadius: 14 },
+  // Active: green tint
   itemActive: { backgroundColor: '#F0FDF4' },
   icon:       { width: 40, height: 40, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
   label:      { fontSize: 15, fontWeight: '600', color: '#1E293B' },
@@ -189,10 +167,10 @@ const s = StyleSheet.create({
 
   badge:      { backgroundColor: '#EF4444', borderRadius: 9, minWidth: 18, height: 18, paddingHorizontal: 5, justifyContent: 'center', alignItems: 'center' },
   badgeTxt:   { color: '#FFFFFF', fontSize: 10, fontWeight: '700' },
+  // New badge: green
   newBadge:   { backgroundColor: '#065F46', borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 },
   newBadgeTxt:{ color: '#FFFFFF', fontSize: 9, fontWeight: '800', letterSpacing: 0.6 },
 
-  // Hadra item
   hadraWrap:    { marginHorizontal: 10, marginVertical: 6, borderRadius: 14, overflow: 'hidden' },
   hadraItem:    { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 13, paddingHorizontal: 16, backgroundColor: '#0A0A0F', borderRadius: 14, borderWidth: 1, borderColor: 'rgba(200,146,42,0.20)' },
   hadraIconWrap:{ width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(200,146,42,0.10)', borderWidth: 1, borderColor: 'rgba(200,146,42,0.22)', justifyContent: 'center', alignItems: 'center' },
@@ -201,7 +179,6 @@ const s = StyleSheet.create({
   hadraBadgeTxt:{ fontSize: 8, fontWeight: '800', color: '#C8922A', letterSpacing: 0.8 },
   hadraDesc:    { fontSize: 11, color: 'rgba(255,255,255,0.38)', marginTop: 2 },
 
-  // Footer
   footer:        { padding: 18, borderTopWidth: 1, borderTopColor: '#F1F5F9', alignItems: 'center', borderBottomRightRadius: 28 },
   footerLine:    { width: 36, height: 3, backgroundColor: '#E2E8F0', borderRadius: 2, marginBottom: 10 },
   footerVersion: { fontSize: 12, color: '#94A3B8', fontWeight: '600' },

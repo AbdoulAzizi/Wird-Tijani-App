@@ -1,9 +1,13 @@
-// components/layout/AnimatedTabBar.tsx
+// components/layout/AnimatedTabBar.tsx — Wird Tijani
+//
+// Tabs: Home · Wird & Wazifa · Menu (burger)
+// Notch gradient: green brand (#064E3B → #043D2E)
+// The "Wird & Wazifa" tab triggers WirdPickerSheet (onWirdPress).
 
-import { Heart, Timer, SunMoon, Menu } from 'lucide-react-native';
+import { Heart, Menu } from 'lucide-react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import {
-  View, Text, TouchableOpacity, Animated,
+  View, Text, TouchableOpacity,
   StyleSheet, Platform, Dimensions,
 } from 'react-native';
 import { useState, useRef, useEffect } from 'react';
@@ -13,28 +17,27 @@ import Svg, {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const { width: SW } = Dimensions.get('window');
-const TAB_COUNT     = 5;
-const TAB_BAR_H     = Platform.OS === 'ios' ? 86 : 70;
-const ICON_SIZE     = 40;
+
+// Wird Tijani shows 3 real tabs; we keep TAB_COUNT = 3 so spacing is correct.
+const TAB_COUNT = 3;
+const TAB_BAR_H = Platform.OS === 'ios' ? 86 : 70;
+const ICON_SIZE = 40;
 
 const TAB_PX = (i: number) => (i + 0.5) * (SW / TAB_COUNT);
 
+// logIdx: 0 = Home, 1 = Wird, 2 = Menu
 const TABS_DISPLAY = [
-  { routeName: 'index',         label: 'Home',          logIdx: 0, isBurger: false, isWird: false },
-  { routeName: 'wird',          label: 'Wird & Wazifa', logIdx: 1, isBurger: false, isWird: true  },
-  { routeName: '__menu',        label: 'Menu',          logIdx: 2, isBurger: true,  isWird: false },
-  { routeName: 'dhikr-counter', label: 'Dhikr Counter', logIdx: 3, isBurger: false, isWird: false },
-  { routeName: 'azkars',        label: 'Azkaars',       logIdx: 4, isBurger: false, isWird: false },
+  { routeName: 'index',  label: 'Home',          logIdx: 0, isBurger: false, isWird: false },
+  { routeName: 'wird',   label: 'Wird & Wazifa', logIdx: 1, isBurger: false, isWird: true  },
+  { routeName: '__menu', label: 'Menu',           logIdx: 2, isBurger: true,  isWird: false },
 ];
 
 const ROUTE_TO_IDX: Record<string, number> = {
-  index:           0,
-  wird:            1,
-  'dhikr-counter': 3,
-  azkars:          4,
+  index: 0,
+  wird:  1,
 };
 
-// ─── Notch SVG ────────────────────────────────────────────────────────────────
+// ─── Notch SVG — green brand ──────────────────────────────────────────────────
 function NotchBarSVG({ cx }: { cx: number }) {
   const W = SW, H = TAB_BAR_H, NR = 26, ND = 20, CR = 20, WING = 12;
 
@@ -63,6 +66,7 @@ function NotchBarSVG({ cx }: { cx: number }) {
   return (
     <Svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} style={StyleSheet.absoluteFill}>
       <Defs>
+        {/* Green brand gradient */}
         <SvgLinearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
           <Stop offset="0%"   stopColor="#064E3B" />
           <Stop offset="100%" stopColor="#043D2E" />
@@ -70,6 +74,7 @@ function NotchBarSVG({ cx }: { cx: number }) {
       </Defs>
       <Path d={mainPath}   fill="url(#barGrad)" />
       <Path d={borderPath} fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth="1" />
+      {/* Gold notch arc accent */}
       <Path d={arcPath}    fill="none" stroke="rgba(245,158,11,0.70)"  strokeWidth="1.5" />
       <Ellipse cx={cx} cy={ND * 0.4} rx={NR * 1.1} ry={8} fill="rgba(245,158,11,0.07)" />
     </Svg>
@@ -81,11 +86,9 @@ function TabIcon({ routeName, isActive }: { routeName: string; isActive: boolean
   const color = isActive ? '#FFFFFF' : '#A7C4B5';
   const size  = 20;
   const sw    = isActive ? 2.2 : 1.8;
-  if (routeName === 'index')         return <Ionicons name="home" color={color} size={size} />;
-  if (routeName === 'wird')          return <Heart   color={color} size={size} strokeWidth={sw} />;
-  if (routeName === '__menu')        return <Menu    color={color} size={size} strokeWidth={sw} />;
-  if (routeName === 'dhikr-counter') return <Timer   color={color} size={size} strokeWidth={sw} />;
-  if (routeName === 'azkars')        return <SunMoon color={color} size={size} strokeWidth={sw} />;
+  if (routeName === 'index')  return <Ionicons name="home"  color={color} size={size} />;
+  if (routeName === 'wird')   return <Heart  color={color} size={size} strokeWidth={sw} />;
+  if (routeName === '__menu') return <Menu   color={color} size={size} strokeWidth={sw} />;
   return null;
 }
 
@@ -94,13 +97,13 @@ interface Props {
   state:         any;
   navigation:    any;
   onBurgerPress: () => void;
-  onWirdPress:   () => void;
+  onWirdPress:   () => void;   // opens WirdPickerSheet
   burgerActive:  boolean;
   wirdActive:    boolean;
   unreadCount:   number;
 }
 
-// ─── Animated tab bar ─────────────────────────────────────────────────────────
+// ─── AnimatedTabBar ───────────────────────────────────────────────────────────
 export function AnimatedTabBar({
   state, navigation,
   onBurgerPress, onWirdPress,
@@ -109,19 +112,14 @@ export function AnimatedTabBar({
 }: Props) {
   const focusedRoute = state.routes[state.index]?.name ?? 'index';
 
-  /**
-   * Index logique actif — priorité stricte :
-   *  1. Menu sheet ouvert  → logIdx 2
-   *  2. Wird sheet ouvert  → logIdx 1
-   *  3. Route de navigation → ROUTE_TO_IDX
-   */
+  // Active logical index — priority: burger > wird > route
   const activeLogIdx = (() => {
     if (burgerActive) return 2;
     if (wirdActive)   return 1;
     return ROUTE_TO_IDX[focusedRoute] ?? 0;
   })();
 
-  // ── Notch : suit activeLogIdx avec inertie ──────────────────────────────────
+  // ── Notch follows activeLogIdx with spring inertia ─────────────────────────
   const targetPx  = TAB_PX(activeLogIdx);
   const notchVal  = useRef(targetPx);
   const animFrame = useRef(0);
@@ -139,7 +137,6 @@ export function AnimatedTabBar({
     return () => { cancelAnimationFrame(animFrame.current); };
   }, [targetPx]);
 
-  // ── Naviguer vers un tab standard ──────────────────────────────────────────
   const navigateTo = (routeName: string) => {
     const event = navigation.emit({
       type:              'tabPress',
@@ -172,6 +169,7 @@ export function AnimatedTabBar({
             >
               <View style={[s.iconCircle, isActive && s.iconCircleActive]}>
                 <TabIcon routeName={tab.routeName} isActive={isActive} />
+                {/* Badge on burger tab */}
                 {tab.isBurger && unreadCount > 0 && (
                   <View style={s.badge}>
                     <Text style={s.badgeTxt}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
@@ -204,6 +202,7 @@ const s = StyleSheet.create({
     borderWidth: 1, borderColor: 'rgba(167,196,181,0.20)',
     position: 'relative',
   },
+  // Active: green icon circle with gold border glow
   iconCircleActive: {
     backgroundColor: '#065F46',
     borderWidth: 2, borderColor: 'rgba(252,211,77,0.18)',
