@@ -276,7 +276,7 @@ export default function DailyAchievementsScreen() {
   // ── Practices ────────────────────────────────────────────────────────────────
   const practices: Practice[] = [
     {
-      id: 'wird', label: 'Wird Tijāni', arabicLabel: 'الوِرد التجاني',
+      id: 'wird', label: 'Lāzim Tijāni', arabicLabel: 'الوِرد التجاني',
       Icon: Heart, color: '#DC2626',
       isFullyDone: isWirdFullyDoneToday, isActive: true,
       completions: wirdCompletionsToday, target: frequencySettings.wirdPerDay,

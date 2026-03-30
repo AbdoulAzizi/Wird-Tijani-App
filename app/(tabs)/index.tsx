@@ -44,7 +44,7 @@ interface QuickAction {
 const ALL_PRACTICE_CARDS: PracticeCardData[] = [
   {
     id: 'wird',
-    title: 'Wird Tijāni', arabicTitle: 'الوِرد التجاني',
+    title: 'Lāzim Tijāni', arabicTitle: 'الوِرد التجاني',
     description: 'Daily spiritual practice',
     icon: Heart, color: '#DC2626', lightColor: '#FEE2E2',
     route: '/wird', time: 'Morning & Evening', priority: 'high',

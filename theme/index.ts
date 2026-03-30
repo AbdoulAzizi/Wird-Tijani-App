@@ -337,8 +337,8 @@ export const practices: Record<PracticeKey, {
 }> = {
   wird: {
     route:        '/wird',
-    label:        'Wird',
-    arabicTitle:  'الوِرْد',
+    label:        'Lāzim',
+    arabicTitle:  'لازم', // "Lāzim" = "Must" — short, punchy label for the tab bar
     arabicLarge:  'وِرْد',
     description:  'Personal daily litany',
     accent:       palette.crimson[600],

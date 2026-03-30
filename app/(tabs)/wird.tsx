@@ -311,7 +311,7 @@ export default function WirdScreen() {
   return (
     <View style={[styles.root, dark && styles.rootDark]}>
       <MinimalHeader
-        title="Wird Tijāni" subtitle="Daily litany"
+        title="Lāzim Tijāni" subtitle="Daily litany"
         onBackPress={handleBack} showMore menuActions={menuActions} theme="default"
       />
 

@@ -10,7 +10,7 @@ const PRACTICES = [
   {
     key: 'wird' as const,
     icon: Heart, color: '#DC2626',
-    label: 'Wird Tijāni', arabic: 'الوِرد',
+    label: 'Lāzim Tijāni', arabic: 'الوِرد',
     hint: 'Morning & evening',
     options: [1, 2] as const,
     fixed: false,

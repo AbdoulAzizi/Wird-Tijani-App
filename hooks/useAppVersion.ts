@@ -41,7 +41,7 @@ export interface AppVersionInfo {
 export function useAppVersion(): AppVersionInfo {
   const expoConfig = Constants.expoConfig ?? Constants.manifest ?? {};
 
-  const appName    = (expoConfig as any).name    ?? 'Wird Tijani';
+  const appName    = (expoConfig as any).name    ?? 'Wird Tijāni';
   const slug       = (expoConfig as any).slug    ?? 'wird-tijani';
   const appVersion = (expoConfig as any).version ?? '1.0.0';
   const scheme     = (expoConfig as any).scheme  ?? 'wirdtijani';

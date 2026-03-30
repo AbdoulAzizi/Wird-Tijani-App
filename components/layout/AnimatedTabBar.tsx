@@ -28,7 +28,7 @@ const TAB_PX = (i: number) => (i + 0.5) * (SW / TAB_COUNT);
 // logIdx: 0 = Home, 1 = Wird, 2 = Menu
 const TABS_DISPLAY = [
   { routeName: 'index',  label: 'Home',          logIdx: 0, isBurger: false, isWird: false },
-  { routeName: 'wird',   label: 'Wird & Wazifa', logIdx: 1, isBurger: false, isWird: true  },
+  { routeName: 'wird',   label: 'Lāzim & Wazifa', logIdx: 1, isBurger: false, isWird: true  },
   { routeName: '__menu', label: 'Menu',           logIdx: 2, isBurger: true,  isWird: false },
 ];
 

@@ -24,7 +24,7 @@ export interface MenuItem {
 export const MENU_ITEMS: MenuItem[] = [
   // ── Daily Awrād ────────────────────────────────────────────────────────────
   { name: 'Home',            route: '/',          icon: Home,     description: 'Main dashboard',                  color: '#059669' },
-  { name: 'Wird',            route: '/wird',      icon: Heart,    description: 'Daily litany',                    color: '#DC2626' },
+  { name: 'Lāzim',            route: '/wird',      icon: Heart,    description: 'Daily litany',                    color: '#DC2626' },
   { name: 'Wazifa',          route: '/wazifa',    icon: Star,     description: 'The daily collective invocation', color: '#D97706' },
   { name: 'Haḍratu-Jumūʿa', route: '/hadra',     icon: Moon,     description: 'Friday sacred gathering',         color: '#7C3AED', dividerAfter: true },
 
