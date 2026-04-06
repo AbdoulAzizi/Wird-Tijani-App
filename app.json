@@ -44,19 +44,7 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      },
-
-      "intentFilters": [
-        {
-          "action": "VIEW",
-          "data": [
-            {
-              "scheme": "rawdatdhikr"
-            }
-          ],
-          "category": ["BROWSABLE", "DEFAULT"]
-        }
-      ]
+      }
     },
 
     "web": {
@@ -70,27 +58,13 @@
       "expo-font",
       "expo-web-browser",
       "@react-native-community/datetimepicker",
-
       [
         "expo-build-properties",
         {
           "android": {
             "compileSdkVersion": 35,
-            "targetSdkVersion": 35,
-            "extraProguardRules": "",
-
-            "manifestQueries": {
-              "intent": [
-                {
-                  "action": "android.intent.action.VIEW",
-                  "data": {
-                    "scheme": "rawdatdhikr"
-                  }
-                }
-              ]
-            }
+            "targetSdkVersion": 35
           },
-
           "ios": {
             "useFrameworks": "static"
           }
@@ -104,7 +78,6 @@
 
     "extra": {
       "router": {},
-
       "eas": {
         "projectId": "eb0773c5-5f4c-4b64-b17e-13e4c8fa8955"
       }
