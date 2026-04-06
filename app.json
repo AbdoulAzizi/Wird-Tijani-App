@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "Wird Tijāni",
+    "name": "Wird Tijani",
     "slug": "wird-tijani",
-    "version": "1.0.24",
+    "version": "1.0.25",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "wirdtijani",
@@ -14,6 +14,7 @@
       "backgroundColor": "#ffffff",
       "barStyle": "light-content"
     },
+
     "androidNavigationBar": {
       "backgroundColor": "#ffffff"
     },
@@ -27,18 +28,35 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.wirdtijani.app",
-      "buildNumber": "25"
+      "buildNumber": "26",
+      "infoPlist": {
+        "LSApplicationQueriesSchemes": [
+          "rawdatdhikr",
+          "hadramap"
+        ]
+      }
     },
 
     "android": {
       "package": "com.wirdtijani.app",
-      "versionCode": 25,
+      "versionCode": 26,
       "permissions": [],
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-        // "backgroundColor": "#059669"
-      }
+      },
+
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "data": [
+            {
+              "scheme": "rawdatdhikr"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
     },
 
     "web": {
@@ -52,13 +70,27 @@
       "expo-font",
       "expo-web-browser",
       "@react-native-community/datetimepicker",
+
       [
         "expo-build-properties",
         {
           "android": {
             "compileSdkVersion": 35,
-            "targetSdkVersion": 35
+            "targetSdkVersion": 35,
+            "extraProguardRules": "",
+
+            "manifestQueries": {
+              "intent": [
+                {
+                  "action": "android.intent.action.VIEW",
+                  "data": {
+                    "scheme": "rawdatdhikr"
+                  }
+                }
+              ]
+            }
           },
+
           "ios": {
             "useFrameworks": "static"
           }
@@ -72,6 +104,7 @@
 
     "extra": {
       "router": {},
+
       "eas": {
         "projectId": "eb0773c5-5f4c-4b64-b17e-13e4c8fa8955"
       }
