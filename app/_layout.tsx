@@ -1,7 +1,7 @@
 // app/_layout.tsx — Wird Tijani
 //
-// InstallPromptModal is mounted here at the root so it can render
-// above any screen when openRawdatDhikr() triggers it.
+// Both install-prompt modals are mounted here at root level so they can
+// render above any screen when triggered by openRawdatDhikr() or openHadraMap().
 
 import { useEffect, useState, useRef } from 'react';
 import { Stack } from 'expo-router';
@@ -14,8 +14,8 @@ import { AppProvider } from '@/contexts/AppContext';
 import { NotificationProvider } from '@/contexts/NotificationContext';
 import Toast from 'react-native-toast-message';
 
-// Import the modal — it registers itself as the global listener on mount
 import { InstallPromptModal } from '@/utils/OpenRawdatDhikr';
+import { HadraMapInstallModal } from '@/utils/OpenHadraMap';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -36,7 +36,6 @@ export default function RootLayout() {
         setTimeout(async () => {
           await SplashScreen.hideAsync();
           setAppReady(true);
-
           Toast.show({
             type:           'success',
             text1:          'Welcome!',
@@ -69,13 +68,11 @@ export default function RootLayout() {
         </Stack>
         <StatusBar style="auto" />
 
-        {/*
-          InstallPromptModal is mounted here at root level so it renders
-          above all screens. It stays invisible (visible=false internally)
-          until openRawdatDhikr() detects the app is not installed and
-          calls the global trigger.
-        */}
+        {/* Rawdat Dhikr install modal — triggered by openRawdatDhikr() */}
         <InstallPromptModal />
+
+        {/* Hadara Map install modal — triggered by openHadraMap() */}
+        <HadraMapInstallModal />
 
         <Toast />
       </AppProvider>

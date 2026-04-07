@@ -64,6 +64,13 @@ const ALL_PRACTICE_CARDS: PracticeCardData[] = [
     route: '/hadra-jumua', time: 'Friday evening', priority: 'medium',
   },
   {
+    id: 'dhikr-counter',
+    title: 'Dhikr Counter', arabicTitle: 'عداد الذكر',
+    description: 'Personal counter for your dhikr sessions',
+    icon: Clock, color: '#0891B2', lightColor: '#E0F2FE',
+    route: '/dhikr-counter', time: 'Anytime', priority: 'low',
+  },
+  {
     id: 'hadra-map',
     title: 'Hadara Map', arabicTitle: 'خريطة الحضرة',
     description: 'Find local Zawiya & gatherings',
@@ -84,7 +91,7 @@ const PRACTICE_CATEGORIES: PracticeCategory[] = [
   {
     id: 'awrad', label: 'Daily Awrād', arabicLabel: 'الأوراد اليومية',
     emoji: '🕌', color: '#DC2626',
-    cards: ALL_PRACTICE_CARDS.filter(c => ['wird', 'wazifa', 'hadra-jumua'].includes(c.id)),
+    cards: ALL_PRACTICE_CARDS.filter(c => ['wird', 'wazifa', 'hadra-jumua', 'dhikr-counter'].includes(c.id)),
   },
   {
     id: 'resources', label: 'Resources', arabicLabel: 'الموارد',
@@ -278,6 +285,7 @@ export default function HomeScreen() {
       case '/wazifa':      router.push('/(tabs)/wazifa');  break;
       case '/library':     router.push('/(tabs)/library'); break;
       case '/hadra-jumua': router.push('/(tabs)/hadra');   break;
+      case '/dhikr-counter': openRawdatDhikr('dhikr-counter'); break;
       case '/hadra-map':   openHadraMap();                 break;
     }
   };
