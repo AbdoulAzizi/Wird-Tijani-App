@@ -20,16 +20,16 @@ const SHEET_HEIGHT = SCREEN_HEIGHT * 0.72;  // slightly shorter — fewer groups
 // Wird Tijāni navigation groups
 // Routes that are present in this app only
 const GROUPS: { label: string; emoji: string; routes: string[] }[] = [
-  {
-    label: 'Daily Awrād',
-    emoji: '🕌',
-    routes: ['/', '/wird', '/wazifa', '/hadra'],
-  },
-  {
-    label: 'Library & Resources',
-    emoji: '📚',
-    routes: ['/library', '/hadra-map'],
-  },
+  // {
+  //   label: 'Daily Awrād',
+  //   emoji: '🕌',
+  //   routes: ['/', '/wird', '/wazifa', '/hadra'],
+  // },
+  // {
+  //   label: 'Library & Resources',
+  //   emoji: '📚',
+  //   routes: ['/library', '/hadra-map'],
+  // },
   {
     label: 'Tools',
     emoji: '⚙️',
@@ -204,7 +204,7 @@ export function BottomMenuSheet({ visible, onClose, menuItems, onNavigate, pathn
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const s = StyleSheet.create({
-  overlay:  { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 2000, justifyContent: 'flex-end', marginBottom: 54 },
+  overlay:  { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 2000, justifyContent: 'flex-end'},
   backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.45)' },
   sheet: {
     backgroundColor: '#FFFFFF', height: SHEET_HEIGHT,

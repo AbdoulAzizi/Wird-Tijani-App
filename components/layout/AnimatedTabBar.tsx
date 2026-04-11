@@ -29,7 +29,7 @@ const TAB_PX = (i: number) => (i + 0.5) * (SW / TAB_COUNT);
 const TABS_DISPLAY = [
   { routeName: 'index',  label: 'Home',          logIdx: 0, isBurger: false, isWird: false },
   { routeName: 'wird',   label: 'Wird Tijāni', logIdx: 1, isBurger: false, isWird: true  },
-  { routeName: '__menu', label: 'Menu',           logIdx: 2, isBurger: true,  isWird: false },
+  { routeName: '__menu', label: 'More',           logIdx: 2, isBurger: true,  isWird: false },
 ];
 
 const ROUTE_TO_IDX: Record<string, number> = {
