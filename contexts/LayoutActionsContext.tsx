@@ -1,5 +1,5 @@
 // contexts/LayoutActionsContext.ts
-// Shared between Wird Tijani and Rawdat Dhikr — no app-specific logic.
+// Shared between Wird Tijāni and Rawdat Dhikr — no app-specific logic.
 
 import { createContext } from 'react';
 

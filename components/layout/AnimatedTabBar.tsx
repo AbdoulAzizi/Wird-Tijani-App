@@ -1,4 +1,4 @@
-// components/layout/AnimatedTabBar.tsx — Wird Tijani
+// components/layout/AnimatedTabBar.tsx — Wird Tijāni
 //
 // Tabs: Home · Wird & Wazifa · Menu (burger)
 // Notch gradient: green brand (#064E3B → #043D2E)
@@ -18,7 +18,7 @@ import Svg, {
 // ─── Constants ────────────────────────────────────────────────────────────────
 const { width: SW } = Dimensions.get('window');
 
-// Wird Tijani shows 3 real tabs; we keep TAB_COUNT = 3 so spacing is correct.
+// Wird Tijāni shows 3 real tabs; we keep TAB_COUNT = 3 so spacing is correct.
 const TAB_COUNT = 3;
 const TAB_BAR_H = Platform.OS === 'ios' ? 86 : 70;
 const ICON_SIZE = 40;
@@ -28,7 +28,7 @@ const TAB_PX = (i: number) => (i + 0.5) * (SW / TAB_COUNT);
 // logIdx: 0 = Home, 1 = Wird, 2 = Menu
 const TABS_DISPLAY = [
   { routeName: 'index',  label: 'Home',          logIdx: 0, isBurger: false, isWird: false },
-  { routeName: 'wird',   label: 'Lāzim & Wazifa', logIdx: 1, isBurger: false, isWird: true  },
+  { routeName: 'wird',   label: 'Wird Tijāni', logIdx: 1, isBurger: false, isWird: true  },
   { routeName: '__menu', label: 'Menu',           logIdx: 2, isBurger: true,  isWird: false },
 ];
 

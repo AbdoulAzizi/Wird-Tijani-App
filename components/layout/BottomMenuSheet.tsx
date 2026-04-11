@@ -1,4 +1,4 @@
-// components/layout/BottomMenuSheet.tsx — Wird Tijani
+// components/layout/BottomMenuSheet.tsx — Wird Tijāni
 //
 // Groups: Daily Awrād · Library & Resources · Tools
 // Removed: Qur'ān & Dhikr / Al-Hadra / Meditation (those belong to Rawdat Dhikr)
@@ -17,7 +17,7 @@ import { MenuItem }      from '@/constants/menuItems';
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 const SHEET_HEIGHT = SCREEN_HEIGHT * 0.72;  // slightly shorter — fewer groups
 
-// Wird Tijani navigation groups
+// Wird Tijāni navigation groups
 // Routes that are present in this app only
 const GROUPS: { label: string; emoji: string; routes: string[] }[] = [
   {
@@ -204,7 +204,7 @@ export function BottomMenuSheet({ visible, onClose, menuItems, onNavigate, pathn
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const s = StyleSheet.create({
-  overlay:  { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 2000, justifyContent: 'flex-end', marginBottom: 86 },
+  overlay:  { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 2000, justifyContent: 'flex-end', marginBottom: 54 },
   backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.45)' },
   sheet: {
     backgroundColor: '#FFFFFF', height: SHEET_HEIGHT,

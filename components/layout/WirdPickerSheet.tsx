@@ -1,7 +1,7 @@
-// components/layout/WirdPickerSheet.tsx — Wird Tijani
+// components/layout/WirdPickerSheet.tsx — Wird Tijāni
 //
 // Unchanged from original — this picker is intrinsically Tariqa-specific
-// (Wird · Wazifa · Haḍra) and belongs only in Wird Tijani.
+// (Wird · Wazifa · Haḍra) and belongs only in Wird Tijāni.
 // Rawdat Dhikr does NOT use this component.
 
 import { Heart, Star, Moon, X, ChevronRight } from 'lucide-react-native';

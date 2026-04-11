@@ -1,4 +1,4 @@
-// utils/OpenHadraMap.tsx — Wird Tijani
+// utils/OpenHadraMap.tsx — Wird Tijāni
 
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {

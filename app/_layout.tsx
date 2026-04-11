@@ -1,4 +1,4 @@
-// app/_layout.tsx — Wird Tijani
+// app/_layout.tsx — Wird Tijāni
 //
 // Both install-prompt modals are mounted here at root level so they can
 // render above any screen when triggered by openRawdatDhikr() or openHadraMap().

@@ -12,7 +12,7 @@ import { Platform } from 'react-native';
  */
 
 export interface AppVersionInfo {
-  /** Nom affiché de l'app  — "Wird Tijani" */
+  /** Nom affiché de l'app  — "Wird Tijāni" */
   appName: string;
   /** Slug expo                — "wird-tijani" */
   slug: string;

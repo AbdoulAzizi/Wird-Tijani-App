@@ -1,4 +1,4 @@
-// components/layout/MinimalHeader.tsx — Wird Tijani
+// components/layout/MinimalHeader.tsx — Wird Tijāni
 //
 // Green brand gradients (default / dark / light).
 // Dropdown menu accent: green #059669.
@@ -81,7 +81,7 @@ const DropdownMenu = memo(({ visible, onClose, actions, anchorPosition }: Dropdo
                 { translateY:  8 },
               ],
             }]}>
-              {/* Green accent — Wird Tijani brand */}
+              {/* Green accent — Wird Tijāni brand */}
               <View style={dd.menuAccent} />
               {actions.map((action, index) => (
                 <React.Fragment key={action.key}>

@@ -1,4 +1,4 @@
-// utils/OpenRawdatDhikr.ts — Wird Tijani
+// utils/OpenRawdatDhikr.ts — Wird Tijāni
 //
 // Strategy: always attempt Linking.openURL() directly.
 // canOpenURL() is unreliable for cross-app custom schemes even with
@@ -168,7 +168,7 @@ export async function openRawdatDhikr(screen?: string) {
   const path     = screen ? (SCREEN_PATHS[screen] ?? '') : '';
   const deepLink = path ? `${RD_SCHEME}${path}` : RD_SCHEME;
 
-  // Flush current touch event before backgrounding Wird Tijani
+  // Flush current touch event before backgrounding Wird Tijāni
   await new Promise(r => setTimeout(r, 100));
 
   try {

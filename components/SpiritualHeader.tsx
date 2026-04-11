@@ -1,4 +1,4 @@
-// components/layout/SpiritualHeader.tsx — Wird Tijani
+// components/layout/SpiritualHeader.tsx — Wird Tijāni
 //
 // Green brand: gradient from theme.ts (default variant → #064E3B / #065F46 / #047857)
 // Logo: Islamic crescent + ﷲ · مُحَمَّد — unchanged.

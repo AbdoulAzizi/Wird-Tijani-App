@@ -1,8 +1,8 @@
-// components/layout/SideDrawer.tsx — Wird Tijani
+// components/layout/SideDrawer.tsx — Wird Tijāni
 //
 // Green brand: header #064E3B, active items #F0FDF4.
 // Includes HadraMenuItem special treatment for /hadra-station
-// (though that route does not exist in Wird Tijani, the component
+// (though that route does not exist in Wird Tijāni, the component
 //  handles it gracefully if ever passed through MENU_ITEMS).
 
 import { X, ChevronRight } from 'lucide-react-native';
@@ -128,7 +128,7 @@ export function SideDrawer({ visible, onClose, menuItems, onNavigate, pathname }
         <View style={s.footer}>
           <View style={s.footerLine} />
           <Text style={s.footerVersion}>{appName} · v{fullVersion}</Text>
-          <Text style={s.footerCopy}>© 2025 Wird Tijani</Text>
+          <Text style={s.footerCopy}>© 2025 Wird Tijāni</Text>
         </View>
       </Animated.View>
     </View>
@@ -137,7 +137,7 @@ export function SideDrawer({ visible, onClose, menuItems, onNavigate, pathname }
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const s = StyleSheet.create({
-  overlay:  { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1000 },
+  overlay:  { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9000 },
   backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.48)' },
   drawer: {
     position: 'absolute', left: 0, top: 0, bottom: 0,

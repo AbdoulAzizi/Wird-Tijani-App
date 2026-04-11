@@ -1,4 +1,4 @@
-// app/(tabs)/index.tsx — Wird Tijani
+// app/(tabs)/index.tsx — Wird Tijāni
 // Awrād Tijāniyya · Library · Hadara Map
 // Cross-app Quick Actions → Rawdat Dhikr
 

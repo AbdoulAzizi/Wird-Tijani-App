@@ -1,6 +1,6 @@
-// constants/menuItems.ts — Wird Tijani
+// constants/menuItems.ts — Wird Tijāni
 //
-// Only screens that exist inside Wird Tijani:
+// Only screens that exist inside Wird Tijāni:
 //   Daily Awrād: Home · Wird · Wazifa · Haḍra
 //   Resources:   Library · Hadara Map
 //   Tools:       Stats · Settings · About · Contact

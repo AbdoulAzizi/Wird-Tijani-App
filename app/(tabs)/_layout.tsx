@@ -1,4 +1,4 @@
-// app/(tabs)/_layout.tsx — Wird Tijani
+// app/(tabs)/_layout.tsx — Wird Tijāni
 // Tabs: Home · Wird · Wazifa · Library
 // Hidden: hadra, stats, settings, about, notifications, etc.
 
@@ -17,7 +17,7 @@ import { SideDrawer }            from '@/components/layout/SideDrawer';
 import { WirdPickerSheet }       from '@/components/layout/WirdPickerSheet';
 import { MENU_ITEMS }            from '@/constants/menuItems';
 import { useSwipeDrawer }        from '@/hooks/useSwipeDrawer';
-
+import { openHadraMap } from '@/utils/OpenHadraMap';
 // ─── Constants ────────────────────────────────────────────────────────────────
 // Pages where the swipe-to-open-drawer gesture is active
 const MAIN_PAGES = ['/', '/wird'];
@@ -28,6 +28,7 @@ const HIDDEN_TABS = [
   'stats', 'settings', 'about', 'library', 'notifications',
   'notification-settings', 'notification-test',
   'daily-achievements', 'contact',
+  'hadra-map',   // ← ajouté
 ];
 
 // ─── Haptic helper ────────────────────────────────────────────────────────────
@@ -79,10 +80,17 @@ function InnerTabLayout() {
   // ── Drawer ─────────────────────────────────────────────────────────────────
   const openDrawer  = useCallback(() => { haptic('light'); setDrawerOpen(true);  }, [haptic]);
   const closeDrawer = useCallback(() => { haptic('light'); setDrawerOpen(false); }, [haptic]);
-  const onDrawerNav = useCallback(
-    (route: string) => { closeDrawer(); navigate(route, 240); },
-    [closeDrawer, navigate],
-  );
+ const onDrawerNav = useCallback(
+  (route: string) => {
+    closeDrawer();
+    if (route === '/hadra-map') {
+      setTimeout(() => openHadraMap(), 240);
+    } else {
+      navigate(route, 240);
+    }
+  },
+  [closeDrawer, navigate],
+);
 
   // ── Bottom sheet ────────────────────────────────────────────────────────────
   const toggleSheet = useCallback(() => {
@@ -91,8 +99,15 @@ function InnerTabLayout() {
   }, [haptic]);
 
   const closeSheet  = useCallback(() => { haptic('light'); setBottomSheetOpen(false); }, [haptic]);
-  const onSheetNav  = useCallback(
-    (route: string) => { closeSheet(); navigate(route, 260); },
+  const onSheetNav = useCallback(
+    (route: string) => {
+      closeSheet();
+      if (route === '/hadra-map') {
+        setTimeout(() => openHadraMap(), 260);   // ← ouvre l'app externe
+      } else {
+        navigate(route, 260);
+      }
+    },
     [closeSheet, navigate],
   );
 
