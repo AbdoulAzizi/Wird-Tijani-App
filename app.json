@@ -2,7 +2,7 @@
   "expo": {
     "name": "Wird Tijāni",
     "slug": "wird-tijani",
-    "version": "1.0.27",
+    "version": "1.0.28",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "wirdtijani",
@@ -10,37 +10,20 @@
     "newArchEnabled": true,
     "primaryColor": "#ffffff",
 
-    "androidStatusBar": {
-      "backgroundColor": "#ffffff",
-      "barStyle": "light-content"
-    },
-
-    "androidNavigationBar": {
-      "backgroundColor": "#ffffff"
-    },
-
-    "splash": {
-      "image": "./assets/images/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
-    },
-
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.wirdtijani.app",
-      "buildNumber": "28",
+      "buildNumber": "29",
       "infoPlist": {
-        "LSApplicationQueriesSchemes": [
-          "rawdatdhikr",
-          "hadramap"
-        ]
+        "LSApplicationQueriesSchemes": ["rawdatdhikr", "hadramap"]
       }
     },
 
     "android": {
       "package": "com.wirdtijani.app",
-      "versionCode": 28,
+      "versionCode": 29,
       "permissions": [],
+      "predictiveBackGestureEnabled": true,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
@@ -59,11 +42,20 @@
       "expo-web-browser",
       "@react-native-community/datetimepicker",
       [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/splash.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#ffffff"
+        }
+      ],
+      [
         "expo-build-properties",
         {
           "android": {
-            "compileSdkVersion": 35,
-            "targetSdkVersion": 35
+            "compileSdkVersion": 36,
+            "targetSdkVersion": 36,
+            "buildToolsVersion": "36.0.0"
           },
           "ios": {
             "useFrameworks": "static"
@@ -78,14 +70,10 @@
 
     "extra": {
       "router": {},
-      "eas": {
-        "projectId": "eb0773c5-5f4c-4b64-b17e-13e4c8fa8955"
-      }
+      "eas": { "projectId": "eb0773c5-5f4c-4b64-b17e-13e4c8fa8955" }
     },
 
-    "runtimeVersion": {
-      "policy": "appVersion"
-    },
+    "runtimeVersion": { "policy": "appVersion" },
 
     "updates": {
       "url": "https://u.expo.dev/d6804abc-7d41-4321-875e-181217620aeb"

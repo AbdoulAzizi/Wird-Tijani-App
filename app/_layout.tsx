@@ -9,6 +9,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useFonts, Amiri_400Regular } from '@expo-google-fonts/amiri';
 import * as SplashScreen from 'expo-splash-screen';
 import { Animated, View, StyleSheet } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useFrameworkReady } from '@/hooks/useFrameworkReady';
 import { AppProvider } from '@/contexts/AppContext';
 import { NotificationProvider } from '@/contexts/NotificationContext';
@@ -17,7 +18,9 @@ import Toast from 'react-native-toast-message';
 import { InstallPromptModal } from '@/utils/OpenRawdatDhikr';
 import { HadraMapInstallModal } from '@/utils/OpenHadraMap';
 
-SplashScreen.preventAutoHideAsync();
+// preventAutoHideAsync peut rejeter si le splash est déjà masqué : on absorbe.
+SplashScreen.preventAutoHideAsync().catch(() => {});
+SplashScreen.setOptions({ fade: true, duration: 400 });
 
 export default function RootLayout() {
   useFrameworkReady();
@@ -28,55 +31,59 @@ export default function RootLayout() {
   const scale   = useRef(new Animated.Value(0.8)).current;
 
   useEffect(() => {
-    if (fontsLoaded || fontError) {
-      Animated.parallel([
-        Animated.timing(opacity, { toValue: 1, duration: 1200, useNativeDriver: true }),
-        Animated.spring(scale,   { toValue: 1, friction: 4,    useNativeDriver: true }),
-      ]).start(() => {
-        setTimeout(async () => {
-          await SplashScreen.hideAsync();
-          setAppReady(true);
-          Toast.show({
-            type:           'success',
-            text1:          'Welcome!',
-            text2:          'Peace be upon you 🌟',
-            visibilityTime: 3000,
-          });
-        }, 800);
+    if (!fontsLoaded && !fontError) return;
+
+    let cancelled = false;
+
+    Animated.parallel([
+      Animated.timing(opacity, { toValue: 1, duration: 600, useNativeDriver: true }),
+      Animated.spring(scale,   { toValue: 1, friction: 5,   useNativeDriver: true }),
+    ]).start(async () => {
+      if (cancelled) return;
+      await SplashScreen.hideAsync().catch(() => {});
+      setAppReady(true);
+      Toast.show({
+        type:           'success',
+        text1:          'Bienvenue',
+        text2:          'As-salāmu ʿalaykum 🌟',
+        visibilityTime: 3000,
       });
-    }
+    });
+
+    return () => { cancelled = true; };
   }, [fontsLoaded, fontError]);
 
-  if (!appReady) {
-    return (
-      <View style={styles.splashContainer}>
-        <Animated.Image
-          source={require('@/assets/images/icon.png')}
-          style={[styles.logo, { opacity, transform: [{ scale }] }]}
-          resizeMode="contain"
-        />
-      </View>
-    );
-  }
-
   return (
-    <NotificationProvider>
-      <AppProvider>
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="(tabs)"     options={{ headerShown: false }} />
-          <Stack.Screen name="+not-found" />
-        </Stack>
-        <StatusBar style="auto" />
+    <SafeAreaProvider>
+      <StatusBar style="auto" />
 
-        {/* Rawdat Dhikr install modal — triggered by openRawdatDhikr() */}
-        <InstallPromptModal />
+      {!appReady ? (
+        <View style={styles.splashContainer}>
+          <Animated.Image
+            source={require('@/assets/images/icon.png')}
+            style={[styles.logo, { opacity, transform: [{ scale }] }]}
+            resizeMode="contain"
+          />
+        </View>
+      ) : (
+        <NotificationProvider>
+          <AppProvider>
+            <Stack screenOptions={{ headerShown: false }}>
+              <Stack.Screen name="(tabs)"     options={{ headerShown: false }} />
+              <Stack.Screen name="+not-found" />
+            </Stack>
 
-        {/* Hadara Map install modal — triggered by openHadraMap() */}
-        <HadraMapInstallModal />
+            {/* Rawdat Dhikr install modal — triggered by openRawdatDhikr() */}
+            <InstallPromptModal />
 
-        <Toast />
-      </AppProvider>
-    </NotificationProvider>
+            {/* Hadara Map install modal — triggered by openHadraMap() */}
+            <HadraMapInstallModal />
+
+            <Toast />
+          </AppProvider>
+        </NotificationProvider>
+      )}
+    </SafeAreaProvider>
   );
 }
 
